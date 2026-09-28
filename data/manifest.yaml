@@ -1,0 +1,65 @@
+# 法律清单（V1）：系统只回答以下 15 部法律范围内的问题
+# 字段说明：
+#   law_id   —— 稳定英文标识，进入索引 metadata 后不再更改
+#   law_name —— 法律正式名称，与文件名一致
+#   file     —— 原始文件路径（相对项目根目录，正斜杠）
+
+- law_id: cn_individual_income_tax_law
+  law_name: 中华人民共和国个人所得税法
+  file: data/raw/中华人民共和国个人所得税法.md
+
+- law_id: cn_criminal_law
+  law_name: 中华人民共和国刑法
+  file: data/raw/中华人民共和国刑法.docx
+
+- law_id: cn_labor_contract_law
+  law_name: 中华人民共和国劳动合同法
+  file: data/raw/中华人民共和国劳动合同法.pdf
+
+- law_id: cn_labor_law
+  law_name: 中华人民共和国劳动法
+  file: data/raw/中华人民共和国劳动法.pdf
+
+- law_id: cn_anti_domestic_violence_law
+  law_name: 中华人民共和国反家庭暴力法
+  file: data/raw/中华人民共和国反家庭暴力法.md
+
+- law_id: cn_resident_identity_card_law
+  law_name: 中华人民共和国居民身份证法
+  file: data/raw/中华人民共和国居民身份证法.md
+
+- law_id: cn_passport_law
+  law_name: 中华人民共和国护照法
+  file: data/raw/中华人民共和国护照法.md
+
+- law_id: cn_minors_protection_law
+  law_name: 中华人民共和国未成年人保护法
+  file: data/raw/中华人民共和国未成年人保护法.docx
+
+- law_id: cn_civil_code
+  law_name: 中华人民共和国民法典
+  file: data/raw/中华人民共和国民法典.pdf
+
+- law_id: cn_public_security_punishments_law
+  law_name: 中华人民共和国治安管理处罚法
+  file: data/raw/中华人民共和国治安管理处罚法.docx
+
+- law_id: cn_consumer_protection_law
+  law_name: 中华人民共和国消费者权益保护法
+  file: data/raw/中华人民共和国消费者权益保护法.docx
+
+- law_id: cn_social_insurance_law
+  law_name: 中华人民共和国社会保险法
+  file: data/raw/中华人民共和国社会保险法.pdf
+
+- law_id: cn_elderly_protection_law
+  law_name: 中华人民共和国老年人权益保障法
+  file: data/raw/中华人民共和国老年人权益保障法.pdf
+
+- law_id: cn_road_traffic_safety_law
+  law_name: 中华人民共和国道路交通安全法
+  file: data/raw/中华人民共和国道路交通安全法.md
+
+- law_id: cn_food_safety_law
+  law_name: 中华人民共和国食品安全法
+  file: data/raw/中华人民共和国食品安全法.docx
