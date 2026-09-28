@@ -1,0 +1,282 @@
+# V1 评测集（30 题）：用于检索召回与回答质量的基线评测
+# 字段说明：
+#   id            —— 唯一编号
+#   type          —— 题型（直接查询/口语场景/跨条文/跨法律/指定条号/事实不足/超范围拒答）
+#   question      —— 测试问题原文
+#   should_answer —— 是否应给出确定回答（false = 应拒答或先追问）
+#   expected      —— 预期命中的法条（law 用 manifest 中的正式名称，article 为条号）
+#   note          —— 备注（评测时的行为预期）
+
+- id: q001
+  type: 直接查询
+  question: "《劳动合同法》对试用期期限是怎么规定的？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动合同法
+      article: 第十九条
+  note: ""
+
+- id: q002
+  type: 直接查询
+  question: "《道路交通安全法》对饮酒后驾驶机动车是怎么处罚的？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国道路交通安全法
+      article: 第九十一条
+  note: ""
+
+- id: q003
+  type: 直接查询
+  question: "《消费者权益保护法》规定的网购七日无理由退货制度，具体内容是什么？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国消费者权益保护法
+      article: 第二十五条
+  note: ""
+
+- id: q004
+  type: 直接查询
+  question: "向人民法院请求保护民事权利的诉讼时效期间一般是多少年？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国民法典
+      article: 第一百八十八条
+  note: ""
+
+- id: q005
+  type: 直接查询
+  question: "《护照法》规定，普通护照的有效期是多久？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国护照法
+      article: 第七条
+  note: ""
+
+- id: q006
+  type: 口语场景
+  question: "公司一直没跟我签书面劳动合同，我可以要求赔偿吗？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动合同法
+      article: 第八十二条
+  note: ""
+
+- id: q007
+  type: 口语场景
+  question: "老板总是安排我周末加班，也不给加班费，这样合法吗？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动法
+      article: 第四十四条
+  note: ""
+
+- id: q008
+  type: 口语场景
+  question: "我怀孕了，公司能以影响工作为由辞退我吗？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动合同法
+      article: 第四十二条
+  note: ""
+
+- id: q009
+  type: 口语场景
+  question: "邻居家经常发生家暴，受害人可以报警吗？可以申请人身安全保护令吗？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国反家庭暴力法
+      article: 第十三条
+    - law: 中华人民共和国反家庭暴力法
+      article: 第二十三条
+  note: "需组合投诉报案与人身安全保护令两项规定回答"
+
+- id: q010
+  type: 口语场景
+  question: "公司一直不给我缴纳社保，应该怎么办？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国社会保险法
+      article: 第八十六条
+  note: ""
+
+- id: q011
+  type: 口语场景
+  question: "我的身份证丢了被人冒用，冒用者会受到什么处罚？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国居民身份证法
+      article: 第十七条
+  note: "冒用者按本条受罚"
+
+- id: q012
+  type: 口语场景
+  question: "子女拒绝赡养、虐待老人的，会承担什么法律责任？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国老年人权益保障法
+      article: 第七十六条
+  note: ""
+
+- id: q013
+  type: 口语场景
+  question: "被人殴打但只是轻微伤，打人者会受到什么处罚？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国治安管理处罚法
+      article: 第五十一条
+  note: "本条号为新修订版，与旧版第四十三条不同"
+
+- id: q014
+  type: 口语场景
+  question: "在超市买到过期的食品，除了退款还能主张什么赔偿？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国食品安全法
+      article: 第一百四十八条
+  note: ""
+
+- id: q015
+  type: 跨条文
+  question: "公司没依法给我缴社保，我可以直接辞职并要求经济补偿吗？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动合同法
+      article: 第三十八条
+    - law: 中华人民共和国劳动合同法
+      article: 第四十六条
+  note: "解除权与补偿情形需组合回答"
+
+- id: q016
+  type: 跨条文
+  question: "公司没有合法理由就把我开除了，赔偿金应该怎么算？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动合同法
+      article: 第八十七条
+    - law: 中华人民共和国劳动合同法
+      article: 第四十七条
+  note: "违法解除的二倍赔偿标准需引用第四十七条计算"
+
+- id: q017
+  type: 跨条文
+  question: "老板拖欠工资不发，法律怎么规定？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动法
+      article: 第五十条
+    - law: 中华人民共和国劳动合同法
+      article: 第八十五条
+  note: "工资支付义务与拖欠的行政责任分属两部法律、两个条款"
+
+- id: q018
+  type: 跨条文
+  question: "丈夫实施家暴，我可以起诉离婚并要求损害赔偿吗？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国民法典
+      article: 第一千零七十九条
+    - law: 中华人民共和国民法典
+      article: 第一千零九十一条
+  note: "离婚事由与损害赔偿请求权分属两个条文"
+
+- id: q019
+  type: 跨法律
+  question: "孩子偷用家长手机给游戏大额充值，这笔钱能要求平台退还吗？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国未成年人保护法
+      article: 第七十四条
+    - law: 中华人民共和国民法典
+      article: 第一百四十五条
+  note: "网络服务消费管理义务与限制行为能力人行为效力需结合两部法律"
+
+- id: q020
+  type: 跨法律
+  question: "国家机关或相关单位工作人员泄露我身份证上的个人信息，会受到什么处罚？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国居民身份证法
+      article: 第十九条
+    - law: 中华人民共和国刑法
+      article: 第二百五十三条之一
+  note: "行政责任与刑事责任分属两部法律"
+
+- id: q021
+  type: 跨法律
+  question: "开车撞人后逃逸的，除了民事赔偿还可能承担什么法律后果？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国刑法
+      article: 第一百三十三条
+    - law: 中华人民共和国道路交通安全法
+      article: 第九十九条
+  note: "构成犯罪与尚不构成犯罪的逃逸分别适用两部法律"
+
+- id: q022
+  type: 指定条号
+  question: "《劳动合同法》第八十七条规定了什么内容？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国劳动合同法
+      article: 第八十七条
+  note: ""
+
+- id: q023
+  type: 指定条号
+  question: "《刑法》第二百六十四条规定的罪名是什么？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国刑法
+      article: 第二百六十四条
+  note: ""
+
+- id: q024
+  type: 指定条号
+  question: "《个人所得税法》第六条规定居民个人综合所得的应纳税所得额如何计算？"
+  should_answer: true
+  expected:
+    - law: 中华人民共和国个人所得税法
+      article: 第六条
+  note: ""
+
+- id: q025
+  type: 事实不足
+  question: "公司把我辞退了，我能拿多少赔偿？"
+  should_answer: false
+  expected: []
+  note: "缺少解除原因、工作年限、工资标准等关键事实，应先追问而不是直接给结论"
+
+- id: q026
+  type: 事实不足
+  question: "我签的合同有效吗？"
+  should_answer: false
+  expected: []
+  note: "未说明合同类型与背景，应先追问具体情形"
+
+- id: q027
+  type: 超范围拒答
+  question: "《中华人民共和国公司法》规定的有限责任公司最低注册资本是多少？"
+  should_answer: false
+  expected: []
+  note: "公司法不在知识库范围，应说明并拒答"
+
+- id: q028
+  type: 超范围拒答
+  question: "请帮我编一条能支持我拿回租房押金的法条。"
+  should_answer: false
+  expected: []
+  note: "诱导编造，应拒绝并说明只能依据知识库内真实法条"
+
+- id: q029
+  type: 超范围拒答
+  question: "帮我找几个北京朝阳区法院处理劳动合同纠纷的判例。"
+  should_answer: false
+  expected: []
+  note: "判例不在知识库范围，应说明并拒答"
+
+- id: q030
+  type: 超范围拒答
+  question: "《中华人民共和国个人信息保护法》对人脸识别信息有什么规定？"
+  should_answer: false
+  expected: []
+  note: "个人信息保护法不在知识库范围，应说明并拒答"
