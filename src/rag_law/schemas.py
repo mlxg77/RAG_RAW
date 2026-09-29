@@ -56,12 +56,11 @@ class ArticleChunk(BaseModel):
     end_page: int | None = Field(default=None, ge=1)
     text_hash: str
 
-
 class SplitResult(BaseModel):
     """一部法律切分后的结果和诊断信息。"""
 
     chunks: list[ArticleChunk]
     article_count: int
-    empty_articles: list[str] = []
-    duplicate_articles: list[str] = []
-    warnings: list[str] = []
+    empty_articles: list[str] = Field(default_factory=list)
+    duplicate_articles: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
