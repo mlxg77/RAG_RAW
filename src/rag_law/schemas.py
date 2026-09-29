@@ -56,6 +56,38 @@ class ArticleChunk(BaseModel):
     end_page: int | None = Field(default=None, ge=1)
     text_hash: str
 
+RetrievalMethod = Literal[
+    "bm25",
+    "dense",
+    "hybrid",
+]
+
+class RetrievalResult(BaseModel):
+    """BM25、Dense 和 Hybrid 共用的检索结果结构。"""
+
+    chunk_id: str
+    law_id: str
+    law_name: str
+    article_no: str
+    text: str
+
+    part: str | None = None
+    chapter: str | None = None
+    section: str | None = None
+    paragraph_no: int | None = None
+
+    source_file: str
+    page: int | None = Field(default=None, ge=1)
+    end_page: int | None = Field(default=None, ge=1)
+
+    score: float
+    source: RetrievalMethod
+
+    # Hybrid 阶段用来记录各检索器贡献的原始分数。
+    component_scores: dict[str, float] = Field(
+        default_factory=dict
+    )
+
 class SplitResult(BaseModel):
     """一部法律切分后的结果和诊断信息。"""
 
