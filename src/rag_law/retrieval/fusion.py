@@ -12,10 +12,10 @@ from rag_law.retrieval.dense import (
 from rag_law.schemas import RetrievalResult
 
 
-DEFAULT_CANDIDATE_TOP_K = 20
+DEFAULT_CANDIDATE_TOP_K = 10
 DEFAULT_RRF_K = 60
 DEFAULT_BM25_WEIGHT = 1.0
-DEFAULT_DENSE_WEIGHT = 1.0
+DEFAULT_DENSE_WEIGHT = 2.0
 
 
 @dataclass
