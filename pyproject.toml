@@ -11,6 +11,8 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "python-dotenv>=1.2.3",
     "pyyaml>=6.0.3",
+    "pymupdf>=1.24.0",
+    "python-docx>=1.1.0",
 ]
 
 [build-system]
@@ -23,3 +25,8 @@ packages = ["src/rag_law"]
 [[tool.uv.index]]
 url = "https://pypi.tuna.tsinghua.edu.cn/simple"
 default = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
