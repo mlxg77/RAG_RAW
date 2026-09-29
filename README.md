@@ -11,6 +11,7 @@
 | 阶段 0 | 范围与基线（项目骨架、法律清单、评测集、环境验证） | 完成 |
 | 阶段 1 | 文档解析与法条切分 | 完成 |
 | 阶段 2 | BM25、Dense、RRF 混合检索与量化基线 | 完成（存在已记录限制） |
+| 阶段 3 | Reranker 精排与可追溯上下文构建 | 完成（存在已记录限制） |
 
 详见 [docs/plan/v1/](docs/plan/v1/)。
 
@@ -18,7 +19,7 @@
 
 - Python 3.11+（`.python-version` 已锁定 3.13）
 - [uv](https://docs.astral.sh/uv/) 包管理工具
-- 一个 OpenAI 兼容接口的模型服务（本项目当前使用 SiliconFlow：`Qwen/Qwen3-8B` + `BAAI/bge-m3`）
+- 一个模型服务（本项目当前使用 SiliconFlow：`Qwen/Qwen3-8B`、`BAAI/bge-m3` 和 `BAAI/bge-reranker-v2-m3`）
 
 ## 快速开始
 
