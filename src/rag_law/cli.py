@@ -11,6 +11,13 @@ from rag_law.evaluation.retrieval_metrics import (
 from rag_law.retrieval.bm25 import (
     BM25Retriever,
 )
+from rag_law.retrieval.context_builder import (
+    DEFAULT_ADJACENT_FOR_TOP_N,
+    DEFAULT_MAX_CONTEXT_TOKENS,
+    DEFAULT_MAX_EVIDENCES,
+    DEFAULT_MAX_EVIDENCE_TOKENS,
+    DEFAULT_MIN_ADJACENT_SCORE,
+)
 from rag_law.retrieval.dense import (
     DenseRetriever,
 )
@@ -21,7 +28,16 @@ from rag_law.retrieval.fusion import (
     DEFAULT_RRF_K,
     HybridRetriever,
 )
-from rag_law.schemas import RetrievalResult
+from rag_law.retrieval.reranker import (
+    DEFAULT_RERANK_TOP_N,
+)
+from rag_law.retrieval.retrieval_context_pipeline import (
+    RetrievalContextPipeline,
+)
+from rag_law.schemas import (
+    RetrievalContextResult,
+    RetrievalResult,
+)
 
 
 def load_retriever(
@@ -129,6 +145,93 @@ def print_results(
         print(result.text)
 
 
+def print_context_result(
+    output: RetrievalContextResult,
+) -> None:
+    """打印阶段 3 的精排结果和最终上下文。"""
+
+    print()
+    print("=== 阶段 3 执行结果 ===")
+    print(f"问题：{output.query}")
+    print(
+        "精排检索耗时："
+        f"{output.retrieval_latency_ms:.1f} ms"
+    )
+    print(
+        "上下文构建耗时："
+        f"{output.context_latency_ms:.1f} ms"
+    )
+    print(
+        "总耗时："
+        f"{output.total_latency_ms:.1f} ms"
+    )
+
+    print()
+    print("=== Rerank 排名 ===")
+
+    if not output.reranked_results:
+        print("没有检索到候选法条。")
+    else:
+        for rank, result in enumerate(
+            output.reranked_results,
+            start=1,
+        ):
+            hybrid_rank = (
+                result.component_scores.get(
+                    "rerank_input_rank"
+                )
+            )
+
+            print(
+                f"{rank}. "
+                f"《{result.law_name}》"
+                f"{result.article_no} "
+                f"rerank={result.score:.6f} "
+                "hybrid_rank="
+                f"{format_rank(hybrid_rank)}"
+            )
+
+    print()
+    print("=== 上下文摘要 ===")
+    print(
+        "证据数量："
+        f"{len(output.context.evidences)}"
+    )
+    print(
+        "估算 token："
+        f"{output.context.estimated_tokens}"
+        f"/{output.context.max_tokens}"
+    )
+    print(
+        "发生截断或省略："
+        f"{output.context.truncated}"
+    )
+
+    print()
+    print("=== 证据映射 ===")
+
+    if not output.context.evidences:
+        print("没有可用证据。")
+    else:
+        for evidence in output.context.evidences:
+            print(
+                f"{evidence.evidence_id} -> "
+                f"{evidence.chunk_id} | "
+                f"《{evidence.law_name}》"
+                f"{evidence.article_no} | "
+                f"{evidence.relation} | "
+                f"excerpt={evidence.is_excerpt}"
+            )
+
+    print()
+    print("=== 模型上下文 ===")
+
+    if output.context.text:
+        print(output.context.text)
+    else:
+        print("当前没有可提供给模型的上下文。")
+
+
 def format_rank(
     rank: float | None,
 ) -> str:
@@ -196,6 +299,72 @@ def build_parser() -> argparse.ArgumentParser:
         "--dense-weight",
         type=float,
         default=DEFAULT_DENSE_WEIGHT,
+    )
+
+    context_parser = (
+        subparsers.add_parser(
+            "context",
+            help="执行混合检索、精排和上下文构建",
+        )
+    )
+
+    context_parser.add_argument(
+        "--query",
+        help="用户问题；省略时进入交互输入",
+    )
+    context_parser.add_argument(
+        "--law-name",
+        help="按正式法律名称过滤",
+    )
+    context_parser.add_argument(
+        "--candidate-top-k",
+        type=int,
+        default=DEFAULT_CANDIDATE_TOP_K,
+    )
+    context_parser.add_argument(
+        "--rerank-top-n",
+        type=int,
+        default=DEFAULT_RERANK_TOP_N,
+    )
+    context_parser.add_argument(
+        "--rrf-k",
+        type=int,
+        default=DEFAULT_RRF_K,
+    )
+    context_parser.add_argument(
+        "--bm25-weight",
+        type=float,
+        default=DEFAULT_BM25_WEIGHT,
+    )
+    context_parser.add_argument(
+        "--dense-weight",
+        type=float,
+        default=DEFAULT_DENSE_WEIGHT,
+    )
+    context_parser.add_argument(
+        "--max-context-tokens",
+        type=int,
+        default=DEFAULT_MAX_CONTEXT_TOKENS,
+    )
+    context_parser.add_argument(
+        "--max-evidences",
+        type=int,
+        default=DEFAULT_MAX_EVIDENCES,
+    )
+    context_parser.add_argument(
+        "--max-evidence-tokens",
+        type=int,
+        default=DEFAULT_MAX_EVIDENCE_TOKENS,
+    )
+    context_parser.add_argument(
+        "--adjacent-for-top-n",
+        type=int,
+        default=DEFAULT_ADJACENT_FOR_TOP_N,
+    )
+    context_parser.add_argument(
+        "--min-adjacent-score",
+        type=float,
+        default=DEFAULT_MIN_ADJACENT_SCORE,
     )
 
     evaluate_parser = (
@@ -277,6 +446,59 @@ def main() -> None:
         )
 
         print_results(results)
+        return
+
+    if arguments.command == "context":
+        query = arguments.query
+
+        if query is None:
+            query = input(
+                "请输入法律问题："
+            ).strip()
+
+        if not query:
+            parser.error("问题不能为空")
+
+        try:
+            pipeline = RetrievalContextPipeline.load(
+                candidate_top_k=(
+                    arguments.candidate_top_k
+                ),
+                rerank_top_n=(
+                    arguments.rerank_top_n
+                ),
+                rrf_k=arguments.rrf_k,
+                bm25_weight=(
+                    arguments.bm25_weight
+                ),
+                dense_weight=(
+                    arguments.dense_weight
+                ),
+                max_context_tokens=(
+                    arguments.max_context_tokens
+                ),
+                max_evidences=(
+                    arguments.max_evidences
+                ),
+                max_evidence_tokens=(
+                    arguments.max_evidence_tokens
+                ),
+                adjacent_for_top_n=(
+                    arguments.adjacent_for_top_n
+                ),
+                min_adjacent_score=(
+                    arguments.min_adjacent_score
+                ),
+            )
+
+            output = pipeline.run(
+                query,
+                law_name=arguments.law_name,
+            )
+        except ValueError as error:
+            parser.error(str(error))
+
+        print_context_result(output)
         return
 
     if arguments.command == "evaluate":

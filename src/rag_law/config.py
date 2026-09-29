@@ -31,6 +31,11 @@ class Settings(BaseSettings):
     embedding_api_key: str
     embedding_model: str
 
+    # 重排模型（Reranker）
+    rerank_base_url: str
+    rerank_api_key: str
+    rerank_model: str
+
 # 如果 .env 缺任何一个字段，ValidationError 会立刻带着缺的字段名抛出来——这叫 fail fast：
 # 宁可在启动时秒挂，也不要跑到一半才发现配置没有。
 settings = Settings()

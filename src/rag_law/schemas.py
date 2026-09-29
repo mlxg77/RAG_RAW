@@ -60,6 +60,7 @@ RetrievalMethod = Literal[
     "bm25",
     "dense",
     "hybrid",
+    "rerank",
 ]
 
 class RetrievalResult(BaseModel):
@@ -87,6 +88,69 @@ class RetrievalResult(BaseModel):
     component_scores: dict[str, float] = Field(
         default_factory=dict
     )
+
+ContextRelation = Literal[
+    "matched",
+    "adjacent",
+]
+
+
+class ContextEvidence(BaseModel):
+    """交给模型的一段可追溯证据。"""
+
+    evidence_id: str = Field(
+        pattern=r"^E\d{3}$"
+    )
+
+    chunk_id: str
+    law_id: str
+    law_name: str
+    article_no: str
+
+    text: str = Field(min_length=1)
+
+    part: str | None = None
+    chapter: str | None = None
+    section: str | None = None
+
+    source_file: str
+    page: int | None = Field(
+        default=None,
+        ge=1,
+    )
+    end_page: int | None = Field(
+        default=None,
+        ge=1,
+    )
+
+    relation: ContextRelation
+    is_excerpt: bool
+    score: float
+
+
+class BuiltContext(BaseModel):
+    """完成去重、截断和编号后的模型上下文。"""
+
+    text: str
+    evidences: list[ContextEvidence]
+
+    estimated_tokens: int = Field(ge=0)
+    max_tokens: int = Field(gt=0)
+
+    # 只要发生片段提取、预算淘汰或数量淘汰，就为 True。
+    truncated: bool
+
+
+class RetrievalContextResult(BaseModel):
+    """阶段 3 完整流水线的输出。"""
+
+    query: str = Field(min_length=1)
+    reranked_results: list[RetrievalResult]
+    context: BuiltContext
+
+    retrieval_latency_ms: float = Field(ge=0)
+    context_latency_ms: float = Field(ge=0)
+    total_latency_ms: float = Field(ge=0)
 
 class SplitResult(BaseModel):
     """一部法律切分后的结果和诊断信息。"""

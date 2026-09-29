@@ -2630,6 +2630,7 @@ name = "rag-law"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "httpx" },
     { name = "jieba" },
     { name = "langchain-chroma" },
     { name = "langchain-core" },
@@ -2649,6 +2650,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "jieba", specifier = ">=0.42.1" },
     { name = "langchain-chroma", specifier = ">=1.1.0" },
     { name = "langchain-core", specifier = ">=1.6.5" },
