@@ -76,8 +76,9 @@ class _SourceLine:
 class _BodySegment:
     """法条中的一个自然段或逻辑片段。"""
 
-    text: str  # 片段文本（跨页拼接时会被追加内容）
-    page: int | None  # 片段所在页
+    text: str
+    start_page: int | None
+    end_page: int | None
 
 
 @dataclass
@@ -216,10 +217,6 @@ def _append_body_text(
     if not text:
         return
 
-    # 判断是否需要修复 PDF 跨页断句：
-    # 仅 PDF 适用；当前页恰好是上一页的下一页；
-    # 上一段没有以结束标点收尾（说明句子没写完）；
-    # 并且当前文本不是“（一）”这类列举项。
     should_join_across_page = (
         source_format == "pdf"
         and page is not None
@@ -233,18 +230,18 @@ def _append_body_text(
     )
 
     if should_join_across_page:
-        # 直接接到上一段末尾，修复被分页切断的句子
-        draft.segments[-1].text += text
+        last_segment = draft.segments[-1]
+        last_segment.text += text
+        last_segment.end_page = page
     else:
-        # 作为独立自然段追加
         draft.segments.append(
             _BodySegment(
                 text=text,
-                page=page,
+                start_page=page,
+                end_page=page,
             )
         )
 
-    # 维护法条的起始页和结束页
     if page is not None:
         if draft.start_page is None:
             draft.start_page = page
@@ -254,6 +251,16 @@ def _append_body_text(
         else:
             draft.end_page = max(draft.end_page, page)
 
+def _draft_is_empty(draft: _ArticleDraft) -> bool:
+    """判断法条是否没有正文。"""
+
+    return (
+        not draft.segments
+        or not any(
+            segment.text.strip()
+            for segment in draft.segments
+        )
+    )
 
 def _sha256(value: str) -> str:
     """生成带算法前缀的 SHA-256。"""
@@ -265,14 +272,6 @@ def _sha256(value: str) -> str:
 
     # 前缀记录算法名，便于将来更换算法时区分
     return f"sha256:{digest}"
-
-
-def _draft_to_chunk(
-    draft: _ArticleDraft,
-    *,
-    document: LoadedDocument,
-    occurrence: int,
-) -> ArticleChunk:
     """把内部法条对象转换成最终数据结构。"""
 
     # 多个自然段用换行拼接成完整条文
@@ -314,15 +313,179 @@ def _draft_to_chunk(
         text_hash=text_hash,
     )
 
+# 拆分原则：
+# 一条法条不超过 1200 字符
+#     → 一个 chunk，paragraph_no = null
+
+# 一条法条超过 1200 字符，且有多个自然段
+#     → 按自然段组合成多个 chunk
+#     → paragraph_no = 1、2、3……
+
+# 单个自然段自己就超过 1200 字符
+#     → 保留整个自然段
+#     → 不从一句话中间硬切
+#     → 在质量报告中标记 oversized
+
+def _split_segments(
+    segments: list[_BodySegment],
+    *,
+    max_chars: int,
+) -> list[list[_BodySegment]]:
+    """按自然段组合超长法条。
+
+    不从自然段中间截断。单个自然段本身超过 max_chars 时，
+    保留完整自然段，因此最终 chunk 可能略大于阈值。
+    """
+
+    full_text = "\n".join(
+        segment.text
+        for segment in segments
+    )
+
+    if len(full_text) <= max_chars:
+        return [segments]
+
+    groups: list[list[_BodySegment]] = []
+    current_group: list[_BodySegment] = []
+    current_length = 0
+
+    for segment in segments:
+        separator_length = 1 if current_group else 0
+        projected_length = (
+            current_length
+            + separator_length
+            + len(segment.text)
+        )
+
+        if current_group and projected_length > max_chars:
+            groups.append(current_group)
+            current_group = []
+            current_length = 0
+
+        if current_group:
+            current_length += 1
+
+        current_group.append(segment)
+        current_length += len(segment.text)
+
+    if current_group:
+        groups.append(current_group)
+
+    return groups
+
+
+def _group_page_range(
+    segments: list[_BodySegment],
+) -> tuple[int | None, int | None]:
+    """取得一组自然段的开始页和结束页。"""
+
+    start_page = next(
+        (
+            segment.start_page
+            for segment in segments
+            if segment.start_page is not None
+        ),
+        None,
+    )
+
+    end_page = next(
+        (
+            segment.end_page
+            for segment in reversed(segments)
+            if segment.end_page is not None
+        ),
+        None,
+    )
+
+    return start_page, end_page
+
+
+def _draft_to_chunks(
+    draft: _ArticleDraft,
+    *,
+    document: LoadedDocument,
+    occurrence: int,
+    max_chars: int,
+) -> list[ArticleChunk]:
+    """把一个法条转换成一个或多个检索块。"""
+
+    segment_groups = _split_segments(
+        draft.segments,
+        max_chars=max_chars,
+    )
+
+    was_split = len(segment_groups) > 1
+    chunks: list[ArticleChunk] = []
+
+    for group_index, segment_group in enumerate(
+        segment_groups,
+        start=1,
+    ):
+        text = "\n".join(
+            segment.text
+            for segment in segment_group
+        ).strip()
+
+        text_hash = _sha256(text)
+
+        identity_parts = [
+            document.law_id,
+            draft.article_no,
+            str(occurrence),
+        ]
+
+        # 未拆分法条维持原来的 ID 算法。
+        # 只有真正拆分后才加入子块序号。
+        if was_split:
+            identity_parts.append(str(group_index))
+
+        chunk_id = _sha256(
+            "\0".join(identity_parts)
+        )
+
+        if was_split:
+            page, end_page = _group_page_range(
+                segment_group
+            )
+            paragraph_no: int | None = group_index
+        else:
+            page = draft.start_page
+            end_page = draft.end_page
+            paragraph_no = None
+
+        chunks.append(
+            ArticleChunk(
+                chunk_id=chunk_id,
+                law_id=document.law_id,
+                law_name=document.law_name,
+                part=draft.part,
+                chapter=draft.chapter,
+                section=draft.section,
+                article_no=draft.article_no,
+                paragraph_no=paragraph_no,
+                text=text,
+                source_file=document.source_file,
+                page=page,
+                end_page=end_page,
+                text_hash=text_hash,
+            )
+        )
+
+    return chunks
+
 
 def split_articles(
     document: LoadedDocument,
+    *,
+    max_chars: int = 1200,
 ) -> SplitResult:
     """把标准化后的整部法律切分成独立法条。
 
     参数必须是 normalize_document() 的输出。
     核心是一个逐行扫描的状态机：遇到新条号就切出一条法条。
     """
+    if max_chars <= 0:
+        raise ValueError("max_chars 必须大于 0")
 
     # 展开成带位置信息的行，并定位正文起点（跳过目录区）
     source_lines = _iter_source_lines(document)
@@ -467,11 +630,7 @@ def split_articles(
     empty_articles = [
         draft.article_no
         for draft in drafts
-        if not draft.segments
-        or not any(
-            segment.text.strip()
-            for segment in draft.segments
-        )
+        if _draft_is_empty(draft)
     ]
 
     # 逐条转换：空条跳过，重复条号用 occurrence 区分
@@ -481,14 +640,15 @@ def split_articles(
     for draft in drafts:
         occurrence_counts[draft.article_no] += 1
 
-        if draft.article_no in empty_articles:
+        if _draft_is_empty(draft):
             continue
 
-        chunks.append(
-            _draft_to_chunk(
+        chunks.extend(
+            _draft_to_chunks(
                 draft,
                 document=document,
                 occurrence=occurrence_counts[draft.article_no],
+                max_chars=max_chars,
             )
         )
 
@@ -502,6 +662,17 @@ def split_articles(
     if duplicate_articles:
         warnings.append(
             f"发现 {len(duplicate_articles)} 个重复条号"
+        )
+
+    oversized_chunks = [
+        chunk
+        for chunk in chunks
+        if len(chunk.text) > max_chars
+    ]
+
+    if oversized_chunks:
+        warnings.append(
+            f"发现 {len(oversized_chunks)} 个无法按自然段继续拆分的超长块"
         )
 
     return SplitResult(

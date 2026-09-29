@@ -244,6 +244,62 @@ def test_no_articles_returns_warning() -> None:
     assert "未识别到任何法条" in result.warnings[0]
 
 
+def test_split_long_article_by_paragraph() -> None:
+    document = make_document(
+        [
+            "第一条 AAAAAA",
+            "BBBBBB",
+            "CCCCCC",
+            "第二条 第二条正文。",
+        ]
+    )
+
+    result = split_articles(
+        document,
+        max_chars=13,
+    )
+
+    first_article_chunks = [
+        chunk
+        for chunk in result.chunks
+        if chunk.article_no == "第一条"
+    ]
+
+    assert len(first_article_chunks) == 2
+
+    assert first_article_chunks[0].paragraph_no == 1
+    assert first_article_chunks[0].text == "AAAAAA\nBBBBBB"
+
+    assert first_article_chunks[1].paragraph_no == 2
+    assert first_article_chunks[1].text == "CCCCCC"
+
+    assert (
+        first_article_chunks[0].chunk_id
+        != first_article_chunks[1].chunk_id
+    )
+
+
+def test_do_not_cut_inside_single_long_paragraph() -> None:
+    document = make_document(
+        [
+            f"第一条 {'A' * 20}",
+        ]
+    )
+
+    result = split_articles(
+        document,
+        max_chars=10,
+    )
+
+    assert len(result.chunks) == 1
+    assert result.chunks[0].text == "A" * 20
+    assert result.chunks[0].paragraph_no is None
+    assert any(
+        "超长块" in warning
+        for warning in result.warnings
+    )
+
+
 @pytest.mark.parametrize(
     (
         "relative_path",
