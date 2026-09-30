@@ -35,6 +35,7 @@ from rag_law.retrieval.retrieval_context_pipeline import (
     RetrievalContextPipeline,
 )
 from rag_law.schemas import (
+    AnswerPipelineResult,
     RetrievalContextResult,
     RetrievalResult,
 )
@@ -231,6 +232,167 @@ def print_context_result(
     else:
         print("当前没有可提供给模型的上下文。")
 
+ANSWER_STATUS_LABELS = {
+    "answered": "已回答",
+    "needs_clarification": "需要补充事实",
+    "insufficient_evidence": "证据不足",
+    "generation_failed": "生成或校验失败",
+}
+
+
+def format_source_location(
+    *,
+    source_file: str,
+    page: int | None,
+    end_page: int | None,
+) -> str:
+    """格式化引用的原始文件位置。"""
+
+    if page is None:
+        return source_file
+
+    if (
+        end_page is not None
+        and end_page != page
+    ):
+        page_text = f"{page}-{end_page}"
+    else:
+        page_text = str(page)
+
+    return f"{source_file}，第 {page_text} 页"
+
+
+def print_answer_result(
+    output: AnswerPipelineResult,
+    *,
+    debug: bool = False,
+) -> None:
+    """打印阶段 4 的最终回答。"""
+
+    answer = output.answer
+
+    print()
+    print("=== 阶段 4 回答结果 ===")
+    print(f"问题：{output.query}")
+    print(
+        "状态："
+        f"{ANSWER_STATUS_LABELS[answer.status]}"
+        f"（{answer.status}）"
+    )
+
+    print()
+    print("=== 简明结论 ===")
+    print(answer.summary)
+
+    print()
+    print("=== 分析 ===")
+    print(answer.analysis)
+
+    print()
+    print("=== 适用条件或待确认事实 ===")
+
+    if answer.conditions:
+        for condition in answer.conditions:
+            print(f"- {condition}")
+    else:
+        print("- 无")
+
+    print()
+    print("=== 法条引用 ===")
+
+    if not answer.citations:
+        print("没有可展示的已校验引用。")
+    else:
+        for index, citation in enumerate(
+            answer.citations,
+            start=1,
+        ):
+            print()
+            print(
+                f"[{index}] "
+                f"《{citation.law_name}》"
+                f"{citation.article_no}"
+            )
+            print(
+                "证据映射："
+                f"{citation.evidence_id} -> "
+                f"{citation.chunk_id}"
+            )
+            print(
+                "来源："
+                + format_source_location(
+                    source_file=(
+                        citation.source_file
+                    ),
+                    page=citation.page,
+                    end_page=citation.end_page,
+                )
+            )
+            print("原文：")
+            print(citation.quote)
+
+    print()
+    print("=== 回答限制 ===")
+    print(answer.limitations)
+
+    if answer.follow_up_question is not None:
+        print()
+        print("=== 需要补充的问题 ===")
+        print(answer.follow_up_question)
+
+    print()
+    print("=== 运行摘要 ===")
+
+    if output.top_relevance_score is None:
+        score_text = "-"
+    else:
+        score_text = (
+            f"{output.top_relevance_score:.6f}"
+        )
+
+    print(f"最高相关度：{score_text}")
+    print(
+        "模型生成次数："
+        f"{output.generation_attempts}"
+    )
+    print(
+        "生成耗时："
+        f"{output.generation_latency_ms:.1f} ms"
+    )
+    print(
+        "总耗时："
+        f"{output.total_latency_ms:.1f} ms"
+    )
+
+    if not debug:
+        return
+
+    print()
+    print("=== 调试信息 ===")
+    print(
+        "Prompt 版本："
+        f"{output.prompt_version}"
+    )
+    print(
+        "检索耗时："
+        f"{output.retrieval.retrieval_latency_ms:.1f} ms"
+    )
+    print(
+        "上下文构建耗时："
+        f"{output.retrieval.context_latency_ms:.1f} ms"
+    )
+    print(
+        "上下文证据数："
+        f"{len(output.retrieval.context.evidences)}"
+    )
+
+    if output.validation_errors:
+        print("引用或生成诊断：")
+
+        for error in output.validation_errors:
+            print(f"- {error}")
+    else:
+        print("引用或生成诊断：无")
 
 def format_rank(
     rank: float | None,

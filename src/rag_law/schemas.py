@@ -160,3 +160,139 @@ class SplitResult(BaseModel):
     empty_articles: list[str] = Field(default_factory=list)
     duplicate_articles: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    
+AnswerStatus = Literal[
+    "answered",
+    "needs_clarification",
+    "insufficient_evidence",
+    "generation_failed",
+]
+
+
+class GeneratedCitation(BaseModel):
+    """大模型生成的引用，尚未经过程序校验。"""
+
+    evidence_id: str = Field(
+        pattern=r"^E\d{3}$",
+        description=(
+            "本次检索上下文中的证据编号，例如 E001。"
+            "不得自行编造。"
+        ),
+    )
+    law_name: str = Field(
+        min_length=1,
+        description="证据中显示的法律全名。",
+    )
+    article_no: str = Field(
+        min_length=1,
+        description="证据中显示的条号，例如第十条。",
+    )
+    quote: str = Field(
+        min_length=1,
+        description=(
+            "直接复制自证据正文的连续原文，"
+            "不得改写或拼接不连续句子。"
+        ),
+    )
+
+
+class GeneratedAnswer(BaseModel):
+    """大模型必须返回的结构化回答。"""
+
+    summary: str = Field(
+        min_length=1,
+        description="面向用户的简明结论。",
+    )
+    analysis: str = Field(
+        min_length=1,
+        description="严格依据检索证据进行的分析。",
+    )
+    conditions: list[str] = Field(
+        default_factory=list,
+        description="规则适用条件或仍需确认的关键事实。",
+    )
+    citations: list[GeneratedCitation] = Field(
+        default_factory=list,
+        description="支持回答内容的法条引用。",
+    )
+    limitations: str = Field(
+        min_length=1,
+        description="证据边界、知识库边界和必要风险提示。",
+    )
+    follow_up_question: str | None = Field(
+        default=None,
+        description=(
+            "缺少关键事实时，只提出一个最重要的追问；"
+            "无需追问时为 null。"
+        ),
+    )
+
+
+class ValidatedCitation(BaseModel):
+    """通过校验后，允许展示给用户的引用。"""
+
+    evidence_id: str = Field(
+        pattern=r"^E\d{3}$"
+    )
+    chunk_id: str
+    law_id: str
+    law_name: str
+    article_no: str
+    quote: str
+    source_file: str
+    page: int | None = Field(
+        default=None,
+        ge=1,
+    )
+    end_page: int | None = Field(
+        default=None,
+        ge=1,
+    )
+
+
+class CitationValidationResult(BaseModel):
+    """一次引用校验的完整结果。"""
+
+    is_valid: bool
+    citations: list[ValidatedCitation] = Field(
+        default_factory=list
+    )
+    errors: list[str] = Field(
+        default_factory=list
+    )
+    
+class AnswerResponse(BaseModel):
+    """最终允许返回给用户的回答。"""
+
+    status: AnswerStatus
+    summary: str
+    analysis: str
+    conditions: list[str] = Field(
+        default_factory=list
+    )
+    citations: list[ValidatedCitation] = Field(
+        default_factory=list
+    )
+    limitations: str
+    follow_up_question: str | None = None
+
+
+class AnswerPipelineResult(BaseModel):
+    """阶段 4 完整回答流水线的输出。"""
+
+    query: str = Field(min_length=1)
+    answer: AnswerResponse
+    retrieval: RetrievalContextResult
+
+    generation_attempts: int = Field(
+        ge=0,
+        le=2,
+    )
+    top_relevance_score: float | None = None
+    validation_errors: list[str] = Field(
+        default_factory=list
+    )
+
+    prompt_version: str
+    generation_latency_ms: float = Field(ge=0)
+    total_latency_ms: float = Field(ge=0)
