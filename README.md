@@ -12,6 +12,7 @@
 | 阶段 1 | 文档解析与法条切分 | 完成 |
 | 阶段 2 | BM25、Dense、RRF 混合检索与量化基线 | 完成（存在已记录限制） |
 | 阶段 3 | Reranker 精排与可追溯上下文构建 | 完成（存在已记录限制） |
+| 阶段 4 | 结构化答案生成、引用校验、拒答与脱敏日志 | 完成（存在已记录限制） |
 
 详见 [docs/plan/v1/](docs/plan/v1/)。
 
@@ -36,7 +37,12 @@ uv run python scripts/verify_env.py
 
 # 4. 校验法律清单
 uv run python scripts/check_manifest.py
+
+# 5. 执行完整问答（检索、精排、生成和引用校验）
+uv run python -m rag_law.cli answer --query "公司一直没跟我签书面劳动合同，我可以要求赔偿吗？"
 ```
+
+可添加 `--debug` 查看分阶段耗时和校验诊断，或添加 `--json` 输出完整结构化结果。脱敏运行日志默认写入 `logs/answer_runs.jsonl`，该目录不进入 Git。
 
 ## 目录结构
 
@@ -52,7 +58,9 @@ docs/
 scripts/               # 开发辅助脚本（环境自检、清单校验）
 src/rag_law/
   config.py            # 全局配置对象（从 .env 读取）
+  generation/          # 结构化生成、引用校验、拒答与脱敏日志
 indexes/               # 检索索引（不入 Git）
+logs/                  # 本地脱敏运行日志（不入 Git）
 ```
 
 ## 数据说明
