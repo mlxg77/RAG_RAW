@@ -8,6 +8,10 @@ from rag_law.evaluation.retrieval_metrics import (
     DEFAULT_REPORT_PATH,
     run_baseline_evaluation,
 )
+from rag_law.generation.answer_pipeline import (
+    DEFAULT_MIN_ANSWER_SCORE,
+    AnswerPipeline,
+)
 from rag_law.retrieval.bm25 import (
     BM25Retriever,
 )
@@ -232,6 +236,7 @@ def print_context_result(
     else:
         print("当前没有可提供给模型的上下文。")
 
+
 ANSWER_STATUS_LABELS = {
     "answered": "已回答",
     "needs_clarification": "需要补充事实",
@@ -394,6 +399,7 @@ def print_answer_result(
     else:
         print("引用或生成诊断：无")
 
+
 def format_rank(
     rank: float | None,
 ) -> str:
@@ -529,6 +535,41 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_MIN_ADJACENT_SCORE,
     )
 
+    answer_parser = (
+        subparsers.add_parser(
+            "answer",
+            help="执行检索、生成和引用校验",
+        )
+    )
+
+    answer_parser.add_argument(
+        "--query",
+        help="用户问题；省略时进入交互输入",
+    )
+    answer_parser.add_argument(
+        "--law-name",
+        help="按正式法律名称过滤",
+    )
+    answer_parser.add_argument(
+        "--min-answer-score",
+        type=float,
+        default=DEFAULT_MIN_ANSWER_SCORE,
+        help=(
+            "允许调用回答模型的最低 Top1 "
+            "Rerank 分数"
+        ),
+    )
+    answer_parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="显示内部诊断和分阶段耗时",
+    )
+    answer_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="输出完整 JSON 结果",
+    )
+
     evaluate_parser = (
         subparsers.add_parser(
             "evaluate",
@@ -661,6 +702,45 @@ def main() -> None:
             parser.error(str(error))
 
         print_context_result(output)
+        return
+
+    if arguments.command == "answer":
+        query = arguments.query
+
+        if query is None:
+            query = input(
+                "请输入法律问题："
+            ).strip()
+
+        if not query:
+            parser.error("问题不能为空")
+
+        try:
+            pipeline = AnswerPipeline.load(
+                min_answer_score=(
+                    arguments.min_answer_score
+                )
+            )
+
+            output = pipeline.run(
+                query,
+                law_name=arguments.law_name,
+            )
+        except ValueError as error:
+            parser.error(str(error))
+
+        if arguments.json:
+            print(
+                output.model_dump_json(
+                    indent=2,
+                )
+            )
+        else:
+            print_answer_result(
+                output,
+                debug=arguments.debug,
+            )
+
         return
 
     if arguments.command == "evaluate":

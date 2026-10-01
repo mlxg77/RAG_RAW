@@ -1,5 +1,6 @@
 """阶段 4 完整回答流水线。"""
 
+import logging
 import time
 from typing import Protocol
 
@@ -13,6 +14,9 @@ from rag_law.generation.citation_validator import (
 from rag_law.generation.prompts import (
     ANSWER_PROMPT_VERSION,
 )
+from rag_law.generation.run_logger import (
+    AnswerRunLogger,
+)
 from rag_law.retrieval.retrieval_context_pipeline import (
     RetrievalContextPipeline,
 )
@@ -24,6 +28,8 @@ from rag_law.schemas import (
     RetrievalContextResult,
 )
 
+
+logger = logging.getLogger(__name__)
 
 # 临时阈值：
 # 当前 24 道可回答题中，已知召回失败的 q019 Top1 约为 0.018；
@@ -62,6 +68,18 @@ class CitationValidatorProtocol(Protocol):
         ...
 
 
+class AnswerRunLoggerProtocol(Protocol):
+    """回答流水线依赖的运行日志接口。"""
+
+    def write(
+        self,
+        *,
+        result: AnswerPipelineResult,
+        law_name: str | None = None,
+    ) -> None:
+        ...
+
+
 class AnswerPipeline:
     """检索、生成、引用校验和安全降级。"""
 
@@ -71,6 +89,7 @@ class AnswerPipeline:
         retrieval_pipeline: RetrievalPipelineProtocol,
         generation_chains: GenerationChains,
         citation_validator: CitationValidatorProtocol,
+        run_logger: AnswerRunLoggerProtocol | None = None,
         min_answer_score: float = (
             DEFAULT_MIN_ANSWER_SCORE
         ),
@@ -83,6 +102,7 @@ class AnswerPipeline:
         self.retrieval_pipeline = retrieval_pipeline
         self.generation_chains = generation_chains
         self.citation_validator = citation_validator
+        self.run_logger = run_logger
         self.min_answer_score = min_answer_score
 
     @classmethod
@@ -104,6 +124,9 @@ class AnswerPipeline:
             ),
             citation_validator=(
                 CitationValidator.load()
+            ),
+            run_logger=(
+                AnswerRunLogger.from_settings()
             ),
             min_answer_score=min_answer_score,
         )
@@ -329,7 +352,39 @@ class AnswerPipeline:
         *,
         law_name: str | None = None,
     ) -> AnswerPipelineResult:
-        """执行阶段 4 完整流水线。"""
+        """执行完整流水线，并记录脱敏运行日志。"""
+
+        result = self._run(
+            query,
+            law_name=law_name,
+        )
+
+        if self.run_logger is not None:
+            try:
+                self.run_logger.write(
+                    result=result,
+                    law_name=law_name,
+                )
+            except (
+                OSError,
+                TypeError,
+                ValueError,
+            ):
+                # 日志失败不能让一个已经完成的法律回答丢失。
+                # 异常只写入应用自身 stderr，不放进用户回答。
+                logger.exception(
+                    "写入回答运行日志失败"
+                )
+
+        return result
+
+    def _run(
+        self,
+        query: str,
+        *,
+        law_name: str | None = None,
+    ) -> AnswerPipelineResult:
+        """执行阶段 4 完整流水线，不负责写运行日志。"""
 
         normalized_query = query.strip()
 

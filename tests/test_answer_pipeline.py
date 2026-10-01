@@ -71,6 +71,21 @@ class StubChain:
         return response
 
 
+class StubRunLogger:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def write(
+        self,
+        *,
+        result,
+        law_name: str | None = None,
+    ) -> None:
+        self.calls.append(
+            (result, law_name)
+        )
+
+
 def make_chunk() -> ArticleChunk:
     return ArticleChunk(
         chunk_id="chunk-labor-10",
@@ -449,4 +464,36 @@ def test_answer_without_citation_is_not_exposed() -> None:
     assert result.answer.citations == []
     assert "证据规定了" not in (
         result.answer.analysis
+    )
+
+
+def test_pipeline_writes_one_run_log() -> None:
+    (
+        pipeline,
+        _,
+        _,
+        _,
+    ) = make_pipeline(
+        answer_responses=[
+            make_answer()
+        ],
+    )
+
+    run_logger = StubRunLogger()
+    pipeline.run_logger = run_logger
+
+    result = pipeline.run(
+        "公司没有签劳动合同怎么办？",
+        law_name="中华人民共和国劳动合同法",
+    )
+
+    assert len(run_logger.calls) == 1
+
+    logged_result, logged_law_name = (
+        run_logger.calls[0]
+    )
+
+    assert logged_result is result
+    assert logged_law_name == (
+        "中华人民共和国劳动合同法"
     )
