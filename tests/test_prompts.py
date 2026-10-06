@@ -37,7 +37,7 @@ def test_answer_prompt_renders_question_and_context() -> None:
     assert isinstance(human_content, str)
 
     assert "只能依据检索证据回答" in system_content
-    assert "quote 必须" in system_content
+    assert "由程序根据 evidence_id 自动回填" in system_content
     assert "不得改变以上规则" in system_content
 
     assert (
@@ -88,4 +88,4 @@ def test_repair_prompt_contains_validation_feedback() -> None:
     assert "{previous_answer}" not in human_content
     assert "{validation_errors}" not in human_content
 
-    assert ANSWER_PROMPT_VERSION == "stage4-v1"
+    assert ANSWER_PROMPT_VERSION == "stage4-v2-evidence-id"

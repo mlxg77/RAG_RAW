@@ -1,5 +1,6 @@
 """RAG Law 的 Streamlit 演示页面。"""
 
+import logging
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -21,6 +22,33 @@ from rag_law.ui.presentation import (
 ASSET_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 MANIFEST_PATH = PROJECT_ROOT / "data" / "manifest.yaml"
+
+
+def _configure_console_logging() -> None:
+    """确保 RAG 流水线的 INFO 日志显示在 Streamlit 控制台。"""
+
+    rag_logger = logging.getLogger("rag_law")
+    rag_logger.setLevel(logging.INFO)
+
+    if any(
+        getattr(handler, "_rag_law_console", False)
+        for handler in rag_logger.handlers
+    ):
+        return
+
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s - %(message)s"
+        )
+    )
+    handler._rag_law_console = True  # type: ignore[attr-defined]
+    rag_logger.addHandler(handler)
+    rag_logger.propagate = False
+
+
+_configure_console_logging()
 
 
 st.set_page_config(
@@ -185,8 +213,38 @@ def _answer(query: str, law_name: str | None) -> None:
 
     with st.chat_message("assistant"):
         try:
-            with st.spinner("正在检索法条、核对证据…"):
-                result = _load_pipeline().run(query, law_name=law_name)
+            with st.status(
+                "正在准备法律检索…",
+                expanded=True,
+            ) as progress:
+                shown_stages: set[str] = set()
+
+                def show_progress(
+                    stage: str,
+                    message: str,
+                ) -> None:
+                    state = (
+                        "complete"
+                        if stage == "complete"
+                        else "error"
+                        if stage == "error"
+                        else "running"
+                    )
+                    progress.update(
+                        label=message,
+                        state=state,
+                        expanded=stage not in {"complete", "error"},
+                    )
+
+                    if stage not in shown_stages:
+                        progress.write(message)
+                        shown_stages.add(stage)
+
+                result = _load_pipeline().run(
+                    query,
+                    law_name=law_name,
+                    progress_callback=show_progress,
+                )
             _render_result(result)
             st.session_state.messages.append(
                 {"role": "assistant", "result": to_session_payload(result)}

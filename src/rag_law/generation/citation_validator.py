@@ -113,46 +113,10 @@ class CitationValidator:
                 )
                 continue
 
-            if citation.law_name != chunk.law_name:
-                errors.append(
-                    f"{label}法律名称不一致："
-                    f"模型输出《{citation.law_name}》，"
-                    f"证据实际为《{chunk.law_name}》"
-                )
-                continue
-
-            if (
-                citation.article_no
-                != chunk.article_no
-            ):
-                errors.append(
-                    f"{label}条号不一致："
-                    f"模型输出{citation.article_no}，"
-                    f"证据实际为{chunk.article_no}"
-                )
-                continue
-
-            quote = citation.quote.strip()
-
-            if not quote:
-                errors.append(
-                    f"{label}的引文为空"
-                )
-                continue
-
-            if quote not in evidence.text:
-                errors.append(
-                    f"{label}的引文不在本次"
-                    "展示给模型的证据正文中"
-                )
-                continue
-
-            if quote not in chunk.text:
-                errors.append(
-                    f"{label}的引文不是"
-                    "原始法条的连续子串"
-                )
-                continue
+            # 模型只负责选择 evidence_id。法律名称、条号和引文
+            # 均从已经校验过的上下文证据回填，避免模型在复制长文本
+            # 时产生微小差异并触发一次昂贵的修复生成。
+            quote = evidence.text.strip()
 
             validated_citations.append(
                 ValidatedCitation(

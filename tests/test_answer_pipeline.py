@@ -35,10 +35,20 @@ class StubRetrievalPipeline:
         query: str,
         *,
         law_name: str | None = None,
+        progress_callback=None,
     ) -> RetrievalContextResult:
         self.calls.append(
             (query, law_name)
         )
+        if progress_callback is not None:
+            progress_callback(
+                "retrieval",
+                "正在进行混合检索与法条重排…",
+            )
+            progress_callback(
+                "context_building",
+                "正在筛选相邻法条并构建证据上下文…",
+            )
         return self.output
 
 
@@ -173,14 +183,6 @@ def make_answer(
         citations.append(
             GeneratedCitation(
                 evidence_id=evidence_id,
-                law_name=(
-                    "中华人民共和国劳动合同法"
-                ),
-                article_no="第十条",
-                quote=(
-                    "建立劳动关系，应当订立"
-                    "书面劳动合同。"
-                ),
             )
         )
 
@@ -497,3 +499,33 @@ def test_pipeline_writes_one_run_log() -> None:
     assert logged_law_name == (
         "中华人民共和国劳动合同法"
     )
+
+
+def test_pipeline_reports_progress_stages() -> None:
+    (
+        pipeline,
+        _,
+        _,
+        _,
+    ) = make_pipeline(
+        answer_responses=[
+            make_answer()
+        ],
+    )
+    events: list[tuple[str, str]] = []
+
+    pipeline.run(
+        "公司没有签劳动合同怎么办？",
+        progress_callback=lambda stage, message: events.append(
+            (stage, message)
+        ),
+    )
+
+    assert [stage for stage, _ in events] == [
+        "retrieval",
+        "context_building",
+        "evidence_check",
+        "generation",
+        "citation_validation",
+        "complete",
+    ]

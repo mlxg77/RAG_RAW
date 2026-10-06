@@ -56,14 +56,6 @@ class FakeStructuredOutputModel:
             citations=[
                 GeneratedCitation(
                     evidence_id="E001",
-                    law_name=(
-                        "中华人民共和国劳动合同法"
-                    ),
-                    article_no="第十条",
-                    quote=(
-                        "建立劳动关系，应当订立"
-                        "书面劳动合同。"
-                    ),
                 )
             ],
             limitations=(
@@ -126,7 +118,6 @@ def test_answer_chain_returns_generated_answer() -> None:
         GeneratedAnswer,
     )
     assert answer.citations[0].evidence_id == "E001"
-    assert answer.citations[0].article_no == "第十条"
 
     assert len(model.prompt_values) == 1
 

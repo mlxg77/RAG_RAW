@@ -86,11 +86,6 @@ def make_answer(
 def make_valid_citation() -> GeneratedCitation:
     return GeneratedCitation(
         evidence_id="E001",
-        law_name="中华人民共和国劳动合同法",
-        article_no="第十条",
-        quote=(
-            "建立劳动关系，应当订立书面劳动合同。"
-        ),
     )
 
 
@@ -117,6 +112,9 @@ def test_valid_citation_is_mapped_to_chunk() -> None:
     assert citation.chunk_id == chunk.chunk_id
     assert citation.law_name == chunk.law_name
     assert citation.article_no == chunk.article_no
+    assert citation.quote == (
+        "建立劳动关系，应当订立书面劳动合同。"
+    )
     assert citation.page == 3
 
 
@@ -140,90 +138,40 @@ def test_unknown_evidence_id_is_rejected() -> None:
     assert "不存在的证据编号" in result.errors[0]
 
 
-def test_wrong_law_name_is_rejected() -> None:
+def test_context_with_wrong_law_name_is_rejected() -> None:
     chunk = make_chunk()
     validator = CitationValidator(
         chunks=[chunk]
     )
-
-    citation = make_valid_citation().model_copy(
-        update={
-            "law_name": "中华人民共和国劳动法"
-        }
+    context = make_context(chunk)
+    context.evidences[0].law_name = (
+        "中华人民共和国劳动法"
     )
 
     result = validator.validate(
-        answer=make_answer(citation),
-        context=make_context(chunk),
+        answer=make_answer(make_valid_citation()),
+        context=context,
     )
 
     assert result.is_valid is False
-    assert "法律名称不一致" in result.errors[0]
+    assert "上下文证据元数据" in result.errors[0]
 
 
-def test_wrong_article_number_is_rejected() -> None:
+def test_context_text_outside_original_chunk_is_rejected() -> None:
     chunk = make_chunk()
     validator = CitationValidator(
         chunks=[chunk]
     )
-
-    citation = make_valid_citation().model_copy(
-        update={"article_no": "第十一条"}
-    )
+    context = make_context(chunk)
+    context.evidences[0].text = "这不是原始法条正文。"
 
     result = validator.validate(
-        answer=make_answer(citation),
-        context=make_context(chunk),
+        answer=make_answer(make_valid_citation()),
+        context=context,
     )
 
     assert result.is_valid is False
-    assert "条号不一致" in result.errors[0]
-
-
-def test_rewritten_quote_is_rejected() -> None:
-    chunk = make_chunk()
-    validator = CitationValidator(
-        chunks=[chunk]
-    )
-
-    citation = make_valid_citation().model_copy(
-        update={
-            "quote": "用人单位必须签订劳动合同。"
-        }
-    )
-
-    result = validator.validate(
-        answer=make_answer(citation),
-        context=make_context(chunk),
-    )
-
-    assert result.is_valid is False
-    assert result.citations == []
-    assert "引文不在本次" in result.errors[0]
-
-
-def test_quote_outside_displayed_excerpt_is_rejected() -> None:
-    chunk = make_chunk()
-    validator = CitationValidator(
-        chunks=[chunk]
-    )
-
-    citation = make_valid_citation().model_copy(
-        update={
-            "quote": (
-                "应当自用工之日起一个月内"
-                "订立书面劳动合同。"
-            )
-        }
-    )
-
-    result = validator.validate(
-        answer=make_answer(citation),
-        context=make_context(chunk),
-    )
-
-    assert result.is_valid is False
-    assert "引文不在本次" in result.errors[0]
+    assert "上下文正文" in result.errors[0]
 
 
 def test_answer_without_citations_has_no_fake_errors() -> None:

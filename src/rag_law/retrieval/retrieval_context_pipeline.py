@@ -1,6 +1,7 @@
 """检索上下文流水线：混合检索、精排和上下文构建。"""
 
 import time
+from collections.abc import Callable
 from typing import Protocol
 
 from rag_law.retrieval.context_builder import (
@@ -137,6 +138,7 @@ class RetrievalContextPipeline:
         query: str,
         *,
         law_name: str | None = None,
+        progress_callback: Callable[[str, str], None] | None = None,
     ) -> RetrievalContextResult:
         """执行完整的阶段 3 流水线。"""
 
@@ -147,6 +149,12 @@ class RetrievalContextPipeline:
 
         total_started_at = time.perf_counter()
         retrieval_started_at = time.perf_counter()
+
+        if progress_callback is not None:
+            progress_callback(
+                "retrieval",
+                "正在进行混合检索与法条重排…",
+            )
 
         reranked_results = self.retriever.search(
             normalized_query,
@@ -160,6 +168,12 @@ class RetrievalContextPipeline:
         ) * 1000.0
 
         context_started_at = time.perf_counter()
+
+        if progress_callback is not None:
+            progress_callback(
+                "context_building",
+                "正在筛选相邻法条并构建证据上下文…",
+            )
 
         context = self.context_builder.build(
             query=normalized_query,

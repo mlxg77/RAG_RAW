@@ -170,28 +170,13 @@ AnswerStatus = Literal[
 
 
 class GeneratedCitation(BaseModel):
-    """大模型生成的引用，尚未经过程序校验。"""
+    """大模型选择的证据，展示字段由程序从证据中回填。"""
 
     evidence_id: str = Field(
         pattern=r"^E\d{3}$",
         description=(
             "本次检索上下文中的证据编号，例如 E001。"
             "不得自行编造。"
-        ),
-    )
-    law_name: str = Field(
-        min_length=1,
-        description="证据中显示的法律全名。",
-    )
-    article_no: str = Field(
-        min_length=1,
-        description="证据中显示的条号，例如第十条。",
-    )
-    quote: str = Field(
-        min_length=1,
-        description=(
-            "直接复制自证据正文的连续原文，"
-            "不得改写或拼接不连续句子。"
         ),
     )
 

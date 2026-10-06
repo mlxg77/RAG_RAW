@@ -2,6 +2,7 @@
 
 import logging
 import time
+from collections.abc import Callable
 from typing import Protocol
 
 from rag_law.generation.chain import (
@@ -31,6 +32,8 @@ from rag_law.schemas import (
 
 logger = logging.getLogger(__name__)
 
+ProgressCallback = Callable[[str, str], None]
+
 # 临时阈值：
 # 当前 24 道可回答题中，已知召回失败的 q019 Top1 约为 0.018；
 # 其余题的最低 Top1 约为 0.238。
@@ -52,6 +55,7 @@ class RetrievalPipelineProtocol(Protocol):
         query: str,
         *,
         law_name: str | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> RetrievalContextResult:
         ...
 
@@ -130,6 +134,31 @@ class AnswerPipeline:
             ),
             min_answer_score=min_answer_score,
         )
+
+    @staticmethod
+    def _emit_progress(
+        callback: ProgressCallback | None,
+        stage: str,
+        message: str,
+    ) -> None:
+        """通知界面当前阶段；展示失败不能中断回答流水线。"""
+
+        logger.info(
+            "[RAG] stage=%s message=%s",
+            stage,
+            message,
+        )
+
+        if callback is None:
+            return
+
+        try:
+            callback(stage, message)
+        except Exception:
+            logger.exception(
+                "[RAG] progress callback failed at stage=%s",
+                stage,
+            )
 
     @staticmethod
     def _top_score(
@@ -351,13 +380,30 @@ class AnswerPipeline:
         query: str,
         *,
         law_name: str | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> AnswerPipelineResult:
         """执行完整流水线，并记录脱敏运行日志。"""
 
-        result = self._run(
-            query,
-            law_name=law_name,
+        logger.info(
+            "[RAG] request started query_chars=%d law_filter=%s",
+            len(query.strip()),
+            law_name or "ALL",
         )
+
+        try:
+            result = self._run(
+                query,
+                law_name=law_name,
+                progress_callback=progress_callback,
+            )
+        except Exception:
+            self._emit_progress(
+                progress_callback,
+                "error",
+                "处理失败，请查看控制台日志。",
+            )
+            logger.exception("[RAG] request failed")
+            raise
 
         if self.run_logger is not None:
             try:
@@ -376,6 +422,22 @@ class AnswerPipeline:
                     "写入回答运行日志失败"
                 )
 
+        logger.info(
+            "[RAG] request completed status=%s attempts=%d "
+            "retrieval_ms=%.1f context_ms=%.1f generation_ms=%.1f total_ms=%.1f",
+            result.answer.status,
+            result.generation_attempts,
+            result.retrieval.retrieval_latency_ms,
+            result.retrieval.context_latency_ms,
+            result.generation_latency_ms,
+            result.total_latency_ms,
+        )
+        self._emit_progress(
+            progress_callback,
+            "complete",
+            "处理完成，正在展示结果。",
+        )
+
         return result
 
     def _run(
@@ -383,6 +445,7 @@ class AnswerPipeline:
         query: str,
         *,
         law_name: str | None = None,
+        progress_callback: ProgressCallback | None = None,
     ) -> AnswerPipelineResult:
         """执行阶段 4 完整流水线，不负责写运行日志。"""
 
@@ -396,6 +459,23 @@ class AnswerPipeline:
         retrieval = self.retrieval_pipeline.run(
             normalized_query,
             law_name=law_name,
+            progress_callback=lambda stage, message: self._emit_progress(
+                progress_callback,
+                stage,
+                message,
+            ),
+        )
+        logger.info(
+            "[RAG] retrieval completed results=%d retrieval_ms=%.1f context_ms=%.1f",
+            len(retrieval.reranked_results),
+            retrieval.retrieval_latency_ms,
+            retrieval.context_latency_ms,
+        )
+
+        self._emit_progress(
+            progress_callback,
+            "evidence_check",
+            "正在评估证据充分性…",
         )
 
         if not self._has_sufficient_evidence(
@@ -419,6 +499,12 @@ class AnswerPipeline:
 
         try:
             generation_attempts += 1
+            attempt_started_at = time.perf_counter()
+            self._emit_progress(
+                progress_callback,
+                "generation",
+                "正在依据检索证据生成回答…",
+            )
 
             generated = (
                 self.generation_chains
@@ -442,7 +528,16 @@ class AnswerPipeline:
                     f"{type(generated)!r}"
                 )
 
+            logger.info(
+                "[RAG] generation attempt=1 completed elapsed_ms=%.1f citations=%d",
+                (time.perf_counter() - attempt_started_at) * 1000.0,
+                len(generated.citations),
+            )
+
         except Exception as error:
+            logger.exception(
+                "[RAG] generation attempt=1 failed"
+            )
             validation_errors.append(
                 self._format_exception(
                     stage="首次结构化生成",
@@ -466,11 +561,22 @@ class AnswerPipeline:
                 ),
             )
 
+        self._emit_progress(
+            progress_callback,
+            "citation_validation",
+            "正在校验引用与原始法条…",
+        )
         first_validation = (
             self.citation_validator.validate(
                 answer=generated,
                 context=retrieval.context,
             )
+        )
+        logger.info(
+            "[RAG] citation validation completed attempt=1 valid=%s citations=%d errors=%d",
+            first_validation.is_valid,
+            len(first_validation.citations),
+            len(first_validation.errors),
         )
 
         if first_validation.is_valid:
@@ -497,10 +603,20 @@ class AnswerPipeline:
             f"首次生成：{error}"
             for error in first_validation.errors
         )
+        logger.warning(
+            "[RAG] citation validation failed attempt=1 errors=%s",
+            first_validation.errors,
+        )
 
         # 引用校验失败时只允许修复一次。
         try:
             generation_attempts += 1
+            repair_started_at = time.perf_counter()
+            self._emit_progress(
+                progress_callback,
+                "repair",
+                "证据编号未通过校验，正在进行一次安全修复…",
+            )
 
             repaired = (
                 self.generation_chains
@@ -536,7 +652,16 @@ class AnswerPipeline:
                     f"{type(repaired)!r}"
                 )
 
+            logger.info(
+                "[RAG] generation attempt=2 completed elapsed_ms=%.1f citations=%d",
+                (time.perf_counter() - repair_started_at) * 1000.0,
+                len(repaired.citations),
+            )
+
         except Exception as error:
+            logger.exception(
+                "[RAG] generation attempt=2 failed"
+            )
             validation_errors.append(
                 self._format_exception(
                     stage="引用修复生成",
@@ -560,11 +685,22 @@ class AnswerPipeline:
                 ),
             )
 
+        self._emit_progress(
+            progress_callback,
+            "citation_validation",
+            "正在校验修复后的证据编号…",
+        )
         repaired_validation = (
             self.citation_validator.validate(
                 answer=repaired,
                 context=retrieval.context,
             )
+        )
+        logger.info(
+            "[RAG] citation validation completed attempt=2 valid=%s citations=%d errors=%d",
+            repaired_validation.is_valid,
+            len(repaired_validation.citations),
+            len(repaired_validation.errors),
         )
 
         if repaired_validation.is_valid:
@@ -595,6 +731,10 @@ class AnswerPipeline:
             f"修复生成：{error}"
             for error
             in repaired_validation.errors
+        )
+        logger.warning(
+            "[RAG] citation validation failed attempt=2 errors=%s",
+            repaired_validation.errors,
         )
 
         return self._build_result(
