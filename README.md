@@ -44,6 +44,16 @@ uv run python -m rag_law.cli answer --query "公司一直没跟我签书面劳�
 
 可添加 `--debug` 查看分阶段耗时和校验诊断，或添加 `--json` 输出完整结构化结果。脱敏运行日志默认写入 `logs/answer_runs.jsonl`，该目录不进入 Git。
 
+### 启动演示界面
+
+```bash
+# 启动演示界面（本次的方式）
+uv run streamlit run src/rag_law/ui/app.py --server.port 8502
+uv run streamlit run src/rag_law/ui/app.py
+```
+
+页面支持连续提问、按法律筛选、展示回答状态、适用条件、边界限制和已经过校验的法条引用。启动前需按上文完成环境变量配置，并确保 `data/processed/` 与 `indexes/` 已生成。
+
 ## 目录结构
 
 ```text
@@ -59,6 +69,7 @@ scripts/               # 开发辅助脚本（环境自检、清单校验）
 src/rag_law/
   config.py            # 全局配置对象（从 .env 读取）
   generation/          # 结构化生成、引用校验、拒答与脱敏日志
+  ui/                  # Streamlit 演示界面与展示规则
 indexes/               # 检索索引（不入 Git）
 logs/                  # 本地脱敏运行日志（不入 Git）
 ```
