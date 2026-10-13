@@ -114,7 +114,20 @@ def _strip_markdown_heading(line: str) -> str:
 def _iter_source_lines(
     document: LoadedDocument,
 ) -> list[_SourceLine]:
-    """把文档块展开成携带页码的逻辑文本行。"""
+    """把文档块展开成携带页码的逻辑文本行。
+
+    # 输入（normalize_document 之后）
+    SourceBlock(block_index=0, page=1,
+                text="第一章 总则\n第一条 为了保护劳动者的合法权益，调整劳动关系，")
+    SourceBlock(block_index=1, page=2,
+                text="制定本法。\n第二条 在中华人民共和国境内的企业……")
+
+    # 输出
+    _SourceLine(text="第一章 总则", page=1, block_index=0, line_index=0)
+    _SourceLine(text="第一条 为了保护劳动者的合法权益，调整劳动关系，", page=1, block_index=0, line_index=1)
+    _SourceLine(text="制定本法。", page=2, block_index=1, line_index=0)
+    _SourceLine(text="第二条 在中华人民共和国境内的企业……", page=2, block_index=1, line_index=1)
+    """
 
     source_lines: list[_SourceLine] = []
 
@@ -146,7 +159,11 @@ def _iter_source_lines(
 
 
 def _heading_value(match: re.Match[str]) -> str:
-    """把标题编号和标题名称拼成标准形式。"""
+    """把标题编号和标题名称拼成标准形式。
+    第原始行 line	 label	  title	   返回值
+    第一章 总则	     第一章	   总则	    第一章 总则
+    因为：第原始行 line可能是不规则的格式，使用_heading_value会调整为规则的格式
+    """
 
     label = match.group("label")
     title = match.group("title")
@@ -272,46 +289,7 @@ def _sha256(value: str) -> str:
 
     # 前缀记录算法名，便于将来更换算法时区分
     return f"sha256:{digest}"
-    """把内部法条对象转换成最终数据结构。"""
 
-    # 多个自然段用换行拼接成完整条文
-    text = "\n".join(
-        segment.text
-        for segment in draft.segments
-    ).strip()
-
-    # 内容指纹：用于判断条文内容是否变化
-    text_hash = _sha256(text)
-
-    # occurrence 用于处理原文中意外出现的重复条号。
-    # 正常情况下每个条号 occurrence 都是 1。
-    # 用 \0 拼接，避免字段边界产生歧义。
-    identity = "\0".join(
-        [
-            document.law_id,
-            draft.article_no,
-            str(occurrence),
-        ]
-    )
-
-    # 条文身份标识：由 法律ID + 条号 + 出现序号 共同决定
-    chunk_id = _sha256(identity)
-
-    return ArticleChunk(
-        chunk_id=chunk_id,
-        law_id=document.law_id,
-        law_name=document.law_name,
-        part=draft.part,
-        chapter=draft.chapter,
-        section=draft.section,
-        article_no=draft.article_no,
-        paragraph_no=None,  # 暂不按款拆分
-        text=text,
-        source_file=document.source_file,
-        page=draft.start_page,
-        end_page=draft.end_page,
-        text_hash=text_hash,
-    )
 
 # 拆分原则：
 # 一条法条不超过 1200 字符
@@ -526,6 +504,7 @@ def split_articles(
 
         # 1. 遇到“第X编”标题
         if part_match is not None:
+            # 正文起点之前（index < body_start）属于目录区
             if index >= body_start:
                 finish_current_article()
 

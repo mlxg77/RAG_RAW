@@ -22,9 +22,9 @@ DEFAULT_DENSE_WEIGHT = 2.0
 class _FusionEntry:
     """RRF 融合过程中的内部累加记录。"""
 
-    result: RetrievalResult
-    rrf_score: float = 0.0
-    best_rank: int = 0
+    result: RetrievalResult # 检索结果
+    rrf_score: float = 0.0 # RRF 分数
+    best_rank: int = 0 # 最好排名   
     component_scores: dict[str, float] = field(
         default_factory=dict
     )
@@ -120,6 +120,7 @@ def reciprocal_rank_fusion(
 
             seen_in_route.add(result.chunk_id)
 
+            # 每条结果的 source 字段和它所在的这一路是否一致。
             if result.source != route_name:
                 raise ValueError(
                     f"{route_name} 结果中出现了 "
@@ -201,7 +202,7 @@ def reciprocal_rank_fusion(
 class HybridRetriever:
     """组合 BM25 和 Dense 的混合检索器。"""
 
-    def __init__(
+    def __init__( 
         self,
         *,
         bm25_retriever: BM25Retriever,

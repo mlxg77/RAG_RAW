@@ -20,16 +20,16 @@ LAW_ID_PATTERN = re.compile(r"cn_[a-z0-9_]+")
 
 def main() -> None:
     with open(MANIFEST_PATH, encoding="utf-8") as f:
-        laws = yaml.safe_load(f)
+        laws = yaml.safe_load(f) # 把 YAML 格式的文本解析成 Python 对象。
 
     if not isinstance(laws, list):
         print(f"manifest 顶层必须是列表，实际是 {type(laws).__name__}")
         sys.exit(1)
 
     print(f"manifest 共 {len(laws)} 条：")
-    errors: list[str] = []
-    seen_ids: set[str] = set()
-    listed_files: set[str] = set()
+    errors: list[str] = [] # 记录错误信息
+    seen_ids: set[str] = set() # 已经出现过的 law_id
+    listed_files: set[str] = set() # manifest 中列出的文件
 
     for entry in laws:
         if not isinstance(entry, dict):

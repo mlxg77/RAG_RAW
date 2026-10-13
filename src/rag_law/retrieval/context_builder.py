@@ -1,4 +1,7 @@
-"""将精排结果构造成可追溯、去重且长度受控的上下文。"""
+"""
+将精排结果构造成可追溯、去重且长度受控的上下文。
+BM25 + 向量检索 → 融合 → Rerank 精排 → 【ContextBuilder】 → Prompt → LLM 生成答案 → 引用校验
+"""
 
 import re
 from dataclasses import dataclass
@@ -410,7 +413,8 @@ class ContextBuilder:
         query: str,
         matched_chunks: list[ArticleChunk],
     ) -> list[_ContextCandidate]:
-        """收集并重排相邻法条。
+        """
+        收集并重排相邻法条。
 
         相邻条文不能无条件塞进上下文。先收集前后条，再使用同一
         Reranker 对它们打分，相关性较高的邻条优先使用。

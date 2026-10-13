@@ -46,8 +46,8 @@ class CitationValidator:
     def validate(
         self,
         *,
-        answer: GeneratedAnswer,
-        context: BuiltContext,
+        answer: GeneratedAnswer, # 模型生成的답案
+        context: BuiltContext, # 构建的上下文
     ) -> CitationValidationResult:
         """校验回答中的全部引用。
 
@@ -113,9 +113,9 @@ class CitationValidator:
                 )
                 continue
 
-            # 模型只负责选择 evidence_id。法律名称、条号和引文
-            # 均从已经校验过的上下文证据回填，避免模型在复制长文本
-            # 时产生微小差异并触发一次昂贵的修复生成。
+            # 模型只负责选择 evidence_id。
+            # 法律名称、条号和引文，均从已经校验过的上下文证据回填，
+            # 避免模型在复制长文本时产生微小差异并触发一次昂贵的修复生成。
             quote = evidence.text.strip()
 
             validated_citations.append(

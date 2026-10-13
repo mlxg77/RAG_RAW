@@ -30,7 +30,7 @@ from rag_law.schemas import (
     RetrievalResult,
 )
 
-
+# python没有接口的概念，但可以使用Protocol来定义接口
 class RerankedRetrieverProtocol(Protocol):
     """流水线依赖的精排检索接口。"""
 

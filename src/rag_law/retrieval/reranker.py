@@ -19,6 +19,7 @@ DEFAULT_RERANK_TIMEOUT_SECONDS = 30.0
 class RerankScorerProtocol(Protocol):
     """上下文构建和测试依赖的最小重排接口。"""
 
+    # Ellipsis。写在函数体里，意思是"这里只声明方法签名，不提供实现"。
     def score_documents(
         self,
         query: str,
@@ -105,6 +106,7 @@ class SiliconFlowReranker:
         self.timeout_seconds = timeout_seconds
         self.client = client
 
+    # "从配置创建对象"的类方法，命名惯例就是 from_xxx。
     @classmethod
     def from_settings(
         cls,
@@ -121,7 +123,8 @@ class SiliconFlowReranker:
             api_key=settings.rerank_api_key,
             model=settings.rerank_model,
         )
-
+    
+    # @property 会把一个方法变成只读属性：访问时不用加括号，但每次访问都会执行这个方法，现算出结果。
     @property
     def endpoint(self) -> str:
         return f"{self.base_url}/rerank"
@@ -154,6 +157,8 @@ class SiliconFlowReranker:
                 json=payload,
             )
 
+    # 实现 RerankScorerProtocol 协议。
+    # 函数要求 scorer: RerankScorerProtocol → 传进来的是 SiliconFlowReranker → 检查它有没有同名、同签名的 score_documents → 有，就算符合。
     def score_documents(
         self,
         query: str,
@@ -279,6 +284,7 @@ def rerank_results(
     if not candidates:
         return []
 
+    # 已经检查过的候选法条的 chunk_id
     seen_chunk_ids: set[str] = set()
 
     for candidate in candidates:
@@ -331,6 +337,7 @@ def rerank_results(
             "rerank_input_rank"
         ] = float(input_rank)
 
+        # 复制出一个新的模型对象，复制时还可以顺便改掉部分字段的值。
         reranked_result = candidate.model_copy(
             update={
                 "score": float(rerank_score),
@@ -355,6 +362,12 @@ def rerank_results(
         )
     )
 
+    # _ 是一个约定，表示这个变量我们不打算用。
+    
+    # pairs = [(2, "第十九条"), (3, "第二十一条"), (1, "第十七条"), (4, "第八条")]
+    # print(pairs[:2])                           # [(2, '第十九条'), (3, '第二十一条')]
+    # print([name for _, name in pairs[:2]])     # ['第十九条', '第二十一条']
+    # print([name for _, name in pairs[:10]])    # 不够 10 个也不报错，返回全部 4 个
     return [
         result
         for _, result in reranked[:top_n]
@@ -434,6 +447,8 @@ class RerankedRetriever:
                 "top_k 不能大于重排候选数量"
             )
 
+        # candidates 里存的是混合检索召回的候选法条列表，类型是 list[RetrievalResult]。
+        # 它已经按 RRF 分数从高到低排好序，最多 candidate_top_k 条，接下来会交给 Reranker 精排。
         candidates = (
             self.base_retriever.search(
                 query,

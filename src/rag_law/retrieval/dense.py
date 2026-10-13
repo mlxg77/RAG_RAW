@@ -108,6 +108,8 @@ class DenseRetriever:
                 "Dense 语料中包含重复 chunk_id"
             )
 
+    # @staticmethod 把下面的 _create_vector_store 声明为静态方法：
+    # 它放在类里面，但调用时不会自动接收 self（实例）或 cls（类）。本质上就是一个普通函数，只是归到了这个类下面。
     @staticmethod
     def _create_vector_store(
         *,
@@ -131,6 +133,9 @@ class DenseRetriever:
             },
         )
 
+    # 带有 @classmethod 装饰器，是类方法：
+    # 通过类名 DenseRetriever.build(...) 直接调用，
+    # 调用时还没有任何实例，所以不会触发 __init__。
     @classmethod
     def build(
         cls,
@@ -172,6 +177,7 @@ class DenseRetriever:
             collection_name=collection_name,
         )
 
+        # 检查 collection 里有没有旧数据，有就删除
         existing = vector_store.get(limit=1)
 
         if existing.get("ids"):
@@ -226,6 +232,7 @@ class DenseRetriever:
                 f"实际 {len(indexed_ids)}"
             )
 
+        # cls(...) 等价于 DenseRetriever(...)，这时才执行 __init__。
         return cls(
             chunks=chunks,
             vector_store=vector_store,
@@ -272,6 +279,8 @@ class DenseRetriever:
                 "请先执行 --build。"
             )
 
+        # 这段是 load 里的一致性校验：
+        # 检查 Chroma 索引中的法条和 articles.jsonl 里的法条是否完全是同一批。
         if validate_ids:
             expected_ids = {
                 chunk.chunk_id
@@ -422,6 +431,7 @@ def main() -> None:
 
     parser.add_argument(
         "--build",
+        # 写了 --build，arguments.build 就是 True；
         action="store_true",
         help="重建 Chroma 向量索引",
     )

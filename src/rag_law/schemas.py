@@ -24,12 +24,12 @@ class SourceBlock(BaseModel):
 class LoadedDocument(BaseModel):
     """一部法律经过 Loader 后的结果，尚未清洗和切分。"""
 
-    law_id: str
-    law_name: str
-    source_file: str
-    source_format: SourceFormat
-    page_count: int | None = Field(default=None, ge=1)
-    blocks: list[SourceBlock]
+    law_id: str # 法律 ID，格式为 cn_ 开头，后跟小写字母、数字或下划线
+    law_name: str # 法律名称
+    source_file: str # 原始文件名
+    source_format: SourceFormat # 原始文件格式
+    page_count: int | None = Field(default=None, ge=1) # 原始文件页数
+    blocks: list[SourceBlock] # 原始文本块
 
 
 class ArticleChunk(BaseModel):
@@ -38,22 +38,22 @@ class ArticleChunk(BaseModel):
     现在先定义，后面的 splitter 和 pipeline 会使用。
     """
 
-    chunk_id: str
-    law_id: str
-    law_name: str
-    jurisdiction: str = "中华人民共和国"
-    document_type: str = "法律"
+    chunk_id: str # 片段 ID，格式为 C 开头，后跟 3 个数字，例如 C001
+    law_id: str # 法律 ID，格式为 cn_ 开头，后跟小写字母、数字或下划线
+    law_name: str # 法律名称
+    jurisdiction: str = "中华人民共和国" # 管辖区域
+    document_type: str = "法律" # 文档类型
 
-    part: str | None = None
-    chapter: str | None = None
-    section: str | None = None
-    article_no: str
-    paragraph_no: int | None = None
+    part: str | None = None # 篇
+    chapter: str | None = None # 章
+    section: str | None = None # 节
+    article_no: str # 条号
+    paragraph_no: int | None = None # 款号
 
-    text: str
-    source_file: str
-    page: int | None = Field(default=None, ge=1)
-    end_page: int | None = Field(default=None, ge=1)
+    text: str # 文本内容
+    source_file: str # 原始文件名
+    page: int | None = Field(default=None, ge=1) # 页码
+    end_page: int | None = Field(default=None, ge=1) # 结束页码
     text_hash: str
 
 RetrievalMethod = Literal[
@@ -90,8 +90,8 @@ class RetrievalResult(BaseModel):
     )
 
 ContextRelation = Literal[
-    "matched",
-    "adjacent",
+    "matched",   # 直接命中：检索器（BM25/Dense/Rerank）直接召回的法条
+    "adjacent",  # 相邻条文：上下文构建器为命中法条扩展的前/后一条法条
 ]
 
 

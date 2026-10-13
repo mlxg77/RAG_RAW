@@ -45,13 +45,13 @@ def check_embeddings(embeddings: OpenAIEmbeddings) -> None:
         "公司必须与员工签订书面劳动合同。",      # 1：相关句
         "机动车行经人行横道时，应当减速行驶。",  # 2：无关句
     ]
-    vectors = embeddings.embed_documents(sentences)
-    dims = {len(v) for v in vectors}
+    vectors = embeddings.embed_documents(sentences) # 嵌入文本，得到向量
+    dims = {len(v) for v in vectors} # set（集合推导式）-集合会自动去重
     assert len(dims) == 1, f"向量维度不一致：{dims}"
     dim = dims.pop()
 
-    sim_related = cosine_similarity(vectors[0], vectors[1])
-    sim_unrelated = cosine_similarity(vectors[0], vectors[2])
+    sim_related = cosine_similarity(vectors[0], vectors[1]) # 计算相关句的相似度
+    sim_unrelated = cosine_similarity(vectors[0], vectors[2]) # 计算无关句的相似度
     print(f"[1/3] Embedding 调用成功：3 条文本 → {dim} 维向量")
     print(f"      相关句相似度 {sim_related:.4f} / 无关句相似度 {sim_unrelated:.4f}")
     assert sim_related > sim_unrelated, "语义相似度方向异常：相关句应高于无关句"

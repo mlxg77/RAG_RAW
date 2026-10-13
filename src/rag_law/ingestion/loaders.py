@@ -20,7 +20,8 @@ SUPPORTED_SUFFIXES = {".pdf", ".docx", ".md"}
 
 def _source_name(path: Path, source_file: str | None) -> str:
     """优先使用 manifest 中保存的相对路径。"""
-
+    # as_posix() 只是把分隔符换成 /，
+    #            不会把相对路径变成绝对路径，也不会解析 ..。那是 resolve() 做的事。
     return source_file if source_file is not None else path.as_posix()
 
 

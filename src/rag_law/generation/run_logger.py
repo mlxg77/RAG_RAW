@@ -155,6 +155,7 @@ class AnswerRunLogger:
     ) -> None:
         self.path = path
         self.model_name = model_name
+        # 这里是在为日志写入创建一个线程锁，防止多个请求同时写同一个 JSONL 文件时发生内容混乱。
         self._lock = Lock()
 
     @classmethod

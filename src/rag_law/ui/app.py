@@ -1,12 +1,16 @@
-"""RAG Law 的 Streamlit 演示页面。"""
+"""RAG Law 的 Streamlit 演示页面。
+uv run streamlit run src/rag_law/ui/app.py
+"""
 
 import logging
+import tempfile
 from html import escape
 from pathlib import Path
 from typing import Any
 
 import streamlit as st
 
+from rag_law.knowledge_base import add_document
 from rag_law.schemas import AnswerPipelineResult, ValidatedCitation
 from rag_law.ui.presentation import (
     EXAMPLE_QUESTIONS,
@@ -76,9 +80,121 @@ def _load_laws():
     return load_law_options(MANIFEST_PATH)
 
 
+def _render_add_law_form() -> None:
+    """渲染「上传新法律并重建」面板。"""
+
+    uploaded = st.file_uploader(
+        "上传法律文件",
+        type=["pdf", "docx", "md"],
+        help="支持 PDF、DOCX 和 Markdown；文件名建议使用法律正式名称。",
+    )
+    law_id = st.text_input(
+        "law_id",
+        placeholder="cn_company_law",
+        help="稳定英文标识：cn_ 前缀加小写字母数字下划线。",
+    )
+    law_name = st.text_input(
+        "法律名称（可选）",
+        placeholder="中华人民共和国公司法",
+        help="留空时使用文件名（不含扩展名）。",
+    )
+
+    if st.button(
+        "上传并重建索引",
+        type="primary",
+        use_container_width=True,
+    ):
+        _add_uploaded_law(uploaded, law_id, law_name)
+
+
+def _add_uploaded_law(
+    uploaded: Any,
+    law_id: str,
+    law_name: str,
+) -> None:
+    """把上传的文件交给 add_document 完成登记与全链重建。"""
+
+    if uploaded is None:
+        st.warning("请先选择要上传的法律文件。")
+        return
+
+    cleaned_law_id = law_id.strip()
+
+    if not cleaned_law_id:
+        st.warning("请填写 law_id，例如 cn_company_law。")
+        return
+
+    # 先释放旧流水线，避免重建索引时仍持有旧向量库连接。
+    _load_pipeline.clear()
+    _load_laws.clear()
+
+    with st.status(
+        "正在添加法律并重建索引…",
+        expanded=True,
+    ) as progress:
+
+        def show_progress(
+            stage: str,
+            message: str,
+        ) -> None:
+            progress.update(
+                label=message,
+                state=(
+                    "complete"
+                    if stage == "complete"
+                    else "running"
+                ),
+            )
+            progress.write(message)
+
+        try:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                uploaded_path = (
+                    Path(temp_dir)
+                    / Path(uploaded.name).name
+                )
+                uploaded_path.write_bytes(
+                    uploaded.getvalue()
+                )
+
+                result = add_document(
+                    uploaded_path,
+                    law_id=cleaned_law_id,
+                    law_name=law_name.strip() or None,
+                    progress_callback=show_progress,
+                )
+        except Exception as error:
+            progress.update(
+                label="添加失败",
+                state="error",
+                expanded=True,
+            )
+            st.error(
+                "添加失败：请检查文件内容与索引环境。"
+                f"\n\n技术信息：{type(error).__name__}: {error}"
+            )
+            return
+
+    st.session_state.add_law_notice = (
+        f"已成功添加《{result.law_name}》："
+        f"{result.article_count} 条法条，"
+        f"知识库共 {result.law_count} 部法律、"
+        f"{result.chunk_total} 个 chunk。"
+    )
+    st.rerun()
+
+
 def _render_sidebar(law_names: list[str]) -> str | None:
     with st.sidebar:
         st.markdown('<div class="brand-mark">RAG Law</div>', unsafe_allow_html=True)
+
+        notice = st.session_state.pop(
+            "add_law_notice",
+            None,
+        )
+        if notice:
+            st.success(notice)
+
         st.markdown("### 检索范围")
         selected = st.selectbox(
             "指定法律",
@@ -93,6 +209,9 @@ def _render_sidebar(law_names: list[str]) -> str | None:
         with st.expander("查看法律清单"):
             for index, law_name in enumerate(law_names, start=1):
                 st.caption(f"{index:02d}  {law_name}")
+
+        with st.expander("添加新法律"):
+            _render_add_law_form()
 
         st.markdown("---")
         st.caption("回答仅供法律信息检索与参考，不构成法律意见。")

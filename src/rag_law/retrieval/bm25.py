@@ -1,4 +1,10 @@
-"""基于 jieba 和 rank-bm25 的中文法条检索。"""
+"""
+    基于 jieba 和 rank-bm25 的中文法条检索。
+    整体流程：
+            articles.jsonl ──build──▶ 内存里的 BM25Retriever ──save──▶ bm25_index.json
+                                                                         │
+            CLI / UI / fusion / 评测 ◀──────────────load─────────────────┘
+"""
 
 import argparse
 import json
@@ -37,7 +43,10 @@ TOKEN_PATTERN = re.compile(
 
 
 def tokenize(text: str) -> list[str]:
-    """对中文法律文本进行确定性的基础分词。"""
+    """对中文法律文本进行确定性的基础分词。
+    输入：劳动合同法第38条，用人单位（ABC）
+    输出：['劳动', '合同法', '第', '38', '条', '用人单位', 'abc']
+    """
 
     normalized = (
         text.replace("\u3000", " ")
@@ -46,6 +55,10 @@ def tokenize(text: str) -> list[str]:
     )
 
     tokens: list[str] = []
+
+    # findall 只做粗切：它从左往右扫描文本，把连续的汉字、连续的英文字母、连续的阿拉伯数字各自拿出来作为一段，其他字符（标点、空格、符号）一律跳过。
+    #     '劳动合同法第38条，用人单位（ABC）'
+    #   -> ['劳动合同法第', '38', '条', '用人单位', 'ABC']
 
     for segment in TOKEN_PATTERN.findall(normalized):
         if re.fullmatch(
@@ -85,7 +98,9 @@ class BM25Retriever:
             )
 
         self.chunks = chunks
+        # 份语料分好词之后的结果
         self.tokenized_corpus = tokenized_corpus
+        # 用来给分好词的法条打关键词相关性分数。
         self._bm25 = BM25Okapi(tokenized_corpus)
 
     @classmethod
@@ -127,6 +142,7 @@ class BM25Retriever:
             "document_count": len(self.chunks),
             "tokenizer": "jieba-accurate-v1",
             "chunks": [
+                # 保存时：ArticleChunk → model_dump → dict → 写入 bm25_index.json
                 chunk.model_dump(mode="json")
                 for chunk in self.chunks
             ],
@@ -174,6 +190,7 @@ class BM25Retriever:
             )
 
         chunks = [
+            # 加载时：json.load 读出 dict → model_validate → ArticleChunk
             ArticleChunk.model_validate(item)
             for item in payload["chunks"]
         ]

@@ -1,4 +1,8 @@
-"""项目统一命令行入口。"""
+"""
+    《太难看了！！！》
+    项目统一命令行入口。目的是为了让开发调试方便
+    uv run python -m rag_law.cli answer --query "公司没跟我签劳动合同，能要赔偿吗？"
+"""
 
 import argparse
 from pathlib import Path
@@ -11,6 +15,13 @@ from rag_law.evaluation.retrieval_metrics import (
 from rag_law.generation.answer_pipeline import (
     DEFAULT_MIN_ANSWER_SCORE,
     AnswerPipeline,
+)
+from rag_law.ingestion.pipeline import (
+    DEFAULT_MAX_CHARS,
+)
+from rag_law.knowledge_base import (
+    AddDocumentResult,
+    add_document,
 )
 from rag_law.retrieval.bm25 import (
     BM25Retriever,
@@ -409,6 +420,40 @@ def format_rank(
     return str(int(rank))
 
 
+def print_add_document_result(
+    result: AddDocumentResult,
+) -> None:
+    """打印添加法律文件后的重建结果。"""
+
+    print()
+    print("法律文件添加完成")
+    print(f"  法律名称：{result.law_name}")
+    print(f"  登记文件：{result.file}")
+    print(f"  法条数量：{result.article_count}")
+    print(f"  chunk 数量：{result.chunk_count}")
+    print(
+        "  知识库法律总数："
+        f"{result.law_count}"
+    )
+    print(
+        "  知识库 chunk 总数："
+        f"{result.chunk_total}"
+    )
+
+    if not result.manifest_updated:
+        print(
+            "  说明：该法律此前已登记，"
+            "本次直接完成重建。"
+        )
+
+    print()
+    print(
+        "提示：既有评测报告基于旧语料，"
+        "如需新基线请重跑 "
+        "uv run python -m rag_law.cli evaluate"
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="法条知识库检索工具"
@@ -610,6 +655,39 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_DENSE_WEIGHT,
     )
 
+    add_document_parser = (
+        subparsers.add_parser(
+            "add-document",
+            help="添加法律文件并自动重建语料与索引",
+        )
+    )
+
+    add_document_parser.add_argument(
+        "--file",
+        required=True,
+        help="新法律文件路径（PDF/DOCX/Markdown）",
+    )
+    add_document_parser.add_argument(
+        "--law-id",
+        required=True,
+        help=(
+            "稳定英文标识，例如 "
+            "cn_company_law"
+        ),
+    )
+    add_document_parser.add_argument(
+        "--law-name",
+        help=(
+            "法律正式名称；"
+            "省略时取文件名（不含扩展名）"
+        ),
+    )
+    add_document_parser.add_argument(
+        "--max-chars",
+        type=int,
+        default=DEFAULT_MAX_CHARS,
+    )
+
     return parser
 
 
@@ -763,6 +841,20 @@ def main() -> None:
             ),
             show_progress=True,
         )
+        return
+
+    if arguments.command == "add-document":
+        try:
+            result = add_document(
+                Path(arguments.file),
+                law_id=arguments.law_id,
+                law_name=arguments.law_name,
+                max_chars=arguments.max_chars,
+            )
+        except (FileNotFoundError, ValueError) as error:
+            parser.error(str(error))
+
+        print_add_document_result(result)
         return
 
     parser.error(

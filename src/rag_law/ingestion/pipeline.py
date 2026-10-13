@@ -168,17 +168,18 @@ def run_pipeline(
 
         normalized = normalize_document(loaded)
 
+        # 拆分法条
         split_result = split_articles(
             normalized,
             max_chars=max_chars,
         )
-
+        # 过长的 chunk
         oversized_chunks = [
             chunk
             for chunk in split_result.chunks
             if len(chunk.text) > max_chars
         ]
-
+        # 计算最大 chunk 长度
         max_chunk_chars = max(
             (
                 len(chunk.text)
@@ -186,7 +187,7 @@ def run_pipeline(
             ),
             default=0,
         )
-
+        # 状态 "ok" 或 "warning"
         status = (
             "warning"
             if split_result.warnings
@@ -285,6 +286,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="解析法律原始文件并生成法条 JSONL"
     )
+    # uv run python -m rag_law.ingestion.pipeline 
+    # --max-chars 800 
+    # --output data/processed/articles_test.jsonl 
+    # --report data/processed/report_test.json
 
     parser.add_argument(
         "--manifest",
