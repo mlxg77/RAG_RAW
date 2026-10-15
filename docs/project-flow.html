@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="rag_law 项目交互式流程图：查看每个节点的输入、输出、功能和对应方法。">
+  <title>rag_law · 项目流程图</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f2f0ea;
+      --surface: #fffdf8;
+      --surface-2: #f7f4ec;
+      --ink: #17252b;
+      --muted: #607076;
+      --line: #d8d4c9;
+      --navy: #173f4f;
+      --navy-2: #245d6e;
+      --amber: #c67a28;
+      --amber-soft: #f4dfbd;
+      --green: #276655;
+      --green-soft: #dcece5;
+      --red: #9a3d32;
+      --red-soft: #f3ddd8;
+      --blue-soft: #dce8ed;
+      --blue: #2d6092;
+      --purple: #73518b;
+      --purple-soft: #eee6f2;
+      --shadow: 0 18px 44px rgba(33, 48, 52, .09);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(198, 122, 40, .11), transparent 32rem),
+        linear-gradient(180deg, #f6f4ee 0, var(--bg) 38rem);
+      color: var(--ink);
+      font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+      line-height: 1.55;
+    }
+    button, input { font: inherit; }
+    button:focus-visible { outline: 3px solid rgba(198, 122, 40, .4); outline-offset: 3px; }
+
+    .shell { max-width: 1520px; margin: 0 auto; padding: 28px; }
+    .masthead {
+      position: relative;
+      overflow: hidden;
+      min-height: 220px;
+      border-radius: 26px;
+      padding: 34px 38px;
+      color: #f9f6ef;
+      background: linear-gradient(120deg, #102f3c, #1b4d5d 62%, #295e68);
+      box-shadow: var(--shadow);
+    }
+    .masthead::after {
+      content: "法";
+      position: absolute;
+      right: 28px;
+      top: -62px;
+      font: 500 240px/1 serif;
+      color: rgba(255,255,255,.055);
+      pointer-events: none;
+    }
+    .eyebrow { margin: 0 0 8px; color: #e5bd83; font-size: 13px; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { margin: 0; font: 500 clamp(32px, 5vw, 58px)/1.12 Georgia, "Microsoft YaHei", serif; letter-spacing: -.03em; }
+    .lead { max-width: 780px; margin: 16px 0 0; color: #d8e3e5; font-size: 16px; }
+    .metrics { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .metric { min-width: 132px; padding: 9px 13px; border: 1px solid rgba(255,255,255,.15); border-radius: 10px; background: rgba(255,255,255,.06); }
+    .metric b { display: block; color: #fff; font-size: 18px; font-weight: 500; }
+    .metric span { color: #b8cdd1; font-size: 12px; }
+
+    .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 24px 0 18px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tab {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 15px;
+      color: var(--muted);
+      background: rgba(255,253,248,.7);
+      cursor: pointer;
+    }
+    .tab[aria-selected="true"] { border-color: var(--navy); color: #fff; background: var(--navy); }
+    .hint { color: var(--muted); font-size: 13px; }
+
+    .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 20px; align-items: start; }
+    .canvas { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,253,248,.82); box-shadow: var(--shadow); }
+    .flow-panel { display: none; padding: 26px; }
+    .flow-panel.active { display: block; }
+    .panel-title { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .panel-title h2 { margin: 0; font: 500 26px/1.2 Georgia, "Microsoft YaHei", serif; }
+    .panel-title p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; color: var(--muted); font-size: 11px; }
+    .legend span { display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px; border-radius: 6px; background: var(--surface-2); }
+    .legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--navy-2); }
+    .legend .input::before { background: var(--blue); }
+    .legend .control::before { background: var(--purple); }
+    .legend .process::before { background: var(--navy-2); }
+    .legend .decision::before { background: var(--amber); }
+    .legend .output::before { background: var(--green); }
+    .legend .risk::before { background: var(--red); }
+
+    .flow { display: grid; justify-items: stretch; gap: 10px; padding-top: 22px; }
+    .stage-label { display: flex; align-items: center; gap: 12px; margin: 14px 0 2px; color: var(--muted); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    .stage-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+    .node-row { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); gap: 12px; }
+    .flow-node {
+      position: relative;
+      width: 100%;
+      min-height: 98px;
+      border: 1px solid #cfd7d7;
+      border-radius: 14px;
+      padding: 14px 72px 14px 17px;
+      text-align: left;
+      color: var(--ink);
+      background: var(--surface);
+      cursor: pointer;
+      transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+    }
+    .flow-node::before {
+      content: "";
+      position: absolute;
+      inset: 10px auto 10px 0;
+      width: 4px;
+      border-radius: 0 4px 4px 0;
+      background: var(--navy-2);
+    }
+    .flow-node::after {
+      content: attr(data-kind-label);
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 3px 7px;
+      border-radius: 6px;
+      color: var(--navy-2);
+      background: var(--blue-soft);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .06em;
+    }
+    .flow-node:hover { transform: translateY(-2px); border-color: var(--navy-2); box-shadow: 0 10px 22px rgba(35,76,88,.11); }
+    .flow-node[aria-pressed="true"] { border-color: var(--amber); box-shadow: 0 0 0 3px rgba(198,122,40,.16); }
+    .flow-node .kicker { color: var(--navy-2); font: 500 11px/1.3 "Segoe UI", sans-serif; letter-spacing: .09em; text-transform: uppercase; }
+    .flow-node strong { display: block; margin-top: 4px; font-weight: 500; font-size: 16px; }
+    .flow-node small { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .flow-node.kind-input { border-color: #bfd0df; background: #f2f7fb; }
+    .flow-node.kind-input::before { background: var(--blue); }
+    .flow-node.kind-input::after { color: var(--blue); background: #dfeaf3; }
+    .flow-node.kind-control { border-color: #d6c6df; background: #f8f3fa; }
+    .flow-node.kind-control::before { background: var(--purple); }
+    .flow-node.kind-control::after { color: var(--purple); background: var(--purple-soft); }
+    .flow-node.kind-process::before { background: var(--navy-2); }
+    .flow-node.kind-process::after { color: var(--navy-2); background: var(--blue-soft); }
+    .flow-node.kind-decision { border-style: dashed; border-color: #dfbd87; background: #fffaf1; }
+    .flow-node.kind-decision::before { background: var(--amber); }
+    .flow-node.kind-decision::after { color: #8b561b; background: var(--amber-soft); }
+    .flow-node.kind-decision .kicker { color: #9a5f20; }
+    .flow-node.kind-output { background: #f2f8f4; border-color: #c6dbd0; }
+    .flow-node.kind-output::before { background: var(--green); }
+    .flow-node.kind-output::after { color: var(--green); background: var(--green-soft); }
+    .flow-node.kind-output .kicker { color: var(--green); }
+    .flow-node.kind-risk { background: #fbf2f0; border-color: #e3c5bf; }
+    .flow-node.kind-risk::before { background: var(--red); }
+    .flow-node.kind-risk::after { color: var(--red); background: var(--red-soft); }
+    .flow-node.kind-risk .kicker { color: var(--red); }
+    .arrow { height: 24px; display: grid; place-items: center; color: var(--navy-2); font-size: 22px; line-height: 1; }
+    .arrow.split { height: 34px; position: relative; }
+    .arrow.split::before { content: ""; position: absolute; left: 25%; right: 25%; top: 11px; height: 1px; background: var(--line); }
+    .arrow.split::after { content: "↓"; position: relative; padding: 0 8px; background: var(--surface-2); }
+    .branch-note { text-align: center; color: var(--muted); font-size: 12px; }
+
+    .details { position: sticky; top: 18px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--shadow); }
+    .details-head { padding: 22px; color: #fff; background: var(--navy); }
+    .details-head .step { color: #e8bd80; font-size: 12px; letter-spacing: .13em; text-transform: uppercase; }
+    .details-head h2 { margin: 5px 0 7px; font: 500 25px/1.2 Georgia, "Microsoft YaHei", serif; }
+    .details-head p { margin: 0; color: #c9dadd; font-size: 13px; }
+    .details-body { max-height: calc(100vh - 190px); overflow: auto; padding: 20px 22px 26px; }
+    .detail-section + .detail-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .detail-section h3 { margin: 0 0 9px; color: var(--navy); font-size: 12px; letter-spacing: .1em; text-transform: uppercase; }
+    .detail-section ul { margin: 0; padding-left: 20px; }
+    .detail-section li + li { margin-top: 6px; }
+    .io-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .io-box { padding: 12px; border-radius: 10px; background: var(--surface-2); }
+    .io-box b { display: block; margin-bottom: 5px; color: var(--navy); font-size: 12px; }
+    .io-box div { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+    .code-list { display: grid; gap: 8px; }
+    code { font-family: Consolas, "SFMono-Regular", monospace; font-size: 12px; color: #6f4318; overflow-wrap: anywhere; }
+    .method { padding: 9px 10px; border-left: 3px solid var(--amber); background: #fbf2e4; }
+    .file { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .default-chip { display: inline-block; margin: 3px 4px 0 0; padding: 3px 7px; border-radius: 6px; color: var(--navy); background: var(--blue-soft); font-size: 11px; }
+
+    .architecture { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 22px; }
+    .layer { border-top: 4px solid var(--navy-2); padding: 14px 13px; background: var(--surface-2); }
+    .layer:nth-child(2) { border-color: var(--amber); }
+    .layer:nth-child(3) { border-color: var(--green); }
+    .layer:nth-child(4) { border-color: #7d6089; }
+    .layer h3 { margin: 0 0 8px; font-size: 14px; font-weight: 500; }
+    .layer p { margin: 0; color: var(--muted); font-size: 12px; }
+    .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+    .principle { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+    .principle b { display: block; color: var(--navy); }
+    .principle span { display: block; margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .footer-note { margin-top: 18px; padding: 14px 16px; border-left: 4px solid var(--amber); background: var(--amber-soft); color: #5f452b; font-size: 13px; }
+
+    @media (max-width: 1080px) {
+      .workspace { grid-template-columns: 1fr; }
+      .details { position: static; }
+      .details-body { max-height: none; }
+      .architecture { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      .shell { padding: 14px; }
+      .masthead { padding: 26px 22px; }
+      .toolbar, .panel-title { align-items: flex-start; flex-direction: column; }
+      .legend { justify-content: flex-start; }
+      .flow-panel { padding: 18px 14px; }
+      .node-row { grid-template-columns: 1fr; }
+      .architecture, .principles { grid-template-columns: 1fr; }
+      .io-grid { grid-template-columns: 1fr; }
+      .hint { display: none; }
+      .flow-node { padding-right: 64px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <p class="eyebrow">Interactive architecture map · v1</p>
+      <h1>rag_law 项目全流程</h1>
+      <p class="lead">从法律原文入库，到混合检索、证据构建、结构化生成与引用回查。点击任意节点，右侧会显示该节点的输入、输出、职责和真实代码方法。</p>
+      <div class="metrics" aria-label="项目关键指标">
+        <div class="metric"><b>15 部</b><span>收录法律</span></div>
+        <div class="metric"><b>2,879 条</b><span>结构化法条</span></div>
+        <div class="metric"><b>0.9792</b><span>Hybrid Recall@10</span></div>
+        <div class="metric"><b>113 项</b><span>自动化测试</span></div>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="tabs" role="tablist" aria-label="选择流程">
+        <button class="tab" role="tab" aria-selected="true" data-tab="business">业务流程</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="qa">技术主链路</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="ingest">知识库构建</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="add">添加新法律</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="quality">评测与保障</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="overview">架构总览</button>
+      </div>
+      <div class="hint">节点可点击 · 支持键盘 Tab / Enter</div>
+    </div>
+
+    <div class="workspace">
+      <section class="canvas" aria-label="项目流程画布">
+        <div class="flow-panel active" id="panel-business" role="tabpanel">
+          <div class="panel-title">
+            <div><h2>法律咨询业务闭环</h2><p>从用户提出问题，到获得可核验结果，再到内容运营和质量迭代。</p></div>
+            <div class="legend" aria-label="节点颜色说明"><span class="input">入口/数据</span><span class="control">编排器</span><span class="process">处理</span><span class="decision">判断</span><span class="output">结果</span><span class="risk">异常</span></div>
+          </div>
+          <div class="flow">
+            <div class="stage-label">用户 · 提交咨询</div>
+            <button class="flow-node" data-node="biz-question"><span class="kicker">用户动作</span><strong>描述真实法律问题</strong><small>自然语言事实 + 可选法律范围；避免提交敏感信息</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node decision" data-node="biz-intake"><span class="kicker">受理检查</span><strong>问题是否有效、范围是否清楚？</strong><small>空问题直接阻断；用户可指定某一部法律缩小范围</small></button>
+
+            <div class="stage-label">问答服务 · 寻找可靠依据</div>
+            <button class="flow-node" data-node="biz-evidence"><span class="kicker">核心服务</span><strong>从 15 部法律中寻找候选依据</strong><small>关键词与语义双路召回，再融合、精排和补充相邻条文</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node decision" data-node="biz-sufficient"><span class="kicker">业务门槛</span><strong>证据是否足以支持回答？</strong><small>必须同时满足：有候选、有上下文、Top1 达到最低相关度</small></button>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node risk" data-node="biz-no-evidence"><span class="kicker">证据不足</span><strong>明确告知暂时无法确认</strong><small>不调用大模型，不展示可能误导用户的法律结论</small></button>
+              <button class="flow-node" data-node="biz-draft"><span class="kicker">证据充分</span><strong>依据证据生成结构化答复</strong><small>结论、分析、适用条件、限制和证据编号</small></button>
+            </div>
+
+            <div class="stage-label">可信控制 · 决定能否向用户展示</div>
+            <button class="flow-node decision" data-node="biz-citation-check"><span class="kicker">发布前质检</span><strong>引用能否回查到原始法条？</strong><small>模型只选 Evidence ID；程序核验法律名、条号、原文和页码</small></button>
+            <div class="node-row" style="--cols:3">
+              <button class="flow-node output" data-node="biz-answered"><span class="kicker">正常交付</span><strong>给出可追溯回答</strong><small>展示结论、分析、适用条件和已校验法条</small></button>
+              <button class="flow-node output" data-node="biz-clarify"><span class="kicker">信息不足</span><strong>只追问一个关键事实</strong><small>例如主体身份、时间或行为性质</small></button>
+              <button class="flow-node risk" data-node="biz-safe-stop"><span class="kicker">质检失败</span><strong>修复一次后安全停止</strong><small>不向用户展示无法核验的内容</small></button>
+            </div>
+
+            <div class="stage-label">用户 · 理解并采取下一步</div>
+            <button class="flow-node output" data-node="biz-delivery"><span class="kicker">结果页面</span><strong>状态 + 答复 + 原文出处 + 边界提示</strong><small>让用户区分“有依据”“需补充”“依据不足”“安全停止”</small></button>
+            <div class="arrow split"> </div>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node" data-node="biz-user-next"><span class="kicker">用户下一步</span><strong>补充事实、调整问题或寻求律师</strong><small>系统提供信息检索，不替代正式法律意见</small></button>
+              <button class="flow-node" data-node="biz-audit"><span class="kicker">运营闭环</span><strong>脱敏留痕与质量复盘</strong><small>通过状态、耗时、排名和错误定位知识缺口</small></button>
+            </div>
+
+            <div class="stage-label">内容运营 · 扩充服务范围</div>
+            <button class="flow-node" data-node="biz-content-gap"><span class="kicker">知识运营</span><strong>识别高频未覆盖问题与缺失法律</strong><small>准备新法律文件，校验后全量重建语料和双索引</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node output" data-node="biz-improve"><span class="kicker">持续改进</span><strong>扩大可回答范围并重新评测</strong><small>更新知识库、回归测试、Recall/MRR 与上下文质量审计</small></button>
+          </div>
+        </div>
+
+        <div class="flow-panel" id="panel-qa" role="tabpanel">
+          <div class="panel-title">
+            <div><h2>用户问题 → 可追溯回答</h2><p>系统的在线核心路径；引用失败最多修复一次。</p></div>
+            <div class="legend" aria-label="节点颜色说明"><span class="input">入口/数据</span><span class="control">编排器</span><span class="process">处理</span><span class="decision">判断</span><span class="output">结果</span><span class="risk">异常</span></div>
+          </div>
+          <div class="flow">
+            <div class="stage-label">01 · 接入与编排</div>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node" data-node="ui-entry"><span class="kicker">入口 A</span><strong>Streamlit Web UI</strong><small>问题、可选法律范围、会话展示</small></button>
+              <button class="flow-node" data-node="cli-entry"><span class="kicker">入口 B</span><strong>统一 CLI</strong><small>answer / context / retrieve 子命令</small></button>
+            </div>
+            <div class="arrow">↓</div>
+            <button class="flow-node" data-node="answer-orchestrator"><span class="kicker">总编排</span><strong>AnswerPipeline.run</strong><small>串联检索、门控、生成、校验、日志</small></button>
+
+            <div class="stage-label">02 · 召回与精排</div>
+            <button class="flow-node" data-node="retrieval-pipeline"><span class="kicker">阶段 3</span><strong>RetrievalContextPipeline.run</strong><small>统一统计检索与上下文构建耗时</small></button>
+            <div class="arrow split"> </div>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node" data-node="bm25-search"><span class="kicker">稀疏召回</span><strong>BM25 关键词检索</strong><small>术语、条号、精确词匹配</small></button>
+              <button class="flow-node" data-node="dense-search"><span class="kicker">稠密召回</span><strong>Chroma 向量检索</strong><small>口语与法律表达的语义匹配</small></button>
+            </div>
+            <div class="branch-note">两路默认各召回候选；可按法律正式名称过滤</div>
+            <div class="arrow">↓</div>
+            <button class="flow-node" data-node="rrf"><span class="kicker">融合</span><strong>加权 RRF 排名融合</strong><small>BM25 : Dense = 1 : 2，默认 Top 10</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node" data-node="rerank"><span class="kicker">精排</span><strong>Cross-Encoder Reranker</strong><small>查看法律名、层级、条号和正文，保留 Top 5</small></button>
+
+            <div class="stage-label">03 · 证据上下文</div>
+            <button class="flow-node" data-node="context"><span class="kicker">上下文构建</span><strong>回查、邻条、去重、摘录与预算</strong><small>生成 E001…E006，最多约 3,000 Token</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node decision" data-node="evidence-gate"><span class="kicker">证据门控</span><strong>Top1 ≥ 0.15 且存在证据？</strong><small>不足时不调用大模型，直接安全拒答</small></button>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node output" data-node="insufficient"><span class="kicker">否</span><strong>insufficient_evidence</strong><small>0 次生成 · 固定安全文案</small></button>
+              <button class="flow-node" data-node="generation"><span class="kicker">是</span><strong>结构化答案生成</strong><small>模型只选择 Evidence ID</small></button>
+            </div>
+
+            <div class="stage-label">04 · 引用闭环与输出</div>
+            <button class="flow-node decision" data-node="citation"><span class="kicker">程序校验</span><strong>Evidence → Chunk → 原文一致？</strong><small>ID、元数据、连续原文子串逐级核验</small></button>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node output" data-node="final-answer"><span class="kicker">通过</span><strong>回填并展示可信引用</strong><small>answered / needs_clarification</small></button>
+              <button class="flow-node risk" data-node="repair"><span class="kicker">失败</span><strong>携带错误修复一次</strong><small>二次失败 → generation_failed</small></button>
+            </div>
+            <div class="arrow">↓</div>
+            <button class="flow-node output" data-node="logging"><span class="kicker">旁路输出</span><strong>脱敏 JSONL 运行日志</strong><small>记录排名、状态、耗时、错误，不写密钥与敏感信息</small></button>
+          </div>
+        </div>
+
+        <div class="flow-panel" id="panel-ingest" role="tabpanel">
+          <div class="panel-title">
+            <div><h2>原始法律 → 可检索知识库</h2><p>离线构建链路；全部成功后才原子替换正式语料。</p></div>
+            <div class="legend" aria-label="节点颜色说明"><span class="input">入口/数据</span><span class="control">编排器</span><span class="process">处理</span><span class="decision">判断</span><span class="output">结果</span><span class="risk">异常</span></div>
+          </div>
+          <div class="flow">
+            <div class="stage-label">01 · 清单与原文</div>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node" data-node="manifest"><span class="kicker">配置输入</span><strong>data/manifest.yaml</strong><small>law_id · law_name · file</small></button>
+              <button class="flow-node" data-node="raw-files"><span class="kicker">内容输入</span><strong>PDF / DOCX / Markdown</strong><small>data/raw 下的正式法律文本</small></button>
+            </div>
+            <div class="arrow">↓</div>
+            <button class="flow-node decision" data-node="loader"><span class="kicker">格式分发</span><strong>统一文档加载</strong><small>PDF 按页 · DOCX 按段 · Markdown 按行</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node" data-node="normalizer"><span class="kicker">文本清洗</span><strong>标准化与 PDF 修复</strong><small>不可见字符、页眉页脚、页码、视觉断行</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node" data-node="splitter"><span class="kicker">结构解析</span><strong>法条切分状态机</strong><small>识别编章节目条，跳过目录伪条号，长条拆分</small></button>
+            <div class="arrow split"> </div>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node output" data-node="articles"><span class="kicker">语料产物</span><strong>articles.jsonl</strong><small>ArticleChunk + 稳定 chunk_id + text_hash</small></button>
+              <button class="flow-node output" data-node="parse-report"><span class="kicker">诊断产物</span><strong>parse_report.json</strong><small>条数、空条、重复、超长与告警</small></button>
+            </div>
+            <div class="stage-label">02 · 双索引构建</div>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node output" data-node="bm25-build"><span class="kicker">本地稀疏索引</span><strong>BM25 索引构建</strong><small>jieba 分词 → JSON 持久化</small></button>
+              <button class="flow-node output" data-node="dense-build"><span class="kicker">向量索引</span><strong>Chroma 全量重建</strong><small>Embedding → collection 持久化与 ID 一致性</small></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-panel" id="panel-add" role="tabpanel">
+          <div class="panel-title">
+            <div><h2>添加法律与一致性重建</h2><p>先完整预演，再写入；同名冲突与无有效法条会被拒绝。</p></div>
+            <div class="legend" aria-label="节点颜色说明"><span class="input">入口/数据</span><span class="control">编排器</span><span class="process">处理</span><span class="decision">判断</span><span class="output">结果</span><span class="risk">异常</span></div>
+          </div>
+          <div class="flow">
+            <button class="flow-node" data-node="add-input"><span class="kicker">入口</span><strong>上传文件 + law_id + 法律名</strong><small>UI 侧栏或 CLI add-document</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node decision" data-node="add-validate"><span class="kicker">写入前预演</span><strong>格式、命名、重复与可切分性校验</strong><small>load → normalize → split；article_count 必须大于 0</small></button>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node risk" data-node="add-reject"><span class="kicker">不通过</span><strong>拒绝变更</strong><small>不写 manifest，不污染语料与索引</small></button>
+              <button class="flow-node" data-node="add-commit"><span class="kicker">通过</span><strong>复制原文并登记清单</strong><small>幂等重试；原子追加 manifest</small></button>
+            </div>
+            <div class="arrow">↓</div>
+            <button class="flow-node" data-node="add-rebuild"><span class="kicker">全量一致性重建</span><strong>语料 → BM25 → Chroma</strong><small>依次刷新三类持久化产物</small></button>
+            <div class="arrow">↓</div>
+            <button class="flow-node output" data-node="add-result"><span class="kicker">结果</span><strong>AddDocumentResult + UI 缓存刷新</strong><small>新法条数、chunk 数、总法律数、清单是否更新</small></button>
+          </div>
+        </div>
+
+        <div class="flow-panel" id="panel-quality" role="tabpanel">
+          <div class="panel-title">
+            <div><h2>评测、测试与运行保障</h2><p>离线指标验证检索效果，自动化测试验证关键约束。</p></div>
+            <div class="legend" aria-label="节点颜色说明"><span class="input">入口/数据</span><span class="control">编排器</span><span class="process">处理</span><span class="decision">判断</span><span class="output">结果</span><span class="risk">异常</span></div>
+          </div>
+          <div class="flow">
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node" data-node="eval-set"><span class="kicker">评测输入</span><strong>questions_v1.yaml</strong><small>30 题：24 可回答 + 6 拒答/追问</small></button>
+              <button class="flow-node" data-node="tests"><span class="kicker">工程输入</span><strong>pytest 测试套件</strong><small>Loader 到 UI 的 113 项回归测试</small></button>
+            </div>
+            <div class="arrow split"> </div>
+            <div class="node-row" style="--cols:3">
+              <button class="flow-node" data-node="retrieval-eval"><span class="kicker">阶段 2</span><strong>检索基线评测</strong><small>Recall@K · MRR · 延迟</small></button>
+              <button class="flow-node" data-node="fusion-tuning"><span class="kicker">参数实验</span><strong>融合权重调优</strong><small>缓存候选并比较 RRF 配置</small></button>
+              <button class="flow-node" data-node="context-audit"><span class="kicker">阶段 3</span><strong>精排与上下文审计</strong><small>相关性、去重、预算、摘录边界</small></button>
+            </div>
+            <div class="arrow">↓</div>
+            <button class="flow-node decision" data-node="consistency"><span class="kicker">运行时不变量</span><strong>语料、索引、上下文、引用四层一致性</strong><small>每一层都回查 chunk_id 与原文</small></button>
+            <div class="arrow">↓</div>
+            <div class="node-row" style="--cols:2">
+              <button class="flow-node output" data-node="reports"><span class="kicker">评测输出</span><strong>JSON 报告与摘要表</strong><small>可重复对比模型、参数、数据版本</small></button>
+              <button class="flow-node output" data-node="safe-states"><span class="kicker">运行输出</span><strong>四种回答状态</strong><small>answered / clarification / insufficient / failed</small></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow-panel" id="panel-overview" role="tabpanel">
+          <div class="panel-title"><div><h2>分层架构与核心取舍</h2><p>代码按“数据准备 → 检索 → 生成 → 接入/保障”形成清晰边界。</p></div></div>
+          <div class="architecture">
+            <article class="layer"><h3>数据准备层</h3><p>ingestion/* · schemas.py<br>把多格式原文变成可追溯 ArticleChunk。</p></article>
+            <article class="layer"><h3>检索与上下文层</h3><p>retrieval/*<br>双路召回、RRF、精排、邻条和预算控制。</p></article>
+            <article class="layer"><h3>可信生成层</h3><p>generation/*<br>结构化回答、Evidence ID 校验、修复和日志。</p></article>
+            <article class="layer"><h3>交互与质量层</h3><p>ui/* · cli.py · evaluation/* · tests/*<br>入口、展示、离线评测与回归保障。</p></article>
+          </div>
+          <div class="principles">
+            <article class="principle"><b>召回互补</b><span>BM25 负责关键词确定性，Dense 负责语义泛化；RRF 只融合名次，避免异构分数直接相加。</span></article>
+            <article class="principle"><b>模型只做选择</b><span>LLM 返回 Evidence ID；法律名、条号、原文和页码均由程序回填，降低引用幻觉。</span></article>
+            <article class="principle"><b>失败要可控</b><span>证据不足不生成；引用失败只修复一次；仍失败则固定安全降级，成本和时延有明确上限。</span></article>
+            <article class="principle"><b>持久化要一致</b><span>语料原子写出；Dense 加载检查 ID 集合；上下文和引用再次回查原始 ArticleChunk。</span></article>
+            <article class="principle"><b>来源可追溯</b><span>law_id、法律层级、条号、页码、source_file、text_hash 贯穿整条链路。</span></article>
+            <article class="principle"><b>边界显式</b><span>项目只覆盖 manifest 中的法律，不把检索不到的问题伪装成确定法律结论。</span></article>
+          </div>
+          <div class="footer-note">理解项目时建议按顺序阅读：<code>schemas.py</code> → <code>ingestion/pipeline.py</code> → <code>retrieval/retrieval_context_pipeline.py</code> → <code>generation/answer_pipeline.py</code> → <code>ui/app.py</code>。</div>
+        </div>
+      </section>
+
+      <aside class="details" aria-live="polite" aria-label="节点详情">
+        <div class="details-head">
+          <div class="step" id="detail-step">从这里开始</div>
+          <h2 id="detail-title">点击任意流程节点</h2>
+          <p id="detail-summary">这里会显示该节点的输入、输出、功能和对应代码方法。</p>
+        </div>
+        <div class="details-body" id="detail-body">
+          <div class="detail-section"><h3>阅读提示</h3><ul><li>先看“问答主链路”理解在线请求。</li><li>再看“知识库构建”理解数据如何进入索引。</li><li>最后看“评测与保障”理解可信性从何而来。</li></ul></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const NODES = {
+      "biz-question": {step:"业务 · 咨询发起", title:"用户描述法律问题", summary:"业务起点不是法律条文，而是用户对真实事件的自然语言描述。", input:["用户事实描述","可选的目标法律范围","页面隐私提示"], output:["query","law_name | None"], features:["允许口语化表达，不要求用户掌握法律术语","最多 1000 字","提醒避免填写身份证号、银行卡号等敏感信息"], methods:[["Streamlit 首次问题表单","src/rag_law/ui/app.py:402"],["_answer(query, law_name)","src/rag_law/ui/app.py:323"]], business:{owner:"咨询用户", goal:"以尽可能低的使用门槛准确表达事实", success:"问题非空、核心事实可理解、没有不必要的敏感信息", risk:"事实遗漏会导致适用规则判断偏差"}},
+      "biz-intake": {step:"业务 · 请求受理", title:"有效性与范围检查", summary:"先判断请求是否具备进入检索流程的基本条件。", input:["query","可选 law_name"], output:["有效请求 → 进入检索","空请求 → 明确校验错误"], features:["去除首尾空白","可选择某部法律缩小搜索范围","不对空问题消耗检索和模型资源"], methods:[["AnswerPipeline._run()","src/rag_law/generation/answer_pipeline.py:453"],["RetrievalContextPipeline.run()","src/rag_law/retrieval/retrieval_context_pipeline.py:136"]], business:{owner:"问答服务", goal:"只受理可执行请求并明确检索边界", success:"请求参数有效且范围可执行", risk:"用户指定错误法律可能过滤掉真正相关依据"}},
+      "biz-evidence": {step:"业务 · 依据发现", title:"寻找候选法律依据", summary:"把用户事实转换为一组按相关性排序、仍可回溯原文的候选法条。", input:["用户问题","15 部法律、2879 条结构化法条","可选法律过滤"], output:["Rerank Top 5","最多 6 条 ContextEvidence"], features:["BM25 处理精确术语和条号","Dense 处理口语与法律表达差异","RRF 融合后由 Reranker 精排","补充相关邻条并控制上下文预算"], methods:[["HybridRetriever.search()","src/rag_law/retrieval/fusion.py:276"],["RerankedRetriever.search()","src/rag_law/retrieval/reranker.py:426"],["ContextBuilder.build()","src/rag_law/retrieval/context_builder.py:687"]], business:{owner:"检索服务", goal:"在较小成本下找到最可能支持回答的原始法条", success:"正确法条进入前列并保留完整来源信息", risk:"召回遗漏会让后续模型没有正确证据可用"}},
+      "biz-sufficient": {step:"业务 · 风险门槛", title:"证据充分性判断", summary:"相关法条看起来不够可靠时，系统宁可拒答，也不把检索噪声包装成法律结论。", input:["Top1 rerank score","BuiltContext.evidences"], output:["充分 → 允许调用 LLM","不足 → 固定安全拒答"], features:["检查是否存在精排候选","检查是否构建出有效证据","Top1 必须达到 0.15","判断在模型调用之前完成"], methods:[["AnswerPipeline._has_sufficient_evidence()","src/rag_law/generation/answer_pipeline.py:178"]], business:{owner:"可信问答策略", goal:"控制错误法律结论进入生成阶段的概率", success:"低置信请求被拦截，高置信请求正常通过", risk:"阈值过低增加误答，过高增加拒答"}},
+      "biz-no-evidence": {step:"业务 · 拒答出口", title:"依据不足时的用户反馈", summary:"展示清楚、克制、可解释的拒答，而不是空白或模型猜测。", input:["证据门控失败"], output:["状态：依据不足","固定原因说明","引用 0、生成次数 0","边界和免责声明"], features:["说明当前知识库没有足够证据","说明系统没有调用模型生成结论","不展示低相关候选作为正式依据","用户仍可调整问题或咨询律师"], methods:[["AnswerPipeline._insufficient_answer()","src/rag_law/generation/answer_pipeline.py:216"],["_render_result(result)","src/rag_law/ui/app.py:258"]], business:{owner:"问答服务", goal:"让用户知道系统为什么不能回答，并避免错误依赖", success:"用户不会把低相关内容误认成法律意见", risk:"若只有拒答没有行动建议，用户体验会偏弱"}},
+      "biz-draft": {step:"业务 · 答复形成", title:"依据证据生成结构化答复", summary:"模型负责组织语言和选择证据，不负责创造来源。", input:["用户问题","带 Evidence ID 的证据上下文"], output:["简明结论","证据内分析","适用条件","Evidence ID 列表","限制和可选追问"], features:["使用 Pydantic 结构化输出","只允许选择已有 Evidence ID","不让模型直接生成最终法条原文","temperature 设为 0"], methods:[["answer_chain.invoke(...) ","src/rag_law/generation/answer_pipeline.py:520"],["build_generation_chains(llm)","src/rag_law/generation/chain.py:59"]], business:{owner:"回答生成服务", goal:"把专业法律证据转换成用户易理解的说明", success:"结论清楚、分析与证据一致、边界明确", risk:"语言流畅不等于引用真实，必须经过下一步校验"}},
+      "biz-citation-check": {step:"业务 · 发布前质检", title:"引用真实性检查", summary:"任何回答在展示前都必须证明引用来自本次检索到的真实法条。", input:["GeneratedAnswer","BuiltContext","原始 ArticleChunk"], output:["通过 → ValidatedCitation","失败 → 一次修复或安全停止"], features:["Evidence ID 必须属于本次请求","chunk_id 必须存在于原语料","法律名和条号必须一致","引文必须是原文连续子串"], methods:[["CitationValidator.validate()","src/rag_law/generation/citation_validator.py:46"]], business:{owner:"可信性控制", goal:"阻止伪造条号、错误法律名和变形引文对外展示", success:"每条引用均可回查到原始文件和页码", risk:"跳过此步骤会把模型幻觉直接暴露给用户"}},
+      "biz-answered": {step:"业务 · 正常交付", title:"可追溯法律信息回答", summary:"证据充分且引用校验通过后，向用户展示完整结果。", input:["已校验 GeneratedAnswer","ValidatedCitation[]"], output:["状态：已找到依据","结论、分析、条件","法律名、条号、原文、文件和页码"], features:["每个引用可展开查看原文","顶部显示引用数、耗时和生成次数","保留知识库范围与非法律意见声明"], methods:[["AnswerPipeline._finalize_generated_answer()","src/rag_law/generation/answer_pipeline.py:283"],["_render_citation(...) ","src/rag_law/ui/app.py:244"]], business:{owner:"咨询用户", goal:"获得能理解、能核对来源的法律信息", success:"用户可以区分系统分析与原始法条", risk:"具体法律适用仍取决于完整事实和司法实践"}},
+      "biz-clarify": {step:"业务 · 补充事实", title:"只追问一个关键事实", summary:"有相关法律依据，但主体、时间或行为性质等事实不足时，不强行给出确定结论。", input:["有效证据","GeneratedAnswer.follow_up_question"], output:["状态：需要补充信息","一个最重要的问题","已有条件和边界提示"], features:["一次只问一个关键问题","不把缺失事实自行补全","后续由用户重新提交补充后的问题"], methods:[["AnswerPipeline._clarification_answer()","src/rag_law/generation/answer_pipeline.py:252"],["_normalize_follow_up(...) ","src/rag_law/generation/answer_pipeline.py:195"]], business:{owner:"问答服务与用户", goal:"用最小交互成本补齐决定法律适用的事实", success:"追问具体、可回答，并能显著改变判断质量", risk:"当前历史只用于展示，不会自动形成真正多轮上下文"}},
+      "biz-safe-stop": {step:"业务 · 异常出口", title:"生成或引用失败时安全停止", summary:"系统允许一次有边界的修复；仍无法验证时返回固定失败说明。", input:["首次校验错误","前次结构化回答","相同证据上下文"], output:["修复成功 → 正常交付","修复失败 → 状态：已安全停止"], features:["最多修复一次","二次失败不展示部分可信的混合结果","保留错误用于日志和复盘"], methods:[["repair_chain.invoke(...) ","src/rag_law/generation/answer_pipeline.py:628"],["AnswerPipeline._generation_failed_answer()","src/rag_law/generation/answer_pipeline.py:234"]], business:{owner:"可信性控制", goal:"限制成本和等待时间，并保证错误内容不对外发布", success:"任何不可核验内容都被拦截", risk:"外部模型或服务不稳定会提高安全停止率"}},
+      "biz-delivery": {step:"业务 · 结果呈现", title:"统一结果页面", summary:"无论成功还是失败，用户都能看到明确状态、原因和边界。", input:["AnswerPipelineResult"], output:["状态标签","结果正文或固定说明","运行指标","法条依据或空引用","限制与免责声明"], features:["四种状态采用统一展示规则","只在存在校验引用时显示法条依据","历史记录可在当前会话中重新呈现"], methods:[["_render_result(result)","src/rag_law/ui/app.py:258"],["status_presentation(status)","src/rag_law/ui/presentation.py:84"]], business:{owner:"产品界面", goal:"让用户准确理解结果的可信级别和下一步", success:"状态含义清楚、依据可查看、失败原因可理解", risk:"技术指标不应让用户误以为这是胜诉概率"}},
+      "biz-user-next": {step:"业务 · 用户行动", title:"用户的下一步选择", summary:"系统提供法律信息检索结果，但不代替事实调查、证据收集和律师判断。", input:["回答状态和内容","边界提示"], output:["补充事实后重新提问","调整法律范围或措辞","重大权益事项咨询执业律师"], features:["回答状态决定建议路径","依据不足时不诱导用户依赖候选法条","重大风险场景强调专业咨询"], methods:[["STANDARD_LIMITATION","src/rag_law/generation/answer_pipeline.py:49"],["UI disclaimer","src/rag_law/ui/app.py:300"]], business:{owner:"咨询用户", goal:"基于可信边界采取合适行动", success:"用户不会把系统结果当作最终法律意见", risk:"系统当前不提供案件管理或律师转介"}},
+      "biz-audit": {step:"业务 · 运营留痕", title:"脱敏日志与质量复盘", summary:"记录可用于解释一次请求为何成功、拒答或失败的最小必要信息。", input:["查询（脱敏）","检索排名","回答状态、耗时、引用与错误"], output:["answer_runs.jsonl","知识缺口和失败模式线索"], features:["敏感信息脱敏","记录模型名和 Prompt 版本","记录证据、生成次数和校验错误","日志失败不影响用户回答"], methods:[["AnswerRunLogger.build_record()","src/rag_law/generation/run_logger.py:173"],["AnswerRunLogger.write()","src/rag_law/generation/run_logger.py:268"]], business:{owner:"产品运营 / 研发", goal:"定位高频拒答、性能瓶颈和生成失败原因", success:"能够复现和分类问题，同时不过度收集个人信息", risk:"当前日志尚未形成自动化运营看板"}},
+      "biz-content-gap": {step:"业务 · 内容运营", title:"识别并补齐知识缺口", summary:"把高频依据不足问题转化为知识库扩充和参数优化任务。", input:["脱敏运行日志","用户高频问题","缺失或更新的正式法律文件"], output:["待新增法律清单","新法律文件与元数据","评测集增补建议"], features:["新文件写入前完整预演","同名冲突和无有效法条直接拒绝","更新后全量重建语料与双索引"], methods:[["add_document(...) ","src/rag_law/knowledge_base.py:180"],["_validate_source_file(...) ","src/rag_law/knowledge_base.py:147"]], business:{owner:"法律内容运营 / 知识库管理员", goal:"持续扩大系统能可靠回答的问题范围", success:"新增内容来源正式、结构可解析、索引一致", risk:"法律版本失效或来源不权威会污染整个回答链路"}},
+      "biz-improve": {step:"业务 · 持续改进", title:"重建、回归与重新评测", summary:"内容或参数变化只有通过一致性检查和评测后，才算真正提升业务能力。", input:["更新后的语料和索引","30 题评测集及新增用例","113 项自动化测试"], output:["新的 Recall / MRR / 延迟报告","上下文质量审计","回归测试结果"], features:["比较 BM25、Dense、Hybrid 和 Rerank","检查去重、预算和摘录边界","用失败用例驱动评测集持续增长"], methods:[["run_baseline_evaluation(...) ","src/rag_law/evaluation/retrieval_metrics.py:620"],["evaluate_stage3(...) ","src/rag_law/evaluation/rerank_context_metrics.py:439"],["uv run pytest -q","tests/"]], business:{owner:"研发 / 测试 / 内容运营", goal:"证明更新提高了覆盖率且没有破坏可信性", success:"指标改善或保持、关键回归全部通过", risk:"当前评测集规模较小，阈值仍需独立数据校准"}},
+      "ui-entry": {step:"问答 · 接入", title:"Streamlit Web UI", summary:"浏览器中的主要用户入口，负责表单、进度、结果和历史展示。", input:["query: 用户自然语言问题（最多 1000 字）","law_name: 可选的法律名称过滤","st.session_state.messages: 当前页面展示历史"], output:["调用 AnswerPipelineResult","页面展示回答、状态、引用与运行指标","序列化后的会话消息"], features:["侧栏选择法律范围和添加新法律","把流水线 progress_callback 映射为 st.status","历史仅用于展示，不会拼入模型对话上下文"], methods:[["main()","src/rag_law/ui/app.py:382"],["_answer(query, law_name)","src/rag_law/ui/app.py:323"],["_render_result(result)","src/rag_law/ui/app.py:258"]]},
+      "cli-entry": {step:"问答 · 接入", title:"统一 CLI", summary:"开发、调试与批处理入口，可直接观察中间结果。", input:["命令: answer / context / retrieve / add-document / evaluate","--query、--law-name 与各阶段参数"], output:["终端检索结果、BuiltContext 或最终 AnswerPipelineResult","错误码与可读诊断"], features:["可单独运行 BM25、Dense、Hybrid","context 子命令暴露精排和证据构建结果","answer 子命令执行完整问答链路"], methods:[["main()","src/rag_law/cli.py:694"],["load_retriever(...) ","src/rag_law/cli.py:59"],["print_answer_result(result)","src/rag_law/cli.py:281"]]},
+      "answer-orchestrator": {step:"问答 · 总编排", title:"AnswerPipeline.run", summary:"在线请求的统一控制器；确保所有出口都产生结构化结果并写脱敏日志。", input:["query: str","law_name: str | None","progress_callback(stage, message)"], output:["AnswerPipelineResult","旁路写入脱敏 answer_runs.jsonl"], features:["调用检索上下文流水线","执行证据门控","最多两次生成（首次 + 一次修复）","日志失败不会中断回答"], methods:[["AnswerPipeline.load()","src/rag_law/generation/answer_pipeline.py:118"],["AnswerPipeline.run()","src/rag_law/generation/answer_pipeline.py:388"],["AnswerPipeline._run()","src/rag_law/generation/answer_pipeline.py:453"]], defaults:["min_answer_score = 0.15","generation_attempts ∈ [0, 2]"]},
+      "retrieval-pipeline": {step:"问答 · 检索编排", title:"RetrievalContextPipeline.run", summary:"组合精排检索器与上下文构建器，并记录各段耗时。", input:["query: 去除首尾空白后的问题","law_name: 可选正式法律名称过滤","rerank_top_n: 默认 5"], output:["RetrievalContextResult","reranked_results + BuiltContext","retrieval/context/total latency_ms"], features:["统一调用 RerankedRetriever.search","把精排结果传给 ContextBuilder.build","向 UI 报告 retrieval 与 context_building 进度"], methods:[["RetrievalContextPipeline.load()","src/rag_law/retrieval/retrieval_context_pipeline.py:79"],["RetrievalContextPipeline.run()","src/rag_law/retrieval/retrieval_context_pipeline.py:136"]]},
+      "bm25-search": {step:"问答 · 召回", title:"BM25 关键词检索", summary:"对中文法条和问题进行 jieba 分词，擅长条号、术语和精确关键词。", input:["query: str","top_k: int","law_name: str | None","持久化 BM25 分词语料"], output:["list[RetrievalResult]","source = bm25","BM25 原始相关性分数"], features:["对 query 分词后计算全库 BM25 分数","支持按 law_name 过滤","将 ArticleChunk 映射为统一 RetrievalResult"], methods:[["tokenize(text)","src/rag_law/retrieval/bm25.py:45"],["BM25Retriever.load()","src/rag_law/retrieval/bm25.py:172"],["BM25Retriever.search()","src/rag_law/retrieval/bm25.py:212"]]},
+      "dense-search": {step:"问答 · 召回", title:"Chroma 向量检索", summary:"通过 OpenAI 兼容 Embedding 与 Chroma 做语义相似检索。", input:["query: str","top_k: int","law_name: str | None","articles.jsonl + Chroma collection"], output:["list[RetrievalResult]","source = dense","distance 转换后的相似度分数"], features:["支持 Chroma metadata 过滤","向量库返回 ID 后回查 ArticleChunk","加载时可校验语料 ID 与 collection ID 完全一致"], methods:[["build_embeddings()","src/rag_law/retrieval/dense.py:34"],["DenseRetriever.load()","src/rag_law/retrieval/dense.py:242"],["DenseRetriever.search()","src/rag_law/retrieval/dense.py:311"]]},
+      "rrf": {step:"问答 · 融合", title:"加权 RRF 排名融合", summary:"只使用两路结果的排名进行融合，避免 BM25 分数和向量分数尺度不可比。", input:["已按相关性降序的 BM25 results","已按相关性降序的 Dense results","权重、rrf_k 与 top_k"], output:["Hybrid RetrievalResult Top K","component_scores 保存两路原始分数","融合 score 与 source = hybrid"], features:["同一 chunk_id 的 RRF 贡献累加","相同 chunk 的元数据必须一致","稳定排序并保留双路贡献"], methods:[["reciprocal_rank_fusion(...) ","src/rag_law/retrieval/fusion.py:64"],["HybridRetriever.search()","src/rag_law/retrieval/fusion.py:276"]], defaults:["candidate_top_k = 10","rrf_k = 60","bm25_weight = 1.0","dense_weight = 2.0"]},
+      "rerank": {step:"问答 · 精排", title:"Cross-Encoder Reranker", summary:"让远程重排模型同时比较问题与完整候选描述，再选出最相关的少量法条。", input:["query","Hybrid candidates Top 10","候选的法律名、编章节目、条号、正文"], output:["按 rerank score 降序的 Top 5","source = rerank","保留原 component_scores"], features:["调用 SiliconFlow OpenAI 风格 rerank API","检查响应数量、index 唯一性与分数有效性","top_n 不得超过候选数"], methods:[["build_rerank_text(result)","src/rag_law/retrieval/reranker.py:44"],["SiliconFlowReranker.score_documents()","src/rag_law/retrieval/reranker.py:162"],["rerank_results(...) ","src/rag_law/retrieval/reranker.py:265"],["RerankedRetriever.search()","src/rag_law/retrieval/reranker.py:426"]], defaults:["candidate_top_k = 10","rerank_top_n = 5","timeout = 30s"]},
+      "context": {step:"问答 · 证据构建", title:"ContextBuilder", summary:"把精排结果转换成受预算约束、可被程序回查的 Evidence 列表。", input:["query","list[RetrievalResult] Top 5","articles.jsonl 原始 ArticleChunk","同一个 Reranker scorer"], output:["BuiltContext.text","ContextEvidence E001…","estimated_tokens / truncated"], features:["每个结果先回查并核对原始法条","为前两条命中扩展前后邻条并再次重排","按法律+条号和正文双重去重","超长证据选择连续完整片段，不从句中硬切","按单条、总 Token 和数量预算筛选"], methods:[["ContextBuilder._validate_result()","src/rag_law/retrieval/context_builder.py:317"],["ContextBuilder._build_adjacent_candidates()","src/rag_law/retrieval/context_builder.py:410"],["ContextBuilder._select_excerpt()","src/rag_law/retrieval/context_builder.py:531"],["ContextBuilder.build()","src/rag_law/retrieval/context_builder.py:687"]], defaults:["max_evidences = 6","max_context_tokens = 3000","max_evidence_tokens = 700","adjacent_for_top_n = 2","min_adjacent_score = 0.35"]},
+      "evidence-gate": {step:"问答 · 安全门控", title:"证据充分性检查", summary:"在调用 LLM 前阻断低相关度或空上下文请求。", input:["RetrievalContextResult","reranked Top1 score","BuiltContext.evidences"], output:["True → 允许生成","False → insufficient_evidence"], features:["无精排结果即不足","无任何 ContextEvidence 即不足","Top1 score 低于阈值即不足","门控失败时 generation_attempts = 0"], methods:[["AnswerPipeline._top_score()","src/rag_law/generation/answer_pipeline.py:170"],["AnswerPipeline._has_sufficient_evidence()","src/rag_law/generation/answer_pipeline.py:178"]], defaults:["min_answer_score = 0.15"]},
+      "insufficient": {step:"问答 · 安全出口", title:"insufficient_evidence", summary:"证据不足时完全不调用大模型，不展示推测性法律结论。", input:["门控判断 = False"], output:["AnswerResponse(status='insufficient_evidence')","固定 summary / analysis / limitations","空 citations"], features:["LLM 调用次数为 0","仍保留检索与上下文诊断数据","UI 用统一状态样式呈现"], methods:[["AnswerPipeline._insufficient_answer()","src/rag_law/generation/answer_pipeline.py:216"],["status_presentation(status)","src/rag_law/ui/presentation.py:84"]]},
+      "generation": {step:"问答 · 生成", title:"结构化答案生成", summary:"Prompt、ChatOpenAI 与 Pydantic Structured Output 组成 LCEL 链。", input:["question","BuiltContext.text（含 E001…）","ANSWER_PROMPT"], output:["GeneratedAnswer","summary / analysis / conditions / Evidence IDs / limitations / follow_up_question"], features:["temperature = 0","模型不得编造法律名、条号或引用正文","模型引用只允许选择上下文中的 Evidence ID","输出由 Pydantic 模型约束"], methods:[["build_chat_model()","src/rag_law/generation/chain.py:41"],["build_generation_chains(llm)","src/rag_law/generation/chain.py:59"],["answer_chain.invoke(...) ","src/rag_law/generation/answer_pipeline.py:520"]], defaults:["prompt_version = stage4-v2-evidence-id","LLM timeout = 60s","max_retries = 2"]},
+      "citation": {step:"问答 · 引用校验", title:"CitationValidator.validate", summary:"把模型选择的 Evidence ID 严格映射回本次上下文和原始法条。", input:["GeneratedAnswer.citations","BuiltContext.evidences","articles.jsonl 的 chunks_by_id"], output:["CitationValidationResult","ValidatedCitation 列表","is_valid + errors"], features:["Evidence ID 必须存在于本次上下文","evidence.chunk_id 必须存在于原始语料","法律名与条号必须和原始法条一致","evidence.text 必须是原文连续子串","任一引用失败则整体校验失败"], methods:[["CitationValidator.load()","src/rag_law/generation/citation_validator.py:39"],["CitationValidator.validate()","src/rag_law/generation/citation_validator.py:46"]]},
+      "final-answer": {step:"问答 · 正常出口", title:"可信回答与回填引用", summary:"程序从已校验证据回填展示字段，模型无法自行修改来源。", input:["GeneratedAnswer","CitationValidationResult(is_valid=True)"], output:["AnswerResponse","answered 或 needs_clarification","ValidatedCitation: 法律名、条号、引文、文件、页码"], features:["有 follow_up_question 时状态为 needs_clarification","无有效引用则不展示实质法律分析","conditions 去空白并规范化"], methods:[["AnswerPipeline._finalize_generated_answer()","src/rag_law/generation/answer_pipeline.py:283"],["_render_citation(...) ","src/rag_law/ui/app.py:244"],["citation_location(...) ","src/rag_law/ui/presentation.py:90"]]},
+      "repair": {step:"问答 · 修复分支", title:"引用错误修复一次", summary:"把上一次结构化结果与明确的校验错误交给修复链；次数严格封顶。", input:["question + BuiltContext.text","previous_answer JSON","first_validation.errors"], output:["第二个 GeneratedAnswer","再次 CitationValidationResult","失败时 generation_failed"], features:["只允许一次修复，防止成本和时延失控","修复链仍使用相同 Pydantic 输出约束","二次校验失败或链异常都安全降级"], methods:[["repair_chain.invoke(...) ","src/rag_law/generation/answer_pipeline.py:628"],["AnswerPipeline._generation_failed_answer()","src/rag_law/generation/answer_pipeline.py:234"]], defaults:["总生成次数最多 2"]},
+      "logging": {step:"问答 · 可观测性", title:"脱敏运行日志", summary:"回答完成后追加一条 JSONL 记录；日志异常不影响返回结果。", input:["AnswerPipelineResult","可选 law_name","LLM model_name"], output:["logs/answer_runs.jsonl 一行 JSON","记录状态、排名、引用、耗时和校验错误"], features:["识别并脱敏潜在敏感文本","不记录 API Key","线程锁避免并发追加互相覆盖","日志写入失败仅记录 warning"], methods:[["redact_value(...) ","src/rag_law/generation/run_logger.py:103"],["AnswerRunLogger.build_record()","src/rag_law/generation/run_logger.py:173"],["AnswerRunLogger.write()","src/rag_law/generation/run_logger.py:268"]]},
+
+      "manifest": {step:"构建 · 配置输入", title:"法律清单 manifest.yaml", summary:"声明知识库范围和每部法律的稳定身份。", input:["YAML 列表","law_id / law_name / file"], output:["规范化后的 manifest entries"], features:["law_id 用作稳定索引标识","file 相对项目根目录","重复 law_id、缺字段和不存在文件会在构建前报错"], methods:[["load_manifest(path)","src/rag_law/ingestion/pipeline.py:33"],["check_manifest.py::main()","scripts/check_manifest.py:21"]]},
+      "raw-files": {step:"构建 · 内容输入", title:"原始法律文件", summary:"系统当前支持 PDF、DOCX 和 Markdown 三种格式。", input:["data/raw/*.pdf","data/raw/*.docx","data/raw/*.md"], output:["文件路径交给 load_document"], features:["PDF 保留页码","DOCX 保留非空段落顺序","Markdown 保留非空行顺序"], methods:[["SUPPORTED_SUFFIXES","src/rag_law/ingestion/loaders.py"],["load_document(...) ","src/rag_law/ingestion/loaders.py:156"]]},
+      "loader": {step:"构建 · 加载", title:"统一文档加载", summary:"根据扩展名分发到具体 Loader，统一产出 LoadedDocument。", input:["path","law_id / law_name / source_file"], output:["LoadedDocument","SourceBlock[] + source_format + page_count"], features:["PDF：PyMuPDF 按页提取","DOCX：python-docx 按非空段落提取","Markdown：按非空行提取","每个 SourceBlock 保留 page 与 block_index"], methods:[["load_pdf(...) ","src/rag_law/ingestion/loaders.py:28"],["load_docx(...) ","src/rag_law/ingestion/loaders.py:79"],["load_markdown(...) ","src/rag_law/ingestion/loaders.py:119"],["load_document(...) ","src/rag_law/ingestion/loaders.py:156"]]},
+      "normalizer": {step:"构建 · 清洗", title:"文本标准化", summary:"清除格式噪音，同时保留来源和位置元数据。", input:["LoadedDocument"], output:["model_copy 后的新 LoadedDocument","清洗后的 SourceBlock[]"], features:["统一换行与空白、移除不可见字符","PDF 检测重复页眉页脚与孤立页码","修复 PDF 视觉断行","非 PDF 保持段落/行边界"], methods:[["normalize_text(text)","src/rag_law/ingestion/normalizer.py:67"],["_remove_pdf_margins(...) ","src/rag_law/ingestion/normalizer.py:187"],["_repair_pdf_lines(...) ","src/rag_law/ingestion/normalizer.py:235"],["normalize_document(document)","src/rag_law/ingestion/normalizer.py:346"]]},
+      "splitter": {step:"构建 · 切分", title:"法条切分状态机", summary:"逐行扫描法律层级和条号，把整部法律变成稳定 ArticleChunk。", input:["normalize_document() 的输出","max_chars: 默认 1200"], output:["SplitResult","ArticleChunk[] / article_count / warnings / duplicates"], features:["定位正文起点并跳过目录中的伪条号","跟踪编、章、节层级","跨页聚合同一法条并保留页码范围","长法条按自然段拆分","生成稳定 chunk_id 与 SHA-256 text_hash"], methods:[["split_articles(...) ","src/rag_law/ingestion/article_splitter.py:455"],["_draft_to_chunks(...) ","src/rag_law/ingestion/article_splitter.py:381"],["_split_segments(...) ","src/rag_law/ingestion/article_splitter.py:307"]]},
+      "articles": {step:"构建 · 语料产物", title:"articles.jsonl", summary:"全项目的事实基准：检索、上下文和引用校验都回到这里。", input:["所有法律的 ArticleChunk[]"], output:["data/processed/articles.jsonl","每行一个 Pydantic ArticleChunk JSON"], features:["全库 chunk_id 唯一检查","所有法律成功后才原子替换正式文件","字段含来源文件、页码范围、层级与哈希"], methods:[["run_pipeline(...) ","src/rag_law/ingestion/pipeline.py:140"],["_write_jsonl_atomic(...) ","src/rag_law/ingestion/pipeline.py:82"],["load_articles(...) ","src/rag_law/retrieval/common.py:22"]]},
+      "parse-report": {step:"构建 · 诊断产物", title:"parse_report.json", summary:"为每部法律记录解析质量和全库汇总。", input:["每部法律的 SplitResult","oversized_chunks 与格式信息"], output:["data/processed/parse_report.json","summary + laws[]"], features:["统计 article/chunk/empty/duplicate/oversized","记录最大 chunk 字符数与 warnings","用于构建后快速质量检查"], methods:[["run_pipeline(...) ","src/rag_law/ingestion/pipeline.py:140"],["_write_json_atomic(...) ","src/rag_law/ingestion/pipeline.py:113"]]},
+      "bm25-build": {step:"构建 · 稀疏索引", title:"BM25 索引构建与保存", summary:"把结构化法条的检索文本进行 jieba 分词并持久化。", input:["articles.jsonl"], output:["indexes/bm25/bm25_index.json","chunks + tokenized_corpus + schema metadata"], features:["检索文本包含法律名、层级、条号和正文","不直接 pickle BM25Okapi，加载时重建对象","便于跨 Python/依赖版本恢复"], methods:[["BM25Retriever.build()","src/rag_law/retrieval/bm25.py:107"],["BM25Retriever.save()","src/rag_law/retrieval/bm25.py:125"],["build_search_text(chunk)","src/rag_law/retrieval/common.py:69"]]},
+      "dense-build": {step:"构建 · 向量索引", title:"Chroma 全量重建", summary:"为每个 ArticleChunk 生成向量，并重建 law_articles collection。", input:["articles.jsonl","Embedding 服务配置","batch_size: 默认 32"], output:["indexes/chroma/*","可加载的 DenseRetriever"], features:["构建前删除旧 collection，避免失效法条残留","按 batch 写入 Document 与稳定 chunk_id","加载时可验证向量 ID 集合和语料完全一致"], methods:[["chunk_to_document(chunk)","src/rag_law/retrieval/dense.py:55"],["DenseRetriever.build()","src/rag_law/retrieval/dense.py:140"],["DenseRetriever.load()","src/rag_law/retrieval/dense.py:242"]]},
+
+      "add-input": {step:"添加法律 · 接入", title:"新法律输入", summary:"通过 Streamlit 侧栏或 CLI 提交待加入知识库的法律文件。", input:["source_path / 上传临时文件","law_id: cn_ 开头的小写标识","law_name: 可选，默认文件名"], output:["传给 add_document(...) 的参数"], features:["仅接受 PDF、DOCX、Markdown","UI 完成后清除缓存以重新加载知识库","CLI 输出重建摘要"], methods:[["_render_add_law_form()","src/rag_law/ui/app.py:83"],["_add_uploaded_law(...) ","src/rag_law/ui/app.py:110"],["add_document(...) ","src/rag_law/knowledge_base.py:180"]]},
+      "add-validate": {step:"添加法律 · 安全检查", title:"写入前完整预演", summary:"任何文件写入或 manifest 变更之前，先证明新文档能产出有效法条。", input:["source file","law_id / final_name","现有 manifest"], output:["SplitResult（article_count > 0）","或明确异常并停止"], features:["验证文件存在、后缀和 law_id 格式","检测 law_id、文件名冲突","执行 load → normalize → split 完整预演","未识别到法条则拒绝"], methods:[["_validate_source_file(...) ","src/rag_law/knowledge_base.py:147"],["add_document(...) ","src/rag_law/knowledge_base.py:180"]]},
+      "add-reject": {step:"添加法律 · 失败出口", title:"拒绝不安全变更", summary:"校验失败时不继续持久化，避免半成品知识库。", input:["FileNotFoundError / ValueError / RuntimeError"], output:["UI 或 CLI 可读错误","原正式语料与索引保持不变"], features:["不支持格式被拒绝","同名不同内容文件拒绝覆盖","已有 law_id 信息不一致则拒绝","无有效法条则拒绝"], methods:[["add_document(...) 的前置检查","src/rag_law/knowledge_base.py:180"]]},
+      "add-commit": {step:"添加法律 · 登记", title:"复制原文并登记 manifest", summary:"通过预演后才把文件和清单变化提交到项目。", input:["校验通过的 source_path","规范化 entry"], output:["data/raw/<filename>","manifest.yaml 新条目（如需要）"], features:["同一内容与路径可安全重试","manifest 先在内存解析确认仍为列表","临时文件写完再 replace 原文件"], methods:[["_append_manifest_entry(...) ","src/rag_law/knowledge_base.py:116"],["_write_text_atomic(...) ","src/rag_law/knowledge_base.py:95"]]},
+      "add-rebuild": {step:"添加法律 · 重建", title:"全链路一致性重建", summary:"新法律登记后依次重建结构化语料、BM25 和 Chroma。", input:["已更新 manifest + data/raw","构建参数与 Embeddings"], output:["新 articles.jsonl / parse_report.json","新 BM25 index","新 Chroma collection"], features:["先运行阶段 1 全量解析","再构建 BM25","最后调用 Embedding 重建 Chroma","通过 progress_callback 报告每个阶段"], methods:[["run_pipeline(...) ","src/rag_law/ingestion/pipeline.py:140"],["BM25Retriever.build/save","src/rag_law/retrieval/bm25.py:107"],["DenseRetriever.build()","src/rag_law/retrieval/dense.py:140"]]},
+      "add-result": {step:"添加法律 · 完成", title:"AddDocumentResult", summary:"返回本次新增与全库重建的结构化摘要。", input:["pipeline report","目标 law_report","manifest 是否新增"], output:["law_id / law_name / file","article_count / chunk_count","law_count / chunk_total / manifest_updated"], features:["UI 可展示精确数量","缓存清除后下一次请求加载新索引","结果对象为 frozen dataclass"], methods:[["AddDocumentResult","src/rag_law/knowledge_base.py:69"],["add_document(...) ","src/rag_law/knowledge_base.py:180"]]},
+
+      "eval-set": {step:"质量 · 数据", title:"评测问题集", summary:"带期望引用和可回答性标签的离线基准。", input:["data/eval/questions_v1.yaml"], output:["list[EvaluationQuestion]"], features:["当前 README 记录 30 题","24 题应可回答","6 题用于拒答或追问边界"], methods:[["load_evaluation_questions(...) ","src/rag_law/evaluation/retrieval_metrics.py:93"]]},
+      "tests": {step:"质量 · 回归", title:"自动化测试套件", summary:"覆盖从文档处理到 UI 的关键行为与失败分支。", input:["tests/test_*.py","伪检索器、伪模型与临时文件"], output:["pytest 通过/失败报告"], features:["Loader、Normalizer、Splitter","BM25/Dense/Fusion/Reranker/Context","Citation/Answer Pipeline/Run Logger","CLI、Streamlit presentation 与 app"], methods:[["uv run pytest -q","pyproject.toml / tests/"]]},
+      "retrieval-eval": {step:"质量 · 检索", title:"检索基线评测", summary:"对 BM25、Dense 和 Hybrid 计算召回质量和延迟。", input:["EvaluationQuestion[]","任一 RetrieverProtocol","top_k 配置"], output:["Recall@K / MRR","nearest-rank percentile","每题结果与延迟"], features:["统一 result_key 比较期望法律+条号","记录数据与依赖版本元信息","可原子写出 JSON 报告"], methods:[["evaluate_retriever(...) ","src/rag_law/evaluation/retrieval_metrics.py:241"],["run_baseline_evaluation(...) ","src/rag_law/evaluation/retrieval_metrics.py:620"]]},
+      "fusion-tuning": {step:"质量 · 调参", title:"融合参数调优", summary:"复用候选缓存批量比较单路与多组 RRF 权重配置。", input:["BM25/Dense candidate cache","多组 weight / rrf_k / top_k"], output:["每组配置的 Recall/MRR 摘要","候选诊断与排序报告"], features:["避免每组参数都重复请求向量服务","分别评估 single route 与 fusion","按稳定 configuration_sort_key 排序"], methods:[["collect_candidate_cache(...) ","src/rag_law/evaluation/fusion_tuning.py:93"],["evaluate_fusion_configuration(...) ","src/rag_law/evaluation/fusion_tuning.py:309"],["run_fusion_tuning(...) ","src/rag_law/evaluation/fusion_tuning.py:473"]]},
+      "context-audit": {step:"质量 · 上下文", title:"精排与上下文审计", summary:"比较精排前后相关性，并检查 BuiltContext 的结构不变量。", input:["缓存 Hybrid 结果","Reranker + ContextBuilder","评测问题"], output:["Top-K 平均相关性","上下文审计结果","阶段 3 JSON 报告"], features:["检查 Evidence ID、映射与去重","校验摘录必须有完整边界","校验单条/总预算和数量上限","比较 Rerank 对候选排序的改善"], methods:[["top_k_average_relevance(...) ","src/rag_law/evaluation/rerank_context_metrics.py:76"],["audit_context(...) ","src/rag_law/evaluation/rerank_context_metrics.py:291"],["evaluate_stage3(...) ","src/rag_law/evaluation/rerank_context_metrics.py:439"]]},
+      "consistency": {step:"质量 · 不变量", title:"四层一致性防线", summary:"可信性不是只靠 Prompt，而是由多次程序化回查共同保证。", input:["articles.jsonl","BM25 / Chroma IDs","RetrievalResult / ContextEvidence","GeneratedCitation"], output:["一致时继续","不一致时构建失败、中止或安全降级"], features:["语料写出前：chunk_id 全局唯一","Dense 加载：collection IDs = article IDs","上下文构建：RetrievalResult = 原 ArticleChunk","引用展示：Evidence → Chunk → 原文连续子串"], methods:[["run_pipeline(...) ","src/rag_law/ingestion/pipeline.py:140"],["DenseRetriever.load()","src/rag_law/retrieval/dense.py:242"],["ContextBuilder._validate_result()","src/rag_law/retrieval/context_builder.py:317"],["CitationValidator.validate()","src/rag_law/generation/citation_validator.py:46"]]},
+      "reports": {step:"质量 · 产物", title:"可重复评测报告", summary:"将数据、配置、版本、指标和逐题诊断写入 JSON。", input:["评测结果","run metadata","模型与参数配置"], output:["data/eval/reports/*.json","终端 summary table"], features:["原子写文件","记录源文件 SHA-256","记录关键包版本与时间"], methods:[["build_run_metadata(...) ","src/rag_law/evaluation/retrieval_metrics.py:455"],["print_summary_table(...) ","src/rag_law/evaluation/retrieval_metrics.py:570"]]},
+      "safe-states": {step:"质量 · 用户输出", title:"四种回答状态", summary:"前端只需围绕明确状态渲染，不必猜测失败原因。", input:["证据门控结果","生成结果","引用校验结果","follow_up_question"], output:["answered","needs_clarification","insufficient_evidence","generation_failed"], features:["answered：证据充分且引用有效","needs_clarification：有证据但仍缺关键事实","insufficient_evidence：不生成法律结论","generation_failed：结构化生成或修复失败"], methods:[["AnswerStatus","src/rag_law/schemas.py:164"],["status_presentation(status)","src/rag_law/ui/presentation.py:84"]]}
+    };
+
+    const tabs = [...document.querySelectorAll('.tab')];
+    const panels = [...document.querySelectorAll('.flow-panel')];
+    const buttons = [...document.querySelectorAll('.flow-node')];
+    const detailStep = document.getElementById('detail-step');
+    const detailTitle = document.getElementById('detail-title');
+    const detailSummary = document.getElementById('detail-summary');
+    const detailBody = document.getElementById('detail-body');
+
+    const KIND_LABELS = {
+      input: '入口 / 数据',
+      control: '编排器',
+      process: '处理',
+      decision: '判断',
+      output: '结果',
+      risk: '异常'
+    };
+    const KIND_GROUPS = {
+      input: ['biz-question', 'ui-entry', 'cli-entry', 'manifest', 'raw-files', 'add-input', 'eval-set', 'tests'],
+      control: ['answer-orchestrator', 'retrieval-pipeline'],
+      decision: ['biz-intake', 'biz-sufficient', 'biz-citation-check', 'evidence-gate', 'citation', 'loader', 'add-validate', 'consistency'],
+      output: ['biz-answered', 'biz-clarify', 'biz-delivery', 'biz-improve', 'insufficient', 'final-answer', 'logging', 'articles', 'parse-report', 'bm25-build', 'dense-build', 'add-result', 'reports', 'safe-states'],
+      risk: ['biz-no-evidence', 'biz-safe-stop', 'repair', 'add-reject']
+    };
+    const KIND_BY_NODE = Object.fromEntries(
+      Object.entries(KIND_GROUPS).flatMap(([kind, ids]) => ids.map(id => [id, kind]))
+    );
+
+    buttons.forEach(button => {
+      const kind = KIND_BY_NODE[button.dataset.node] || 'process';
+      button.classList.add(`kind-${kind}`);
+      button.dataset.kindLabel = KIND_LABELS[kind];
+    });
+
+    function list(items) {
+      return `<ul>${items.map(item => `<li>${item}</li>`).join('')}</ul>`;
+    }
+
+    function renderDetails(id) {
+      const item = NODES[id];
+      if (!item) return;
+      buttons.forEach(button => button.setAttribute('aria-pressed', String(button.dataset.node === id)));
+      detailStep.textContent = item.step;
+      detailTitle.textContent = item.title;
+      detailSummary.textContent = item.summary;
+      const defaults = item.defaults?.length ? `<div class="detail-section"><h3>关键默认值</h3><div>${item.defaults.map(value => `<span class="default-chip">${value}</span>`).join('')}</div></div>` : '';
+      const business = item.business ? `<div class="detail-section"><h3>业务视角</h3><div class="io-grid"><div class="io-box"><b>责任方</b><div>${item.business.owner}</div></div><div class="io-box"><b>业务目标</b><div>${item.business.goal}</div></div><div class="io-box"><b>成功标准</b><div>${item.business.success}</div></div><div class="io-box"><b>主要风险</b><div>${item.business.risk}</div></div></div></div>` : '';
+      detailBody.innerHTML = `
+        <div class="detail-section"><div class="io-grid"><div class="io-box"><b>输入</b><div>${item.input.join('<br>')}</div></div><div class="io-box"><b>输出</b><div>${item.output.join('<br>')}</div></div></div></div>
+        <div class="detail-section"><h3>包含的功能</h3>${list(item.features)}</div>
+        <div class="detail-section"><h3>对应方法</h3><div class="code-list">${item.methods.map(([method,file]) => `<div class="method"><code>${method}</code><span class="file">${file}</span></div>`).join('')}</div></div>
+        ${business}${defaults}`;
+    }
+
+    tabs.forEach(tab => tab.addEventListener('click', () => {
+      const name = tab.dataset.tab;
+      tabs.forEach(item => item.setAttribute('aria-selected', String(item === tab)));
+      panels.forEach(panel => panel.classList.toggle('active', panel.id === `panel-${name}`));
+      if (name === 'overview') {
+        buttons.forEach(button => button.setAttribute('aria-pressed', 'false'));
+        detailStep.textContent = '架构总览';
+        detailTitle.textContent = '四层结构，一个可信闭环';
+        detailSummary.textContent = '数据层提供事实基准，检索层缩小证据范围，生成层只做受约束选择，交互与评测层负责可用性和持续验证。';
+        detailBody.innerHTML = '<div class="detail-section"><h3>推荐阅读顺序</h3><ol><li><code>schemas.py</code>：先认识链路中的数据对象。</li><li><code>ingestion/pipeline.py</code>：理解事实从哪里来。</li><li><code>retrieval/retrieval_context_pipeline.py</code>：理解证据如何被选出。</li><li><code>generation/answer_pipeline.py</code>：理解答案为何可信。</li><li><code>ui/app.py</code>：理解用户如何使用系统。</li></ol></div>';
+      }
+    }));
+
+    buttons.forEach(button => button.addEventListener('click', () => renderDetails(button.dataset.node)));
+    renderDetails('biz-question');
+  </script>
+</body>
+</html>
