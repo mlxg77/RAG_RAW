@@ -35,6 +35,8 @@ from rag_law.schemas import (
 
 logger = logging.getLogger(__name__)
 
+# 接收 (str, str) 两个参数，返回 None。
+# 回调只是"通知"，不需要回复
 ProgressCallback = Callable[[str, str], None]
 
 # 临时阈值：
@@ -156,6 +158,7 @@ class AnswerPipeline:
             return
 
         try:
+            # 流水线调用了 UI 交给它的函数。（app.py 341–360 行 定义的 show_progress）
             callback(stage, message)
         except Exception:
             logger.exception(
@@ -176,6 +179,9 @@ class AnswerPipeline:
         self,
         retrieval: RetrievalContextResult,
     ) -> bool:
+        """
+        调用大模型之前的一道检查：先看检索到的证据靠不靠谱，不靠谱就不让模型回答，免得它在没有法条依据的情况下编一个法律结论出来。
+        """
         top_score = self._top_score(retrieval)
 
         return (
@@ -345,6 +351,7 @@ class AnswerPipeline:
         total_started_at: float,
         generation_started_at: float | None,
     ) -> AnswerPipelineResult:
+        """构建最终结果：流水线所有出口共用的打包函数。"""
         if generation_started_at is None:
             generation_latency_ms = 0.0
         else:
