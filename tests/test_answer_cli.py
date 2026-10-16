@@ -87,6 +87,29 @@ def test_parser_accepts_answer_command() -> None:
     assert arguments.json is False
 
 
+def test_parser_accepts_system_evaluation_command() -> None:
+    parser = build_parser()
+
+    arguments = parser.parse_args(
+        [
+            "evaluate-system",
+            "--split",
+            "holdout",
+            "--id",
+            "q031",
+            "--limit",
+            "1",
+            "--fail-on-gates",
+        ]
+    )
+
+    assert arguments.command == "evaluate-system"
+    assert arguments.split == "holdout"
+    assert arguments.question_ids == ["q031"]
+    assert arguments.limit == 1
+    assert arguments.fail_on_gates is True
+
+
 def test_source_location_formats_page_range() -> None:
     location = format_source_location(
         source_file="data/raw/test.pdf",

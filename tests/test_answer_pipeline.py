@@ -411,6 +411,29 @@ def test_structured_output_error_degrades_safely() -> None:
     assert len(repair_chain.calls) == 0
 
 
+def test_empty_structured_output_is_retried_once() -> None:
+    (
+        pipeline,
+        _,
+        answer_chain,
+        repair_chain,
+    ) = make_pipeline(
+        answer_responses=[
+            None,
+            make_answer(),
+        ],
+    )
+
+    result = pipeline.run(
+        "公司没有签劳动合同怎么办？"
+    )
+
+    assert result.answer.status == "answered"
+    assert result.generation_attempts == 2
+    assert len(answer_chain.calls) == 2
+    assert len(repair_chain.calls) == 0
+
+
 def test_follow_up_question_changes_status() -> None:
     (
         pipeline,
@@ -529,3 +552,4 @@ def test_pipeline_reports_progress_stages() -> None:
         "citation_validation",
         "complete",
     ]
+

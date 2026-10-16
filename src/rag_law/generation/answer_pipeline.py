@@ -529,12 +529,32 @@ class AnswerPipeline:
                 )
             )
 
+            # 部分 OpenAI 兼容服务偶尔返回空的 tool-call 结果。
+            # 这种瞬时空结果允许原样重试一次；其他异常仍立即安全降级。
+            if generated is None:
+                logger.warning(
+                    "[RAG] generation attempt=1 returned None; retrying once"
+                )
+                generation_attempts += 1
+                generated = (
+                    self.generation_chains
+                    .answer_chain
+                    .invoke(
+                        {
+                            "question": normalized_query,
+                            "context": (
+                                retrieval.context.text
+                            ),
+                        }
+                    )
+                )
+
             if not isinstance(
                 generated,
                 GeneratedAnswer,
             ):
                 raise TypeError(
-                    "首次生成结果不是 GeneratedAnswer："
+                    "结构化生成结果不是 GeneratedAnswer："
                     f"{type(generated)!r}"
                 )
 
@@ -617,6 +637,25 @@ class AnswerPipeline:
             "[RAG] citation validation failed attempt=1 errors=%s",
             first_validation.errors,
         )
+
+        if generation_attempts >= 2:
+            return self._build_result(
+                query=normalized_query,
+                answer=(
+                    self._generation_failed_answer()
+                ),
+                retrieval=retrieval,
+                generation_attempts=(
+                    generation_attempts
+                ),
+                validation_errors=(
+                    validation_errors
+                ),
+                total_started_at=total_started_at,
+                generation_started_at=(
+                    generation_started_at
+                ),
+            )
 
         # 引用校验失败时只允许修复一次。
         try:

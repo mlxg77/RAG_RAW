@@ -7,6 +7,11 @@
 import argparse
 from pathlib import Path
 
+from rag_law.evaluation.answer_metrics import (
+    DEFAULT_ANSWER_MARKDOWN_PATH,
+    DEFAULT_ANSWER_REPORT_PATH,
+    run_answer_evaluation,
+)
 from rag_law.evaluation.retrieval_metrics import (
     DEFAULT_EVALUATION_PATH,
     DEFAULT_REPORT_PATH,
@@ -655,6 +660,58 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_DENSE_WEIGHT,
     )
 
+    system_evaluate_parser = (
+        subparsers.add_parser(
+            "evaluate-system",
+            help="运行阶段 5 端到端系统评测",
+        )
+    )
+    system_evaluate_parser.add_argument(
+        "--questions",
+        default=str(DEFAULT_EVALUATION_PATH),
+    )
+    system_evaluate_parser.add_argument(
+        "--output-json",
+        default=str(DEFAULT_ANSWER_REPORT_PATH),
+    )
+    system_evaluate_parser.add_argument(
+        "--output-markdown",
+        default=str(
+            DEFAULT_ANSWER_MARKDOWN_PATH
+        ),
+    )
+    system_evaluate_parser.add_argument(
+        "--split",
+        choices=(
+            "all",
+            "development",
+            "holdout",
+        ),
+        default="all",
+        help="选择评测集切片；默认全部运行",
+    )
+    system_evaluate_parser.add_argument(
+        "--id",
+        action="append",
+        dest="question_ids",
+        help="只运行指定题目；可重复传入",
+    )
+    system_evaluate_parser.add_argument(
+        "--limit",
+        type=int,
+        help="仅运行筛选后的前 N 题，适合冒烟验证",
+    )
+    system_evaluate_parser.add_argument(
+        "--min-answer-score",
+        type=float,
+        default=DEFAULT_MIN_ANSWER_SCORE,
+    )
+    system_evaluate_parser.add_argument(
+        "--fail-on-gates",
+        action="store_true",
+        help="任一质量门槛未通过时返回非零退出码",
+    )
+
     add_document_parser = (
         subparsers.add_parser(
             "add-document",
@@ -841,6 +898,46 @@ def main() -> None:
             ),
             show_progress=True,
         )
+        return
+
+    if arguments.command == "evaluate-system":
+        try:
+            report = run_answer_evaluation(
+                evaluation_path=Path(
+                    arguments.questions
+                ),
+                report_path=Path(
+                    arguments.output_json
+                ),
+                markdown_path=Path(
+                    arguments.output_markdown
+                ),
+                min_answer_score=(
+                    arguments.min_answer_score
+                ),
+                split=arguments.split,
+                question_ids=(
+                    set(arguments.question_ids)
+                    if arguments.question_ids
+                    else None
+                ),
+                limit=arguments.limit,
+                show_progress=True,
+            )
+        except (FileNotFoundError, ValueError) as error:
+            parser.error(str(error))
+
+        if (
+            arguments.fail_on_gates
+            and not report["quality_gates"][
+                "all_met"
+            ]
+        ):
+            parser.exit(
+                1,
+                "阶段 5 质量门槛未全部通过。\n",
+            )
+
         return
 
     if arguments.command == "add-document":

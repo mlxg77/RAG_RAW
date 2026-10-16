@@ -10,7 +10,7 @@ from importlib.metadata import (
     version,
 )
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 import yaml
 from pydantic import BaseModel, Field
@@ -75,6 +75,28 @@ class EvaluationQuestion(BaseModel):
     should_answer: bool
     expected: list[ExpectedCitation]
     note: str = ""
+    split: Literal["development", "holdout"] = (
+        "development"
+    )
+    expected_behavior: Literal[
+        "answered",
+        "needs_clarification",
+        "insufficient_evidence",
+    ] | None = None
+
+    def resolved_expected_behavior(self) -> str:
+        """兼容旧评测集，并给端到端评测提供明确行为标签。"""
+
+        if self.expected_behavior is not None:
+            return self.expected_behavior
+
+        if self.should_answer:
+            return "answered"
+
+        if self.question_type == "事实不足":
+            return "needs_clarification"
+
+        return "insufficient_evidence"
 
 
 class RetrieverProtocol(Protocol):
@@ -206,6 +228,43 @@ def reciprocal_rank(
     return 0.0
 
 
+def ndcg_at_k(
+    results: list[RetrievalResult],
+    expected: set[tuple[str, str]],
+    k: int,
+) -> float:
+    """按二元相关性计算单题 nDCG@K。"""
+
+    if not expected:
+        raise ValueError(
+            "计算 nDCG 时 expected 不能为空"
+        )
+
+    if k <= 0:
+        raise ValueError("k 必须大于 0")
+
+    dcg = 0.0
+    seen: set[tuple[str, str]] = set()
+
+    for rank, result in enumerate(
+        results[:k],
+        start=1,
+    ):
+        key = result_key(result)
+
+        if key in expected and key not in seen:
+            dcg += 1.0 / math.log2(rank + 1)
+            seen.add(key)
+
+    ideal_count = min(len(expected), k)
+    ideal_dcg = sum(
+        1.0 / math.log2(rank + 1)
+        for rank in range(1, ideal_count + 1)
+    )
+
+    return dcg / ideal_dcg
+
+
 def nearest_rank_percentile(
     values: list[float],
     percentile: float,
@@ -269,6 +328,7 @@ def evaluate_retriever(
 
     latency_values: list[float] = []
     reciprocal_ranks: list[float] = []
+    ndcg_values: list[float] = []
 
     recall_values: dict[int, list[float]] = {
         k: []
@@ -328,6 +388,12 @@ def evaluate_retriever(
             expected,
         )
         reciprocal_ranks.append(rr)
+        ndcg = ndcg_at_k(
+            results,
+            expected,
+            10,
+        )
+        ndcg_values.append(ndcg)
 
         question_results.append(
             {
@@ -360,6 +426,7 @@ def evaluate_retriever(
                     per_question_recall[10]
                 ),
                 "reciprocal_rank": rr,
+                "ndcg_at_10": ndcg,
                 "latency_ms": latency_ms,
                 "retrieved": [
                     {
@@ -403,6 +470,9 @@ def evaluate_retriever(
             recall_values[10]
         ),
         "mrr": _average(reciprocal_ranks),
+        "ndcg_at_10": _average(
+            ndcg_values
+        ),
         "mean_latency_ms": _average(
             latency_values
         ),
@@ -577,9 +647,9 @@ def print_summary_table(
     print()
     print(
         "方法     R@1     R@3     R@5     "
-        "R@10    MRR     P95(ms)"
+        "R@10    MRR     nDCG@10 P95(ms)"
     )
-    print("-" * 64)
+    print("-" * 76)
 
     for method_name in (
         "bm25",
@@ -596,6 +666,7 @@ def print_summary_table(
             f"{summary['recall_at_5']:.3f}   "
             f"{summary['recall_at_10']:.3f}   "
             f"{summary['mrr']:.3f}   "
+            f"{summary['ndcg_at_10']:.3f}   "
             f"{summary['p95_latency_ms']:.1f}"
         )
 

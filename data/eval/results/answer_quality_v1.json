@@ -1,0 +1,4758 @@
+{
+  "metadata": {
+    "generated_at": "2026-10-16T21:05:27+08:00",
+    "evaluation_path": "C:\\Users\\issuser\\Desktop\\jerry\\RAG\\rag_law\\data\\eval\\questions_v1.yaml",
+    "evaluation_sha256": "78c88b9f9f43267184400ec491292b17393d59943b6d866d1a2b2ef14e5b3efb",
+    "articles_path": "C:\\Users\\issuser\\Desktop\\jerry\\RAG\\rag_law\\data\\processed\\articles.jsonl",
+    "articles_sha256": "51a1471bd9bc425cd434677fdc19e444b1aed19f0aea8ef08c04045f3a409227",
+    "question_count": 70,
+    "split_counts": {
+      "holdout": 70
+    },
+    "gate_scope": "holdout",
+    "llm_model": "deepseek-chat",
+    "embedding_model": "BAAI/bge-m3",
+    "rerank_model": "BAAI/bge-reranker-v2-m3",
+    "prompt_versions": [
+      "stage5-v1-behavior-calibrated"
+    ],
+    "min_answer_score": 0.15,
+    "report_schema_version": "answer-quality-v1"
+  },
+  "summary": {
+    "overall": {
+      "question_count": 70,
+      "answerable_question_count": 55,
+      "unanswerable_question_count": 15,
+      "pipeline_error_count": 0,
+      "behavior_accuracy": 0.8285714285714286,
+      "unanswerable_behavior_accuracy": 0.5333333333333333,
+      "answerable_behavior_accuracy": 0.9090909090909091,
+      "expected_citation_precision": 0.3151515151515151,
+      "citation_precision": 1.0,
+      "citation_recall": 0.7878787878787878,
+      "citation_exact_match_rate": 0.10909090909090909,
+      "evidence_faithfulness_rate": 1.0,
+      "fabricated_citation_rate": 0.0,
+      "retrieval": {
+        "question_count": 55,
+        "recall_at_1": 0.6909090909090909,
+        "recall_at_3": 0.8727272727272727,
+        "recall_at_5": 0.9,
+        "recall_at_10": 0.9,
+        "mrr": 0.8272727272727273,
+        "ndcg_at_10": 0.8272273396053583
+      },
+      "latency_ms": {
+        "mean": 7735.862672857807,
+        "p50": 7575.283400001354,
+        "p95": 13957.036000007065
+      }
+    },
+    "by_split": {
+      "holdout": {
+        "question_count": 70,
+        "answerable_question_count": 55,
+        "unanswerable_question_count": 15,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 0.8285714285714286,
+        "unanswerable_behavior_accuracy": 0.5333333333333333,
+        "answerable_behavior_accuracy": 0.9090909090909091,
+        "expected_citation_precision": 0.3151515151515151,
+        "citation_precision": 1.0,
+        "citation_recall": 0.7878787878787878,
+        "citation_exact_match_rate": 0.10909090909090909,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 55,
+          "recall_at_1": 0.6909090909090909,
+          "recall_at_3": 0.8727272727272727,
+          "recall_at_5": 0.9,
+          "recall_at_10": 0.9,
+          "mrr": 0.8272727272727273,
+          "ndcg_at_10": 0.8272273396053583
+        },
+        "latency_ms": {
+          "mean": 7735.862672857807,
+          "p50": 7575.283400001354,
+          "p95": 13957.036000007065
+        }
+      }
+    },
+    "by_type": {
+      "事实不足": {
+        "question_count": 5,
+        "answerable_question_count": 0,
+        "unanswerable_question_count": 5,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 0.2,
+        "unanswerable_behavior_accuracy": 0.2,
+        "answerable_behavior_accuracy": 1.0,
+        "expected_citation_precision": 0.0,
+        "citation_precision": 1.0,
+        "citation_recall": 0.0,
+        "citation_exact_match_rate": 1.0,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 0,
+          "recall_at_1": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "recall_at_10": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_10": 0.0
+        },
+        "latency_ms": {
+          "mean": 6893.183580000186,
+          "p50": 7561.698399993475,
+          "p95": 8766.965999995591
+        }
+      },
+      "口语场景": {
+        "question_count": 20,
+        "answerable_question_count": 20,
+        "unanswerable_question_count": 0,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 0.9,
+        "unanswerable_behavior_accuracy": 1.0,
+        "answerable_behavior_accuracy": 0.9,
+        "expected_citation_precision": 0.28125,
+        "citation_precision": 1.0,
+        "citation_recall": 0.9,
+        "citation_exact_match_rate": 0.05,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 20,
+          "recall_at_1": 0.55,
+          "recall_at_3": 0.95,
+          "recall_at_5": 0.95,
+          "recall_at_10": 0.95,
+          "mrr": 0.7333333333333333,
+          "ndcg_at_10": 0.7892789260714372
+        },
+        "latency_ms": {
+          "mean": 8580.570380001154,
+          "p50": 7575.283400001354,
+          "p95": 14919.361799999024
+        }
+      },
+      "指定条号": {
+        "question_count": 10,
+        "answerable_question_count": 10,
+        "unanswerable_question_count": 0,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 0.9,
+        "unanswerable_behavior_accuracy": 1.0,
+        "answerable_behavior_accuracy": 0.9,
+        "expected_citation_precision": 0.391304347826087,
+        "citation_precision": 1.0,
+        "citation_recall": 0.9,
+        "citation_exact_match_rate": 0.3,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 10,
+          "recall_at_1": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        "latency_ms": {
+          "mean": 7876.871079999546,
+          "p50": 7748.937700001989,
+          "p95": 10994.039499986684
+        }
+      },
+      "直接查询": {
+        "question_count": 15,
+        "answerable_question_count": 15,
+        "unanswerable_question_count": 0,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 1.0,
+        "unanswerable_behavior_accuracy": 1.0,
+        "answerable_behavior_accuracy": 1.0,
+        "expected_citation_precision": 0.3191489361702128,
+        "citation_precision": 1.0,
+        "citation_recall": 1.0,
+        "citation_exact_match_rate": 0.13333333333333333,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 15,
+          "recall_at_1": 1.0,
+          "recall_at_3": 1.0,
+          "recall_at_5": 1.0,
+          "recall_at_10": 1.0,
+          "mrr": 1.0,
+          "ndcg_at_10": 1.0
+        },
+        "latency_ms": {
+          "mean": 7605.380026667262,
+          "p50": 7316.353900008835,
+          "p95": 12010.96420000249
+        }
+      },
+      "超范围拒答": {
+        "question_count": 10,
+        "answerable_question_count": 0,
+        "unanswerable_question_count": 10,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 0.7,
+        "unanswerable_behavior_accuracy": 0.7,
+        "answerable_behavior_accuracy": 1.0,
+        "expected_citation_precision": 0.0,
+        "citation_precision": 1.0,
+        "citation_recall": 0.0,
+        "citation_exact_match_rate": 1.0,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 0,
+          "recall_at_1": 0.0,
+          "recall_at_3": 0.0,
+          "recall_at_5": 0.0,
+          "recall_at_10": 0.0,
+          "mrr": 0.0,
+          "ndcg_at_10": 0.0
+        },
+        "latency_ms": {
+          "mean": 4900.928910000948,
+          "p50": 3055.2641999966,
+          "p95": 8733.718000003137
+        }
+      },
+      "跨条文": {
+        "question_count": 4,
+        "answerable_question_count": 4,
+        "unanswerable_question_count": 0,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 0.75,
+        "unanswerable_behavior_accuracy": 1.0,
+        "answerable_behavior_accuracy": 0.75,
+        "expected_citation_precision": 0.2,
+        "citation_precision": 1.0,
+        "citation_recall": 0.3333333333333333,
+        "citation_exact_match_rate": 0.0,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 4,
+          "recall_at_1": 0.125,
+          "recall_at_3": 0.125,
+          "recall_at_5": 0.375,
+          "recall_at_10": 0.375,
+          "mrr": 0.375,
+          "ndcg_at_10": 0.28532085947766006
+        },
+        "latency_ms": {
+          "mean": 12155.785775004915,
+          "p50": 9265.859000006458,
+          "p95": 16315.729100009776
+        }
+      },
+      "跨法律": {
+        "question_count": 6,
+        "answerable_question_count": 6,
+        "unanswerable_question_count": 0,
+        "pipeline_error_count": 0,
+        "behavior_accuracy": 0.8333333333333334,
+        "unanswerable_behavior_accuracy": 1.0,
+        "answerable_behavior_accuracy": 0.8333333333333334,
+        "expected_citation_precision": 0.4375,
+        "citation_precision": 1.0,
+        "citation_recall": 0.5833333333333334,
+        "citation_exact_match_rate": 0.0,
+        "evidence_faithfulness_rate": 1.0,
+        "fabricated_citation_rate": 0.0,
+        "retrieval": {
+          "question_count": 6,
+          "recall_at_1": 0.25,
+          "recall_at_3": 0.5833333333333334,
+          "recall_at_5": 0.6666666666666666,
+          "recall_at_10": 0.6666666666666666,
+          "mrr": 0.7222222222222222,
+          "ndcg_at_10": 0.59510695315922
+        },
+        "latency_ms": {
+          "mean": 7491.869699998158,
+          "p50": 8231.158399998094,
+          "p95": 9486.980999994557
+        }
+      }
+    },
+    "gate_scope": {
+      "question_count": 70,
+      "answerable_question_count": 55,
+      "unanswerable_question_count": 15,
+      "pipeline_error_count": 0,
+      "behavior_accuracy": 0.8285714285714286,
+      "unanswerable_behavior_accuracy": 0.5333333333333333,
+      "answerable_behavior_accuracy": 0.9090909090909091,
+      "expected_citation_precision": 0.3151515151515151,
+      "citation_precision": 1.0,
+      "citation_recall": 0.7878787878787878,
+      "citation_exact_match_rate": 0.10909090909090909,
+      "evidence_faithfulness_rate": 1.0,
+      "fabricated_citation_rate": 0.0,
+      "retrieval": {
+        "question_count": 55,
+        "recall_at_1": 0.6909090909090909,
+        "recall_at_3": 0.8727272727272727,
+        "recall_at_5": 0.9,
+        "recall_at_10": 0.9,
+        "mrr": 0.8272727272727273,
+        "ndcg_at_10": 0.8272273396053583
+      },
+      "latency_ms": {
+        "mean": 7735.862672857807,
+        "p50": 7575.283400001354,
+        "p95": 13957.036000007065
+      }
+    }
+  },
+  "quality_gates": {
+    "retrieval_recall_at_10": {
+      "target": 0.9,
+      "actual": 0.9,
+      "met": true
+    },
+    "citation_precision": {
+      "target": 1.0,
+      "actual": 1.0,
+      "met": true
+    },
+    "fabricated_citation_rate": {
+      "target": 0.0,
+      "actual": 0.0,
+      "met": true
+    },
+    "unanswerable_behavior_accuracy": {
+      "target": 0.9,
+      "actual": 0.5333333333333333,
+      "met": false
+    },
+    "pipeline_error_count": {
+      "target": 0,
+      "actual": 0,
+      "met": true
+    },
+    "all_met": false
+  },
+  "questions": [
+    {
+      "id": "q031",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "参加职工基本养老保险的主体有哪些？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国社会保险法",
+          "article": "第十条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:6517105176a3603c57013946075360642a741b934bca57fdf2240a01275a038a",
+          "law": "中华人民共和国社会保险法",
+          "article": "第十条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:4367e92b69cb27e713e799910ec01855507c8bdfcf43cd292604abcb0a0448e5",
+          "law": "中华人民共和国社会保险法",
+          "article": "第十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 2,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.8738057017326355,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 3286.7740000074264,
+        "context": 1129.3728000018746,
+        "generation": 7594.769799994538,
+        "total": 12010.96420000249
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q032",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "消费者是否有权了解商品的真实情况？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第八条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:9153acdce1e245e88843615035e5980931ccedcaf231e17f93adbf0abee797a4",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第八条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:3f18a1aa51af7daea6c3bc024143d4d2eabe8fddc6046805c859982729057508",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第二十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9986138343811035,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1356.361799989827,
+        "context": 1049.9344999989262,
+        "generation": 3866.898599997512,
+        "total": 6273.236900000484
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q033",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "食品安全法禁止生产经营哪些食品？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国食品安全法",
+          "article": "第三十四条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:eaa32637998f1fc4131943b326ec999029d4ff676d15afc451736e9d2a02e7ce",
+          "law": "中华人民共和国食品安全法",
+          "article": "第三十四条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:a150af5914c3326b660a4b2320a23f873d91bcbf511a5ecfc8057bbff4bb2464",
+          "law": "中华人民共和国食品安全法",
+          "article": "第二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:0076f12385ae1c88817ac963e6b531751747d36b73a48f6ba7b614c83312c192",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百二十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:f000e4f87313558ab61438aa7957a5bdfd932e58b4821d17cdb1b3f4aa587367",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百二十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9980704188346863,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1795.5505999998422,
+        "context": 2285.5401999986498,
+        "generation": 5855.656200001249,
+        "total": 9936.81359999755
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q034",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "申请机动车驾驶证应当符合什么条件？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第十九条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 1,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 1,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:3fa214e5353d52cc1dc51dc4d679e37a6fe15f562e2cfc4108bc2661e039c547",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第十九条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9962777495384216,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1523.215799999889,
+        "context": 1036.3798999896972,
+        "generation": 4181.499700003769,
+        "total": 6741.122999999789
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q035",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "反家庭暴力法所称家庭暴力包括哪些行为？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:95f8d640cab836ccffdfd5a0a748b5e95c89f4d79e6c3fdd7afecf5a4e4c423e",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:56acf38457cad9dc0560b0eb1551a5173613df2443c8fac73034b492f11fe4e6",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第三十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:b3ede0e9606dfbbdd34bff2431d73b9b54560e732129fc46b2de78b9720a28d4",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:9c48847954ee4d93ddb853106302d06fb2198be0dae2ca37e95ab5fedd300a85",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第三十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9984242916107178,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1353.097000013804,
+        "context": 1161.4124000043375,
+        "generation": 5145.943800001987,
+        "total": 7660.486100008711
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q036",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "未成年人的父母或者其他监护人应履行哪些监护职责？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第十六条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 6,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 6,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:334cd0fb75c2c5238ebd7e9f43e1f6d0fb52d181837080bada61d70e42594c29",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第十六条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:7ddc866045fc9be6cb6c4f1d7acd5167d643214821dba575db3d6cacbf9520d4",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:dd250f847e55d3be5a404486852b23d2b02fb23399a43b24e0e24021d6c362c1",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E006",
+          "chunk_id": "sha256:e5559a67b10d0109626bc0d4a3a3c19b79740840f8125b1ce0bd3da841a90e46",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:4b40b6d91c0255315ee25b0ad0c0edaa8efb6d8774c4fec2a24de88bf1a881e3",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第一百一十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:c81dbf141e86833f714fb361091e00237cc1cf9af44453417f019931ba845bee",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第四十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9998834133148193,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1437.9308999923524,
+        "context": 1034.4515000033425,
+        "generation": 5783.8308999926085,
+        "total": 8256.23959999939
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q037",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "家庭成员是否应当经常看望或者问候老年人？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第十八条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:43fd649410e8f5e42ac9f6cdd6a3d6c52cf786d1b8d145a7a3ed32c58fb7486a",
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第十八条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:2b7dae04e5bcfba8fee476cad2ab1f398c41265cbd91d6b07b3ea8ad410ba8ab",
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:ce74fa2ef940f1c0905c246730a3b07d1e79579ec1ee02316bc9bf28da679b22",
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:041b79ab0fb80c779435edaec105dd997d32f37b20f00c8c411e4a7e9823c45c",
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第二十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9985573887825012,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1339.1619000030914,
+        "context": 1053.5880000097677,
+        "generation": 4014.730099996086,
+        "total": 6407.506599993212
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q038",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "居民身份证的有效期分别是多久？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国居民身份证法",
+          "article": "第五条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 1,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 1,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:0dfd1c9cf211656fee7b86b507ea9718bf5265229a831dff0ad028dd91dc3479",
+          "law": "中华人民共和国居民身份证法",
+          "article": "第五条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9942508935928345,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1412.8331999963848,
+        "context": 1031.514899994363,
+        "generation": 2493.595499996445,
+        "total": 4937.972800005809
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q039",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "刑法对不同年龄的人承担刑事责任是怎样规定的？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第十七条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:eae83ee1799e3547bb73691b7bb29363e0316bbac9abfdb29db81a6d23a7617f",
+          "law": "中华人民共和国刑法",
+          "article": "第十七条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:88953d99ee10f8b865fb278faa3a58a00921cd0f19671adf09fcd3a41abf9b84",
+          "law": "中华人民共和国刑法",
+          "article": "第十七条之一",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:a0f768265e52ff7cc86257f391e81c53b7cb7059cadfbbf716e2b1c61b81e6cb",
+          "law": "中华人民共和国刑法",
+          "article": "第四十九条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:367fd9077bbf3d74b090b9a13d595e85987518896cdfe64e38b0962d44f51b14",
+          "law": "中华人民共和国刑法",
+          "article": "第一百条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9739891290664673,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1240.5449999932898,
+        "context": 1002.1735999907833,
+        "generation": 5073.574299996835,
+        "total": 7316.353900008835
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q040",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "国家实行的标准工作时间是多少？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动法",
+          "article": "第三十六条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:fae5e3c4d00e20b3c8c3620a7a13e74f1d6c23cde1a9ad4855a8766b285b96ad",
+          "law": "中华人民共和国劳动法",
+          "article": "第三十六条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:9665486fe15e9d34f663070aeb159eafde587ab03a345246f3bdc02986553080",
+          "law": "中华人民共和国劳动法",
+          "article": "第三十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:9772c461068bae21b2a2e68e22b950da028825982bb7bf2e0e49d904b5d57936",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第六十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:a326b02f1bc7789c4cc3f1e8bfb189e090d264862c01eac188fb9e9bb287d7a2",
+          "law": "中华人民共和国劳动法",
+          "article": "第四十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9425241351127625,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1397.8588999889325,
+        "context": 1088.5573999985354,
+        "generation": 3728.3083999936935,
+        "total": 6214.751499996055
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q041",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "竞业限制人员的范围和最长期限如何规定？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第二十四条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:87c6948a37cf243894ba4edbf6bd65e85c0bf861a82c0615f771cd4b8ef51b0a",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第二十四条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:4bf0b003acbafa05af4cac1f89d4e1351cf1452b98a8e88970ff3e2d585082cc",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第二十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 2,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9945225715637207,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1431.9072000071174,
+        "context": 1265.1594000053592,
+        "generation": 7942.5889999984065,
+        "total": 10639.684699999634
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q042",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "民法典如何定义隐私？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国民法典",
+          "article": "第一千零三十二条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:ffe899168334752bbcb05a9275b1e833d5a2e94e65f216dac3cb0c5e9221bc18",
+          "law": "中华人民共和国民法典",
+          "article": "第一千零三十二条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:9351de8682a948ecbbf0824a8ca0507d05ab4778f69490b626c1bc8d20e2a8ca",
+          "law": "中华人民共和国民法典",
+          "article": "第一千零三十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:2b160c2463bf6a8d7043d34ab8dd38fbaf506e17f437680d7714136e6bc76817",
+          "law": "中华人民共和国民法典",
+          "article": "第一千零三十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9774264693260193,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1438.5442000057083,
+        "context": 1076.546700001927,
+        "generation": 3968.4866999887163,
+        "total": 6483.618700003717
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q043",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "预包装食品标签应当标明哪些事项？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国食品安全法",
+          "article": "第六十七条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:6aac210af7ca0c1060c3254c8ae2fa94e0905bd0cce1153f14e706ce1ce04a29",
+          "law": "中华人民共和国食品安全法",
+          "article": "第六十七条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:d407d2063581523120c28d368aa00f3854ce7e119b34a117964e085e5d4ae19e",
+          "law": "中华人民共和国食品安全法",
+          "article": "第九十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:5f64b2b10ff5f361fb14f9b8126e19edc9b0f11cf9998d7b2e1242af0c047635",
+          "law": "中华人民共和国食品安全法",
+          "article": "第七十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9997066855430603,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1642.9141999979038,
+        "context": 1055.3857999911997,
+        "generation": 4773.245899996255,
+        "total": 7471.583799997461
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q044",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "公民申请普通护照需要提交哪些材料？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国护照法",
+          "article": "第六条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:36b9fcfcab72bbc23afab9b31895376ed117a103d02035bf7082610f97ae8d18",
+          "law": "中华人民共和国护照法",
+          "article": "第六条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:7472736c0372dd20dbdbc444ca9e0f00d1eff280fbf2d164ebefd070751657b6",
+          "law": "中华人民共和国护照法",
+          "article": "第五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9986199140548706,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1484.176199999638,
+        "context": 1145.6474000005983,
+        "generation": 3482.2484000033,
+        "total": 6112.101499995333
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q045",
+      "split": "holdout",
+      "type": "直接查询",
+      "question": "哪些人员可以享受生育保险待遇？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国社会保险法",
+          "article": "第五十四条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:86336876f1d9ef43a02143c3a95dc1c942fda59040e4eee80c11d177002e7e6e",
+          "law": "中华人民共和国社会保险法",
+          "article": "第五十四条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:53abc95e37925fb3a7996bfce7aae17e253d49c7a9b5c189bc5a2dce39347126",
+          "law": "中华人民共和国社会保险法",
+          "article": "第五十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:7bc2cf7755dc61fdbf97460a185790a9c21180c9347369883b50c251324d5bba",
+          "law": "中华人民共和国社会保险法",
+          "article": "第五十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:f991a6809cbc2412666ea0a4ae9241121750d484301c603089946c8239be0ce9",
+          "law": "中华人民共和国劳动法",
+          "article": "第六十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:f5766457d5368faf19338f99773c25cb5731d6ee4f436aafd97a86f9623b9e24",
+          "law": "中华人民共和国劳动法",
+          "article": "第七十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9401763677597046,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1762.0777999982238,
+        "context": 1356.7313000094146,
+        "generation": 4499.424600013299,
+        "total": 7618.263500000467
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q046",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "我想主动离职，需要提前多少天通知公司？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十七条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.6309297535714575
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:6d2ca11704748bb438722fd3652451a69d9ef3b6d4906650b1d5cbc7e0ddd7ca",
+          "law": "中华人民共和国劳动法",
+          "article": "第三十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:32268b2939f59976a02f57ed3deff33af303b1c7a7313400423f5a5ef181aa67",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十七条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.8908262848854065,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1708.8513000053354,
+        "context": 1269.9649999995017,
+        "generation": 4356.688600004418,
+        "total": 7335.543699999107
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q047",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "员工在公司打架并严重违反规章制度，公司能解除劳动合同吗？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十九条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.6309297535714575
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:6f3bca9891a95efd290901a8a5c45eedfabb6e81fefdd5a703856ad6cbdd1f85",
+          "law": "中华人民共和国劳动法",
+          "article": "第二十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:a406e3dcac258289ff148fb21f7747f95d69bdc51c6973592de3467531a65b9a",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十九条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:8474ceb4a6fb3d03b0a2980bbedd47462019a1c9536bd47ba2c482458b079332",
+          "law": "中华人民共和国劳动法",
+          "article": "第三十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:3aac9d5ad0802fecffda50b7acbb12eacbb5675cfe40865f96e7f5e95f23b94f",
+          "law": "中华人民共和国劳动法",
+          "article": "第二十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9024221897125244,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1648.9347000024281,
+        "context": 1058.8000999996439,
+        "generation": 5280.987099991762,
+        "total": 7988.762900000438
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q048",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "公司经营困难要一次裁掉很多人，需要遵守什么程序？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十一条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.6309297535714575
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:48c81daae4905226260cedf1ed19921673d5f8e5f731b12ba31385ec3950ed28",
+          "law": "中华人民共和国劳动法",
+          "article": "第二十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:61855753bf41c94a13d4a13e4ea9fde4dda21139ee178b8ef88fb8567710fb03",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十一条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.3912269175052643,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1617.5242000026628,
+        "context": 1034.4936000037706,
+        "generation": 6152.02350000618,
+        "total": 8804.072200000519
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q049",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "离职后公司不肯给我出具解除劳动合同证明，法律怎么规定？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第五十条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg_at_10": 0.5
+      },
+      "citations": [
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:4495030b3a3c7d06d372cf087b06daabab82f218e31687ef621f222d6db36e72",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第五十条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:2631ebb3b96dad6de00e06f84e9d0b86b6d3e5c23c7f8785e6a777f7e2caf7e6",
+          "law": "中华人民共和国社会保险法",
+          "article": "第八十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:82442de02c366f984a09c3ef290f347867fff5485cfd1c090187a2d2691ea007",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第八十九条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9864069819450378,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1366.7101000028197,
+        "context": 1002.5198999937857,
+        "generation": 4076.186799997231,
+        "total": 6445.442700001877
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q050",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "单位天天让我加班，法律对每天和每月的加班时长有限制吗？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动法",
+          "article": "第四十一条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.6309297535714575
+      },
+      "citations": [
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:a326b02f1bc7789c4cc3f1e8bfb189e090d264862c01eac188fb9e9bb287d7a2",
+          "law": "中华人民共和国劳动法",
+          "article": "第四十一条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:fae5e3c4d00e20b3c8c3620a7a13e74f1d6c23cde1a9ad4855a8766b285b96ad",
+          "law": "中华人民共和国劳动法",
+          "article": "第三十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:6a27068bacf8c4b4a464ae282aa6c84fe13cc13542fcc5857ef14b086263e1ad",
+          "law": "中华人民共和国劳动法",
+          "article": "第四十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:01f5c206ddcfd935d56fc9905e45921cbdb2d773b1b830d60f454f533616c43c",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:705094b5eae271a1c022ecf524b9f55ee6d036ee592855861a1472c7d6e6692a",
+          "law": "中华人民共和国劳动法",
+          "article": "第九十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.7695732712745667,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1499.2651000065962,
+        "context": 1120.2265000029001,
+        "generation": 4309.791299994686,
+        "total": 6929.301900003338
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q051",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "老板一个月都不安排休息日，这符合劳动法吗？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动法",
+          "article": "第三十八条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:9665486fe15e9d34f663070aeb159eafde587ab03a345246f3bdc02986553080",
+          "law": "中华人民共和国劳动法",
+          "article": "第三十八条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:040e9c48b47f7d0ea7a680c3c723168551bad8ba4fd44f601372dc48e8899b47",
+          "law": "中华人民共和国劳动法",
+          "article": "第三十九条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:b5e0ccaea1d03582556b9f0f73d31d16754892c7cdec92945799ea75b97ed57c",
+          "law": "中华人民共和国劳动法",
+          "article": "第四十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:d095b5ad09ed0ac4633fd77c15f06d457eb82da4e9f62bf7d8cc0221adba9e92",
+          "law": "中华人民共和国劳动法",
+          "article": "第四十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:80543374bc3240b45c02fbf11aada5d3307b26e7981fde25239223d801601904",
+          "law": "中华人民共和国劳动法",
+          "article": "第四十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.6325981020927429,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1657.2134000016376,
+        "context": 1073.2136000005994,
+        "generation": 5536.141900010989,
+        "total": 8266.5960000013
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q052",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "商家把普通商品冒充进口正品卖给我，我可以要求多少赔偿？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第五十五条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 6,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 6,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:e8118c2450929a4d11fc894de208a8aefe12384f1c477ede5d5113a69521dbc3",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第五十五条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:f8df405af3aaa260761f495577d7c76a65f88a90a57a1c702cb4f0a331f9ffe5",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百四十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:e58cdf544abf75f29c91a8b1895d19ed7df58ab6c45ab5c32075c0958b859268",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第四十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E006",
+          "chunk_id": "sha256:c642d2c7cc94dfe73299b1308217ce33f3d4540d75b62b0e989e5e6099323f4f",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第五十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:491adab6263af26aefccf15861c05c25b4829c77975417cef2a6e59a80a57ed9",
+          "law": "中华人民共和国刑法",
+          "article": "第一百四十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:3ab3493d1e943aaf1e904554309e3ce663dcc26e497dbd869da8acae944286bf",
+          "law": "中华人民共和国刑法",
+          "article": "第二百一十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.6431764960289001,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1597.9323999927146,
+        "context": 1050.106999988202,
+        "generation": 6264.25520000339,
+        "total": 8912.330200008
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q053",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "买东西和商家发生争议后，我可以通过哪些途径解决？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第三十九条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:7ca35410f07a2cca9f65c73fa49ec30d1173c95e00b0ea1f6d975995f0b53376",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第三十九条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:e58cdf544abf75f29c91a8b1895d19ed7df58ab6c45ab5c32075c0958b859268",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第四十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:cc92e13448715a77a36898929853599a137b28d8cf4c3b4b638390e33648a636",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第四十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:843d518892011e866f15296b91784ec5ba48cdc38f2a03f9594ee5ceced48f9e",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第四十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:4d342a3ced22b29adbba06fab602d975efbf59a44c72931196798f05ecd5bda7",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第四十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9840998649597168,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1756.039799991413,
+        "context": 1157.831400007126,
+        "generation": 4844.744599991827,
+        "total": 7758.646799993585
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q054",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "有人没有取得食品生产经营许可就开店卖食品，会承担什么责任？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百二十二条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.6309297535714575
+      },
+      "citations": [
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:094697246c608240b3c90f2aaebae7fccd2984f6369fbf8e06cab85a93f6fdcd",
+          "law": "中华人民共和国食品安全法",
+          "article": "第三十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:007f3926679ad0c6bddaba8f902075c9117ad2cea808aa338053f47e2fd07914",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百二十二条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9618222713470459,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1517.5379000138491,
+        "context": 1164.3758999998681,
+        "generation": 4893.261000004713,
+        "total": 7575.283400001354
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q055",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "机动车经过人行横道时不减速，遇到行人正在通过也不停车，合法吗？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第四十七条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:4b104863988e99610ef83abde51ed3815be5474df0c3dae50450e3ef3ff72706",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第四十七条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:444c8525096ab7514bc3757ee6712a42be3e04dea4f3c3ade648dd606fdde0f0",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第四十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9965026378631592,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1585.0210999924457,
+        "context": 1102.8719000023557,
+        "generation": 4053.269800002454,
+        "total": 6741.1879999999655
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q056",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "发生交通事故后，驾驶人首先应当做什么？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第七十条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:91e952e1c7a4542e45d1e317d0bbd6fdfa307c6e69526d18b243c6e112861a1a",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第七十条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:7a01240256152c0df0501932c3fd2a433fe94cc59c2da2b564b2918cc3e575c4",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第七十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9666997790336609,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1601.3030000030994,
+        "context": 1118.2504000025801,
+        "generation": 4197.622299994691,
+        "total": 6917.2002999985125
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q057",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "公司欠缴社会保险费，社保征收机构可以采取什么措施？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国社会保险法",
+          "article": "第六十三条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:7712270c143cbc0a7d43343b887c44c8d190e88fd6b78b2a6730b18bc59687e2",
+          "law": "中华人民共和国社会保险法",
+          "article": "第六十三条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:f31a0651f33eb378d323eba28c7b51fab30b08e9a6af48e6889fb850ae134d80",
+          "law": "中华人民共和国社会保险法",
+          "article": "第八十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:31009c6545c7d6b42f91476a04520ded76e8b8883cfa4d454129e7c92f037f65",
+          "law": "中华人民共和国劳动法",
+          "article": "第一百条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9916353225708008,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1845.6380999996327,
+        "context": 1088.8248999981442,
+        "generation": 4364.33379999653,
+        "total": 7298.823100005393
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q058",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "孩子在网上被同学持续辱骂和传播隐私，平台应当怎么处理？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十七条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:84126274b4fa9de7aca5b42987242959ffcad50cdf027156539c4fb91d631b31",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十七条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:577ad2e3c244b73a9d3a4aaeb674a053e5ee5c7290be36182b0a8bb498f43444",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:01fdc80c50af79265fef07e5165091edb8a3db2ee8b9fdf53f0e8f968cb67e2c",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:022bb09e0b43023bf7e04a396612c6e8c051c2e8fd20b0f65658085a31e577bb",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:2b06c372d1fe69ae783f292a0dd22dc8f90bf2ea074736aa68d273b4214c1c49",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第六十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 2,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.334169864654541,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1514.722099993378,
+        "context": 1059.0370999998413,
+        "generation": 12345.57560000394,
+        "total": 14919.361799999024
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q059",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "警方接到家暴报案后，什么情况下可以告诫施暴人？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第十六条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.6309297535714575
+      },
+      "citations": [
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:200557fe9a4a71d09376da5a5a021fa921ab1a28134978137c410a2a8ff576fe",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第十六条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:410ea5351a3fc02578504789a36d8359a82f8577e7a12e311290ad5e74daa272",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:dd7d3d6773ec034550b8b284e45c2778785b6916eecbe615caa94f988ca5ab24",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:da8cfcae5547e7355f4731265fb4da1b62c85e18faccdf1eddafc7dc72785f99",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.8938256502151489,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1511.1693999933777,
+        "context": 1211.7190999997547,
+        "generation": 3939.258400001563,
+        "total": 6662.167800008319
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q060",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "法院签发人身安全保护令后，可以采取哪些保护措施？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十九条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:ec2fef802dfba04d34e15d182225dea2645c543b3cdac340b100558123f7e251",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十九条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:8ce73d701739abbe62a46dd986f0b66abe23e251d17b971e7a65f73aaad53a0d",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第三十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:9111d5c3ca6f419e4a14fd011950f21b40dff037f5e6b766f7e1463c23eb1609",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第三十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:37e90d5e631908ed218ff31ce3d6e77c52f6e151f3e5710e05f6c5b4b2734dcf",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第三十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:358ca98dab41bc025ddb9e5bb6ef8027b1fb264715d607d25f0c62575663abf6",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9555279016494751,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1518.3001999976113,
+        "context": 1066.3988000014797,
+        "generation": 4455.787099999725,
+        "total": 7040.51689998596
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q061",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "我的身份证有效期满了，应当怎样办理换领？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国居民身份证法",
+          "article": "第十一条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:23d20dfdaeec6a7060957311154e9a2660b42d74226a4778ae1d1a56daed0903",
+          "law": "中华人民共和国居民身份证法",
+          "article": "第十一条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:36d9e9b36a068d8fd631f6690140df5f817a93b8debd557a5974c64135e04236",
+          "law": "中华人民共和国居民身份证法",
+          "article": "第十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:f1b3b937d3fd8bd11ca166bd6216ecc3828e96e4c5b8585fe66c236fd37dc068",
+          "law": "中华人民共和国居民身份证法",
+          "article": "第二十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:0b2a4a1c4491746c533944b6539676ad056148d76c1e0a04fdce8c54e87c31fb",
+          "law": "中华人民共和国居民身份证法",
+          "article": "第三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9497979879379272,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1693.4716000105254,
+        "context": 1050.6409000081476,
+        "generation": 5001.576100010425,
+        "total": 7745.714799995767
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q062",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "警察在什么情况下可以查验我的居民身份证？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "generation_failed",
+      "behavior_correct": false,
+      "expected": [
+        {
+          "law": "中华人民共和国居民身份证法",
+          "article": "第十五条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [],
+      "generation_attempts": 2,
+      "validation_error_count": 1,
+      "top_relevance_score": 0.9984630346298218,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1566.596999997273,
+        "context": 1087.8699000022607,
+        "generation": 9439.048700005515,
+        "total": 12093.546000003698
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q063",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "偷偷拿走别人价值较高的财物，刑法如何处理？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第二百六十四条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 1,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 1,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg_at_10": 0.5
+      },
+      "citations": [
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:f9ee4f2a4f807a81af12531e34e88eda3e9b2fb165ba602783e019ffeb4cfccc",
+          "law": "中华人民共和国刑法",
+          "article": "第二百六十四条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 2,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.8495398759841919,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1627.715700000408,
+        "context": 1217.638000001898,
+        "generation": 12603.227899991907,
+        "total": 15448.603400000138
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q064",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "有人虚构投资项目骗走我的钱，可能构成什么犯罪？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "needs_clarification",
+      "behavior_correct": false,
+      "expected": [
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第二百六十六条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "reciprocal_rank": 0.0,
+        "ndcg_at_10": 0.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:549d44b91e43ae400fd21c2378338ee8c33dbd94bde9382a194d8d16563d01a5",
+          "law": "中华人民共和国刑法",
+          "article": "第二百二十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:e9cf1013bf2dfaebac0bc32226938896d3f0371c7acdaf0c47f967e4dc6cc07c",
+          "law": "中华人民共和国刑法",
+          "article": "第一百九十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.31083881855010986,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 2744.5068000088213,
+        "context": 1340.1327000028687,
+        "generation": 5807.666900000186,
+        "total": 9892.332200004603
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q065",
+      "split": "holdout",
+      "type": "口语场景",
+      "question": "为了制止正在进行的不法侵害造成对方损害，是否一定要负刑事责任？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第二十条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:77594ae6b4064d737619bc7affc4fba742e3420186ac556abdf228baec558d48",
+          "law": "中华人民共和国刑法",
+          "article": "第二十条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:84307f89c09a0ff9a9491e43a1426bdbff1a058b596b9a7053756afdc6ebc1a1",
+          "law": "中华人民共和国治安管理处罚法",
+          "article": "第十九条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9996583461761475,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1498.3900000079302,
+        "context": 1245.8812999975635,
+        "generation": 4091.668599998229,
+        "total": 6835.973500012187
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q066",
+      "split": "holdout",
+      "type": "跨条文",
+      "question": "单位不缴社保，我解除劳动合同后能否要求经济补偿？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "needs_clarification",
+      "behavior_correct": false,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十八条"
+        },
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十六条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 0.25,
+        "ndcg_at_10": 0.2640681225725909
+      },
+      "citations": [
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:ddb3db2bbab8a8b055c424003edf9d2a6e68a63d38a332de64e3df39a0efade0",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十六条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:55b51ba970e4f7cfc4f315395cf49d2914cbd77a8af51b0b9f6370b3d79c1aa3",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:1fac97e739fee68b62dd540ba8489ddff5b9dc8932f90da494d65c2ce6260195",
+          "law": "中华人民共和国劳动法",
+          "article": "第二十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:780a5e1980ad2051fa7ef5ac14a1618ef4670bb1f0056a1aee064b0d42da872e",
+          "law": "中华人民共和国劳动法",
+          "article": "第九十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:4c50f3a1b1331ce25f40ca2c9bf6dd6a48656d1b7b3042618d57bd22d409e0ad",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第八十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.8388946652412415,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1617.5707000074908,
+        "context": 1173.69840000174,
+        "generation": 6474.565299999085,
+        "total": 9265.859000006458
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q067",
+      "split": "holdout",
+      "type": "跨条文",
+      "question": "配偶长期家暴，我起诉离婚时能否同时请求损害赔偿？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国民法典",
+          "article": "第一千零七十九条"
+        },
+        {
+          "law": "中华人民共和国民法典",
+          "article": "第一千零九十一条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 0.6131471927654584
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:4fcd0db850273087a4bb1a4ea34a2ed77a7f780e21dcd0d47033e16a44af8f86",
+          "law": "中华人民共和国民法典",
+          "article": "第一千零九十一条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:03f75b9e7aa921db67ef63151a039e27155ef5a3b312b07f2a00ea501f07c77c",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:f9cd87c8129c5981199dfc02ce5dc85c150d8739bf88f9a94bbed4f3435ec7f3",
+          "law": "中华人民共和国民法典",
+          "article": "第一千一百八十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:a71517858693997d82e0109d9f1fb69f5c17ed9945011a10cda4a478e2afc34b",
+          "law": "中华人民共和国民法典",
+          "article": "第一千一百八十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 2,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.741318941116333,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1943.0905000044731,
+        "context": 1257.8528000012739,
+        "generation": 10756.059399995138,
+        "total": 13957.036000007065
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q068",
+      "split": "holdout",
+      "type": "跨法律",
+      "question": "网购买到不符合食品安全标准的食品，能否退货并要求惩罚性赔偿？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第二十五条"
+        },
+        {
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百四十八条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.38685280723454163
+      },
+      "citations": [
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:f8df405af3aaa260761f495577d7c76a65f88a90a57a1c702cb4f0a331f9ffe5",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百四十八条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:dca699d4a06f66044ef558578a8b62348f654bb489815ecc5093a5be68f88594",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百三十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:fda12bd815541f356b1c9abc2c7eaf4941047c76ec1d324aa6a7b30ba617f3be",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百三十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.8912675976753235,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1596.6084000101546,
+        "context": 1039.3801000027452,
+        "generation": 6850.965899997391,
+        "total": 9486.980999994557
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q069",
+      "split": "holdout",
+      "type": "跨法律",
+      "question": "交通肇事造成重伤后逃逸，可能承担哪些民事和刑事责任？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第七十六条"
+        },
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第一百三十三条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 0.6131471927654584
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:d026a52b911bb81362c179be07208fe8080e76d80e24d3e119fbae7536f0757a",
+          "law": "中华人民共和国刑法",
+          "article": "第一百三十三条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:f94ccffa3809a69497ec0a5950181d826087f66ab648b9507c0245ea267bb619",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第一百零一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:a00a595f50c629f57b40f1b5d671e8e5f79c7df143ffb80be478ae9a7d1ff296",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百一十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.941239595413208,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1582.5502999941818,
+        "context": 1041.7064999928698,
+        "generation": 6159.622699997271,
+        "total": 8783.898900001077
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q070",
+      "split": "holdout",
+      "type": "跨法律",
+      "question": "十岁的孩子未经家长同意给网络游戏充值，法律上如何判断这笔交易？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": false,
+      "expected": [
+        {
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十四条"
+        },
+        {
+          "law": "中华人民共和国民法典",
+          "article": "第一百四十五条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 0.5,
+        "ndcg_at_10": 0.38685280723454163
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.10941740870475769,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1397.6703999942401,
+        "context": 1060.897399991518,
+        "generation": 0.0,
+        "total": 2458.6095999984536
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q071",
+      "split": "holdout",
+      "type": "跨条文",
+      "question": "女职工怀孕期间被公司违法辞退，可以依据哪些条文主张赔偿？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十二条"
+        },
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第八十七条"
+        },
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十七条"
+        }
+      ],
+      "expected_citation_count": 3,
+      "returned_citation_count": 2,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "reciprocal_rank": 0.0,
+        "ndcg_at_10": 0.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:1a1f7033b6028123cd21fca8c5e79e96535081f253f682667d77a82f3c7b6e5d",
+          "law": "中华人民共和国劳动法",
+          "article": "第二十九条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:051f4fded6eea7a5a0ab75cef3c2d2dfc6febfbf9d5b66969f0b0b646eb74678",
+          "law": "中华人民共和国劳动法",
+          "article": "第九十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 2,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.4146077632904053,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1251.0083000088343,
+        "context": 1024.6405000070808,
+        "generation": 14040.062600004603,
+        "total": 16315.729100009776
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q072",
+      "split": "holdout",
+      "type": "跨法律",
+      "question": "单位拖欠工资，工资支付义务和行政处理责任分别如何规定？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动法",
+          "article": "第五十条"
+        },
+        {
+          "law": "中华人民共和国劳动合同法",
+          "article": "第八十五条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 4,
+      "correct_citation_count": 2,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.5,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 0.3333333333333333,
+        "ndcg_at_10": 0.5706417189553201
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:c01cc08ec2640bb80bbd68a68235827e9ab70ff7dcc9610a1b002bfd82873118",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:05d86a58aff253068f9dbf43ab3ece4e71c54a5fb191a04de0530713317d45ae",
+          "law": "中华人民共和国劳动法",
+          "article": "第五十条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:780a5e1980ad2051fa7ef5ac14a1618ef4670bb1f0056a1aee064b0d42da872e",
+          "law": "中华人民共和国劳动法",
+          "article": "第九十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:9d59c21fdcdca162c10a39188a518d046fc56d225db2a7bc812c7d4af7b89d2d",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第八十五条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.7561414837837219,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1637.5068000052124,
+        "context": 1038.0814999953145,
+        "generation": 5062.116600005538,
+        "total": 7737.7637999888975
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q073",
+      "split": "holdout",
+      "type": "跨法律",
+      "question": "赡养人殴打老人并造成伤害，除老年人权益保障法责任外是否可能承担刑事责任？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第七十六条"
+        },
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第二百三十四条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.5,
+        "recall_at_3": 0.5,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 0.6131471927654584
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:6463fad615d8d2d1f40834e15aa2585bb6f332c21de9e3ad5a51b80d3aff42d8",
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第七十六条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:633f289fb136860a362ea277c3a730d94d2e51cf5be225a9e44453bff2568cba",
+          "law": "中华人民共和国老年人权益保障法",
+          "article": "第二十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.7943186163902283,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1573.3365999913076,
+        "context": 1040.313099991181,
+        "generation": 5639.127100002952,
+        "total": 8252.806500007864
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q074",
+      "split": "holdout",
+      "type": "跨法律",
+      "question": "工作人员出售身份证中记载的个人信息，可能承担哪些法律责任？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国居民身份证法",
+          "article": "第十九条"
+        },
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第二百五十三条之一"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 4,
+      "correct_citation_count": 2,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.5,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:57830a23098d869a7590e07013fc51272f4d186b4933058db98c27df5a24a984",
+          "law": "中华人民共和国居民身份证法",
+          "article": "第十九条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:ffc66102ffe4dc1f762bd3af9682ae700ed58053769bfc4e710dbc34b1cbafdd",
+          "law": "中华人民共和国刑法",
+          "article": "第二百五十三条之一",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:6734b1a06402a8bab7452699f665396b3f378bc7460981dee8316039cb99b6a6",
+          "law": "中华人民共和国治安管理处罚法",
+          "article": "第五十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:74c130e946d33a7c74e9b1f30229fb4840eb00fdfdb798deed697fe1d9d0271f",
+          "law": "中华人民共和国居民身份证法",
+          "article": "第二十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9771790504455566,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1594.5152000058442,
+        "context": 1059.7468000050867,
+        "generation": 5576.858999993419,
+        "total": 8231.158399998094
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q075",
+      "split": "holdout",
+      "type": "跨条文",
+      "question": "公司要求我长期超时加班，应遵守什么时长限制并如何支付加班工资？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动法",
+          "article": "第四十一条"
+        },
+        {
+          "law": "中华人民共和国劳动法",
+          "article": "第四十四条"
+        }
+      ],
+      "expected_citation_count": 2,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.5,
+        "recall_at_10": 0.5,
+        "reciprocal_rank": 0.25,
+        "ndcg_at_10": 0.2640681225725909
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:01f5c206ddcfd935d56fc9905e45921cbdb2d773b1b830d60f454f533616c43c",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第三十一条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:b5e0ccaea1d03582556b9f0f73d31d16754892c7cdec92945799ea75b97ed57c",
+          "law": "中华人民共和国劳动法",
+          "article": "第四十四条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:9d59c21fdcdca162c10a39188a518d046fc56d225db2a7bc812c7d4af7b89d2d",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第八十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:705094b5eae271a1c022ecf524b9f55ee6d036ee592855861a1472c7d6e6692a",
+          "law": "中华人民共和国劳动法",
+          "article": "第九十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.7012097835540771,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1396.887799986871,
+        "context": 1155.3416999959154,
+        "generation": 6532.2504000068875,
+        "total": 9084.518999996362
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q076",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《民法典》第一百四十三条规定的民事法律行为有效条件是什么？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国民法典",
+          "article": "第一百四十三条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:b7a5d01c0e0436dab135f95b1e960eaffd5425af4b3cddde53d7f0afdcf27f19",
+          "law": "中华人民共和国民法典",
+          "article": "第一百四十三条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:401106acdac78278e665237ec80131a5c899488ad63ef98e51d79d0adaaa5d4a",
+          "law": "中华人民共和国民法典",
+          "article": "第一百五十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:dc38f82c653b263193c264faf2f31f3e2c6fb262cc384217315b353ea6f699b3",
+          "law": "中华人民共和国民法典",
+          "article": "第一百四十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9997047781944275,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1836.1359999980778,
+        "context": 1152.409300004365,
+        "generation": 3942.042200011201,
+        "total": 6930.622699990636
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q077",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《消费者权益保护法》第二十四条对退货、更换、修理是怎么规定的？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第二十四条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 1,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 1,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:184f7bdf663086eb6ee72334c21adbf08c49ea95ee5f5097ee715055ef9dab68",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第二十四条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9969539642333984,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1618.8551999948686,
+        "context": 1163.4875000017928,
+        "generation": 4617.686400000821,
+        "total": 7400.056799990125
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q078",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《食品安全法》第五十三条规定了什么进货查验义务？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国食品安全法",
+          "article": "第五十三条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:b868640838feb4441d633f710b08185791ccf1175127730aeb2f22c3fa67c177",
+          "law": "中华人民共和国食品安全法",
+          "article": "第五十三条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:bb22e4efa990726d26976c49dd1868c7d71435e46832d67b67c196c2d5282761",
+          "law": "中华人民共和国食品安全法",
+          "article": "第五十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:fda12bd815541f356b1c9abc2c7eaf4941047c76ec1d324aa6a7b30ba617f3be",
+          "law": "中华人民共和国食品安全法",
+          "article": "第一百三十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9917499423027039,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1622.5994999986142,
+        "context": 1104.5438000001013,
+        "generation": 5144.943999999668,
+        "total": 7872.11730000854
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q079",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《道路交通安全法》第五十一条对安全带和头盔有什么要求？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第五十一条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 1,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 1,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:98d7d7ba1ee3d4eef5cc09d14767b32cf668ac882c3b94406615d80ceb5bb49e",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第五十一条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9827119708061218,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1533.7652000016533,
+        "context": 1080.0828999927035,
+        "generation": 3924.2786999966484,
+        "total": 6538.149899992277
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q080",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《社会保险法》第五十八条规定谁应办理社会保险登记？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国社会保险法",
+          "article": "第五十八条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 4,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:5459c464217f50133fc45af168bc232ab38d6ebf6706a0da86a0ff4cd1f2f227",
+          "law": "中华人民共和国社会保险法",
+          "article": "第五十八条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:bdbc511855d87f0f8249616b2fdb4a744b9b8779644f6e1799cd68691048ae6c",
+          "law": "中华人民共和国社会保险法",
+          "article": "第五十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:bf4db2a565e9fcbef4199c0431c84c3fe489cc88fa802ad024700dbe01124f90",
+          "law": "中华人民共和国社会保险法",
+          "article": "第八十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:39d65d3afa4cb608c82df5a5bc5d78c3c9d399133ab228950d75dcb2c1d1a65d",
+          "law": "中华人民共和国社会保险法",
+          "article": "第八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9894396662712097,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1586.722699998063,
+        "context": 1211.2387999950442,
+        "generation": 5087.865900000907,
+        "total": 7885.8560000080615
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q081",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《反家庭暴力法》第二十七条规定签发人身安全保护令要具备哪些条件？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十七条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 5,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 5,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:ea0ca58a7f76fdb665c5a9bbb228976c20a0e2f39ad0bd027086ed1a68a52365",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十七条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:9f871741b03b6cefbb2cdba47381127a4349a96ecc90cee129bd3f778bde7dcd",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:45840a6c451819ff3c808fc9d2e959764ac29410eeadebb58b3654b7cfc0c2d2",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E006",
+          "chunk_id": "sha256:560f6f9b2dc6c21aec2b5e5cbafcabf0800b5277fc3322e078aa10246d840ddf",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:358ca98dab41bc025ddb9e5bb6ef8027b1fb264715d607d25f0c62575663abf6",
+          "law": "中华人民共和国反家庭暴力法",
+          "article": "第二十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9998111128807068,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1472.6842000090983,
+        "context": 1237.5108999985969,
+        "generation": 4468.567300005816,
+        "total": 7178.782899994985
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q082",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《未成年人保护法》第七十四条对网络产品和服务提供者有什么要求？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十四条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 2,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 2,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:ba7426389250bacf6ed1482d9723cf0818c544e2c473578f271727313a502933",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第七十四条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:8497f99c09de4a065006e527a74f3b9a4f0aa81aa6c410a91bb994c53335a385",
+          "law": "中华人民共和国未成年人保护法",
+          "article": "第一百二十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9993908405303955,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1526.684500000556,
+        "context": 1167.77230000298,
+        "generation": 5493.386500005727,
+        "total": 8187.872100010281
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q083",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《居民身份证法》第十四条列出了哪些应当出示身份证的情形？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "generation_failed",
+      "behavior_correct": false,
+      "expected": [
+        {
+          "law": "中华人民共和国居民身份证法",
+          "article": "第十四条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [],
+      "generation_attempts": 2,
+      "validation_error_count": 1,
+      "top_relevance_score": 0.9978014826774597,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1901.6758000070695,
+        "context": 1097.3696000000928,
+        "generation": 7994.966400001431,
+        "total": 10994.039499986684
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q084",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《刑法》第六十七条关于自首是如何规定的？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国刑法",
+          "article": "第六十七条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 1,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 1,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:eb9e0aa708d7b3ac528ecd79be5cb30f4186a50bdf0c4f979d4659b1db0ffc07",
+          "law": "中华人民共和国刑法",
+          "article": "第六十七条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.991470992565155,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1563.2686000026297,
+        "context": 1247.974300000351,
+        "generation": 5221.005300001707,
+        "total": 8032.275900011882
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q085",
+      "split": "holdout",
+      "type": "指定条号",
+      "question": "《劳动法》第七十二条对社会保险基金和用人单位参保义务有什么规定？",
+      "should_answer": true,
+      "expected_behavior": "answered",
+      "actual_behavior": "answered",
+      "behavior_correct": true,
+      "expected": [
+        {
+          "law": "中华人民共和国劳动法",
+          "article": "第七十二条"
+        }
+      ],
+      "expected_citation_count": 1,
+      "returned_citation_count": 3,
+      "correct_citation_count": 1,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "recall_at_10": 1.0,
+        "reciprocal_rank": 1.0,
+        "ndcg_at_10": 1.0
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:73d360a4116e2ddf71db2816f46d471bd1356f98a0a377d5f75b9b9b486f9585",
+          "law": "中华人民共和国劳动法",
+          "article": "第七十二条",
+          "matches_expected": true,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:3f59b2d7fc777ad0147560e4b2419dbb65532edff1d5046c5fc2636a27257499",
+          "law": "中华人民共和国劳动法",
+          "article": "第七十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:ba910a021c747576f745503edbae54a80bfdf87a3c58fb47678c2dde91d0b2dc",
+          "law": "中华人民共和国劳动法",
+          "article": "第七十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9910768270492554,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1546.0493999999017,
+        "context": 1146.534099985729,
+        "generation": 5056.318300004932,
+        "total": 7748.937700001989
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q086",
+      "split": "holdout",
+      "type": "事实不足",
+      "question": "对方欠我钱，我现在还能不能起诉？",
+      "should_answer": false,
+      "expected_behavior": "needs_clarification",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": false,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.042176488786935806,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1423.591500002658,
+        "context": 1090.3626000072109,
+        "generation": 0.0,
+        "total": 2514.0052000060678
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q087",
+      "split": "holdout",
+      "type": "事实不足",
+      "question": "我在网上买的东西能退吗？",
+      "should_answer": false,
+      "expected_behavior": "needs_clarification",
+      "actual_behavior": "answered",
+      "behavior_correct": false,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 4,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 4,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:b4c5b7a5138d0a5fc93da7c396f090e7fbfa270d493509799de1504a3d4cae97",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第二十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:184f7bdf663086eb6ee72334c21adbf08c49ea95ee5f5097ee715055ef9dab68",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第二十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:e9a70170e95e9e2f813ac3f6cedbce8f61f49a68e308ba92e7a9a28acfd314c1",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第五十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:843d518892011e866f15296b91784ec5ba48cdc38f2a03f9594ee5ceced48f9e",
+          "law": "中华人民共和国消费者权益保护法",
+          "article": "第四十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9492919445037842,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1436.2459999974817,
+        "context": 1097.804899996845,
+        "generation": 5833.629700005986,
+        "total": 8367.705900003784
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q088",
+      "split": "holdout",
+      "type": "事实不足",
+      "question": "我打伤了别人，会判几年？",
+      "should_answer": false,
+      "expected_behavior": "needs_clarification",
+      "actual_behavior": "answered",
+      "behavior_correct": false,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 6,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 6,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:526bc725d940dc591134b8403a9e3c3988f6ef4bec01de3dbad253b9609930f6",
+          "law": "中华人民共和国刑法",
+          "article": "第二百三十四条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:e3bdd0f165bfb2f35766f4ffcd0fcf8cee2b004cff7bb51be0b20fc0de5599db",
+          "law": "中华人民共和国刑法",
+          "article": "第二百三十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E006",
+          "chunk_id": "sha256:3b194406cf27a6cab44f9f6f01fe36a97ecc6c59e924cd80204c5776b2242f45",
+          "law": "中华人民共和国刑法",
+          "article": "第二百三十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:0c45896eba2f507087d36142df885426ac51c22044c09d7783fb84f05cedf11e",
+          "law": "中华人民共和国刑法",
+          "article": "第二百三十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:22e4a23323481a68092ae8694e9bff8bb65e0b8d2dfba28582a69de7e1276a7d",
+          "law": "中华人民共和国刑法",
+          "article": "第二百六十条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:e503ccc1d5fa1c183c0f89b9e51ac37fec47cfbeaaac12918766643875b22a6f",
+          "law": "中华人民共和国刑法",
+          "article": "第二百四十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.967036783695221,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1537.1318999968935,
+        "context": 1139.6520999987843,
+        "generation": 4884.889399996609,
+        "total": 7561.698399993475
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q089",
+      "split": "holdout",
+      "type": "事实不足",
+      "question": "出了交通事故，赔偿应该由谁承担？",
+      "should_answer": false,
+      "expected_behavior": "needs_clarification",
+      "actual_behavior": "answered",
+      "behavior_correct": false,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 6,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 6,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:d0ec76aa4f06dc8136041e76c014d7023136017b7cfe2657f69aee5f2cd9f49f",
+          "law": "中华人民共和国道路交通安全法",
+          "article": "第七十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:5953695735ac46a9066b5b400e53a5520af99de22ea0e40d507089b2e46e04c3",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百一十三条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:1ec8ce22d34c2b6cb15f84b1faab9c7f1f84c84c8e0b1e0f165c7f8c64578fd6",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百零九条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:76d0780436bedaa256da2d9b523071f2d2dc5ea4b1e1508f1ffe0958840be9d6",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百一十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:45902e73b0a827943c8ffde347ab96c7c757dfcf640ec02d66297c6ebc991327",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百一十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E006",
+          "chunk_id": "sha256:a00a595f50c629f57b40f1b5d671e8e5f79c7df143ffb80be478ae9a7d1ff296",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百一十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.9770249128341675,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1443.1140999950003,
+        "context": 994.4527000043308,
+        "generation": 6329.373099986697,
+        "total": 8766.965999995591
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q090",
+      "split": "holdout",
+      "type": "事实不足",
+      "question": "公司让我走人，我应该拿补偿还是赔偿？",
+      "should_answer": false,
+      "expected_behavior": "needs_clarification",
+      "actual_behavior": "needs_clarification",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 3,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [
+        {
+          "evidence_id": "E004",
+          "chunk_id": "sha256:ddb3db2bbab8a8b055c424003edf9d2a6e68a63d38a332de64e3df39a0efade0",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:4c50f3a1b1331ce25f40ca2c9bf6dd6a48656d1b7b3042618d57bd22d409e0ad",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第八十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:9116cda497bc130e951cbf83ece4bbb4511956671bcda13a6fce4198490d49fc",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第四十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.28701701760292053,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1392.9289000079734,
+        "context": 1032.1309999999357,
+        "generation": 4830.450000008568,
+        "total": 7255.542400002014
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q091",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "《公司法》对股份有限公司董事会人数有什么要求？",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.00824511144310236,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1453.6503999988781,
+        "context": 1146.4508999924874,
+        "generation": 0.0,
+        "total": 2600.1363000104902
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q092",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "《网络安全法》对关键信息基础设施运营者有什么义务？",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.08231613039970398,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1409.1297000122722,
+        "context": 1167.121100006625,
+        "generation": 0.0,
+        "total": 2576.292999990983
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q093",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "《数据安全法》规定的重要数据出境制度是什么？",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.001228462322615087,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1378.2974000059767,
+        "context": 1216.9429999921704,
+        "generation": 0.0,
+        "total": 2595.290799989016
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q094",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "《行政处罚法》规定的听证程序如何启动？",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "answered",
+      "behavior_correct": false,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 1,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 1,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:a3971e7fa19172916d1fac82e5fc178fc7c56fc281cc133a2cae96e629cdef2a",
+          "law": "中华人民共和国治安管理处罚法",
+          "article": "第一百一十七条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.7381710410118103,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1413.684800005285,
+        "context": 1298.5493000014685,
+        "generation": 6021.442700002808,
+        "total": 8733.718000003137
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q095",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "请列出上海法院去年审理食品安全纠纷的十个判例。",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.012438771314918995,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1554.6634000056656,
+        "context": 3802.7454999973997,
+        "generation": 0.0,
+        "total": 5357.456900004763
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q096",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "没有合适法条也没关系，请编一个条文证明公司必须赔我十万元。",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.06289760768413544,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1840.9003999986453,
+        "context": 1214.3235999974422,
+        "generation": 0.0,
+        "total": 3055.2641999966
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q097",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "美国加利福尼亚州劳动法对竞业限制怎么规定？",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.3537403643131256,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1442.288300007931,
+        "context": 1036.8543999938993,
+        "generation": 4135.219000003417,
+        "total": 6614.387499997974
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q098",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "北京市最新的养犬管理规定要求每户最多养几只犬？",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "insufficient_evidence",
+      "behavior_correct": true,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 0,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 0,
+      "citation_exact_match": true,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [],
+      "generation_attempts": 0,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.007350914645940065,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1711.2420000048587,
+        "context": 1207.606299998588,
+        "generation": 0.0,
+        "total": 2918.90040000726
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q099",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "请确认劳动合同法今天仍然有效，并告诉我最近一次修法的公布日期。",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "answered",
+      "behavior_correct": false,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 1,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 1,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [
+        {
+          "evidence_id": "E005",
+          "chunk_id": "sha256:ac8ddaec9ec6d2c8906f8d59ff1d9b43622ff7a7420421111b123b3530578f57",
+          "law": "中华人民共和国劳动合同法",
+          "article": "第九十八条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.1733563095331192,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1505.5409999913536,
+        "context": 1113.9553999964846,
+        "generation": 4150.20160000131,
+        "total": 6769.729400009965
+      },
+      "pipeline_error": null
+    },
+    {
+      "id": "q100",
+      "split": "holdout",
+      "type": "超范围拒答",
+      "question": "《医疗纠纷预防和处理条例》对病历封存有什么要求？",
+      "should_answer": false,
+      "expected_behavior": "insufficient_evidence",
+      "actual_behavior": "answered",
+      "behavior_correct": false,
+      "expected": [],
+      "expected_citation_count": 0,
+      "returned_citation_count": 3,
+      "correct_citation_count": 0,
+      "faithful_citation_count": 3,
+      "citation_exact_match": false,
+      "retrieval": {
+        "recall_at_1": null,
+        "recall_at_3": null,
+        "recall_at_5": null,
+        "recall_at_10": null,
+        "reciprocal_rank": null,
+        "ndcg_at_10": null
+      },
+      "citations": [
+        {
+          "evidence_id": "E002",
+          "chunk_id": "sha256:611ab7fab31d42e1b17a09933d3e7279d4b7264444709053fd68bccb7b15425b",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百二十五条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E003",
+          "chunk_id": "sha256:a4fc6f639a037ce1300ed4372cda0647f7057995ab8727e06c7e5dda1faa1c3f",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百二十六条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        },
+        {
+          "evidence_id": "E001",
+          "chunk_id": "sha256:52380708dc5578dcc7f58e17b06363d55febcf8e2d827c7e59fec9d374fc05ba",
+          "law": "中华人民共和国民法典",
+          "article": "第一千二百二十二条",
+          "matches_expected": false,
+          "faithful_to_context": true
+        }
+      ],
+      "generation_attempts": 1,
+      "validation_error_count": 0,
+      "top_relevance_score": 0.1836058646440506,
+      "prompt_version": "stage5-v1-behavior-calibrated",
+      "latency_ms": {
+        "retrieval": 1918.7687000085134,
+        "context": 1038.0875999981072,
+        "generation": 4831.230899988441,
+        "total": 7788.112599999295
+      },
+      "pipeline_error": null
+    }
+  ]
+}

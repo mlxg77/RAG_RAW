@@ -88,4 +88,6 @@ def test_repair_prompt_contains_validation_feedback() -> None:
     assert "{previous_answer}" not in human_content
     assert "{validation_errors}" not in human_content
 
-    assert ANSWER_PROMPT_VERSION == "stage4-v2-evidence-id"
+    assert ANSWER_PROMPT_VERSION == (
+        "stage5-v1-behavior-calibrated"
+    )

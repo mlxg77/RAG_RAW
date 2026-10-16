@@ -13,6 +13,8 @@
 | 阶段 2 | BM25、Dense、RRF 混合检索与量化基线 | 完成（存在已记录限制） |
 | 阶段 3 | Reranker 精排与可追溯上下文构建 | 完成（存在已记录限制） |
 | 阶段 4 | 结构化答案生成、引用校验、拒答与脱敏日志 | 完成（存在已记录限制） |
+| 阶段 5 | 独立 holdout 端到端评测与质量门槛 | 已实现（1 项质量门槛未通过） |
+| 阶段 6 | API、界面与部署 | 进行中（演示界面已完成） |
 
 详见 [docs/plan/v1/](docs/plan/v1/)。
 
@@ -43,6 +45,20 @@ uv run python -m rag_law.cli answer --query "公司一直没跟我签书面劳�
 ```
 
 可添加 `--debug` 查看分阶段耗时和校验诊断，或添加 `--json` 输出完整结构化结果。脱敏运行日志默认写入 `logs/answer_runs.jsonl`，该目录不进入 Git。
+
+### 运行阶段 5 系统评测
+
+```bash
+# 默认运行全部 development + holdout；正式验收以 holdout 为准
+uv run python -m rag_law.cli evaluate-system
+
+# 仅重跑独立 holdout，并在质量门槛失败时返回非零退出码
+uv run python -m rag_law.cli evaluate-system --split holdout --fail-on-gates
+```
+
+命令同时生成 `data/eval/results/answer_quality_v1.json` 和
+`data/eval/results/answer_quality_v1.md`。评测集共 100 题：原 30 题作为
+development，新增 70 题作为独立 holdout。
 
 ### 启动演示界面
 

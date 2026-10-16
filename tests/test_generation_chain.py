@@ -130,6 +130,12 @@ def test_answer_chain_returns_generated_answer() -> None:
     assert "公司没有和我签劳动合同" in human_content
     assert "[E001]" in human_content
 
+    system_content = messages[0].content
+    assert isinstance(system_content, str)
+    assert "一般法律规则" in system_content
+    assert "不得追问其个人情况" in system_content
+    assert "实时效力信息不在" in system_content
+
 
 def test_repair_chain_receives_validation_errors() -> None:
     model = FakeStructuredOutputModel()
