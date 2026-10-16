@@ -106,6 +106,17 @@ docker compose up -d --wait
 docker compose ps
 ```
 
+国内 Linux 服务器无法直连 Docker Hub 时，可以任选一种方式完成构建：为 Docker 配置镜像加速
+（在 `/etc/docker/daemon.json` 中设置 `registry-mirrors` 后重启 Docker），或指定可访问的
+基础镜像地址（以实际可用的加速服务为准）：
+
+```bash
+export RAG_LAW_PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.13-slim
+docker compose build
+```
+
+镜像内的 `uv` 与全部 Python 依赖均从阿里云 PyPI 镜像源安装，构建过程无需访问 ghcr.io。
+
 默认地址：
 
 - API：<http://127.0.0.1:8000>，交互文档位于 `/docs`；
