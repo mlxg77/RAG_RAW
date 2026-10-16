@@ -20,7 +20,6 @@
   background: transparent;
 }
 
-[data-testid="stToolbar"],
 [data-testid="stDecoration"] {
   display: none;
 }
