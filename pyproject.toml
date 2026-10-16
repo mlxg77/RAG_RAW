@@ -17,6 +17,8 @@ dependencies = [
     "rank-bm25>=0.2.2",
     "httpx>=0.28.1",
     "streamlit>=1.41.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
 ]
 
 [build-system]
@@ -27,7 +29,8 @@ build-backend = "hatchling.build"
 packages = ["src/rag_law"]
 
 [[tool.uv.index]]
-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+name = "aliyun"
+url = "https://mirrors.aliyun.com/pypi/simple/"
 default = true
 
 [dependency-groups]

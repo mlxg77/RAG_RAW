@@ -14,7 +14,7 @@
 | 阶段 3 | Reranker 精排与可追溯上下文构建 | 完成（存在已记录限制） |
 | 阶段 4 | 结构化答案生成、引用校验、拒答与脱敏日志 | 完成（存在已记录限制） |
 | 阶段 5 | 独立 holdout 端到端评测与质量门槛 | 已实现（1 项质量门槛未通过） |
-| 阶段 6 | API、界面与部署 | 进行中（演示界面已完成） |
+| 阶段 6 | API、界面与部署 | 进行中（API 与演示界面已完成） |
 
 详见 [docs/plan/v1/](docs/plan/v1/)。
 
@@ -69,6 +69,37 @@ uv run streamlit run src/rag_law/ui/app.py
 ```
 
 页面支持连续提问、按法律筛选、展示回答状态、适用条件、边界限制和已经过校验的法条引用。启动前需按上文完成环境变量配置，并确保 `data/processed/` 与 `indexes/` 已生成。
+
+### 启动 HTTP API
+
+```bash
+# 本机启动；生产环境应放在反向代理之后并限制访问来源
+uv run uvicorn rag_law.api.main:app --host 127.0.0.1 --port 8000
+
+# 查看 API schema 与交互式文档
+# http://127.0.0.1:8000/docs
+```
+
+接口包括 `GET /v1/health`、`GET /v1/laws`、`POST /v1/retrieve` 和
+`POST /v1/query`。后两个接口的请求体为 `{"query":"问题","law_name":"可选法律名称"}`；
+`/v1/retrieve` 还可接受 `top_k`（1–20）。`/v1/query` 返回完整、已校验的结构化回答。
+
+API 单进程默认按客户端 IP 限制为每分钟 30 次请求，单次查询超时为 60 秒；超时返回
+`504`，过于频繁返回 `429`，缺少索引或模型配置时返回 `503`。`/v1/health` 会逐项报告
+manifest、法条数据、BM25 和 Chroma 索引是否就绪。多实例部署时请将内存限流替换为网关或共享存储限流。
+
+### 重建索引与故障排查
+
+新增法律可在演示页“添加新法律”上传，也可使用管理命令：
+
+```bash
+uv run python -m rag_law.cli add-document --file path/to/law.md --law-id cn_example_law
+```
+
+若健康检查显示 `articles`、`bm25_index` 或 `chroma_index` 为 `false`，请先确认
+`data/manifest.yaml` 和原始文件存在，再运行上述添加命令或按项目既有流程重建索引。若 API
+返回 `503`，检查 `.env` 中三组模型配置并运行 `uv run python scripts/verify_env.py`。日志写入
+`logs/answer_runs.jsonl` 前会脱敏身份证号、手机号、邮箱、银行卡号和座机号；API 错误日志不会记录请求原文。
 
 ## 目录结构
 
