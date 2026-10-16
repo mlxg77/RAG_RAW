@@ -1,0 +1,77 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rag-law:v1.0
+    command:
+      - uvicorn
+      - rag_law.api.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - "1"
+    env_file:
+      - .env
+    user: "${RAG_LAW_UID:-1000}:${RAG_LAW_GID:-1000}"
+    environment:
+      HOME: /tmp/raglaw
+    ports:
+      - "${RAG_LAW_API_PORT:-8000}:8000"
+    volumes:
+      - ./data:/app/data:ro
+      - ./indexes:/app/indexes:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import json, urllib.request;
+          result=json.load(urllib.request.urlopen('http://127.0.0.1:8000/v1/health', timeout=5));
+          raise SystemExit(0 if result.get('status') == 'ok' else 1)
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  ui:
+    image: rag-law:v1.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command:
+      - streamlit
+      - run
+      - src/rag_law/ui/app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.headless=true
+    env_file:
+      - .env
+    user: "${RAG_LAW_UID:-1000}:${RAG_LAW_GID:-1000}"
+    environment:
+      HOME: /tmp/raglaw
+    ports:
+      - "${RAG_LAW_UI_PORT:-8501}:8501"
+    volumes:
+      - ./data:/app/data
+      - ./indexes:/app/indexes
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=5)
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

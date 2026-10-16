@@ -2,7 +2,10 @@ from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
 
-from rag_law.knowledge_base import AddDocumentResult
+from rag_law.knowledge_base import (
+    AddDocumentResult,
+    RebuildKnowledgeBaseResult,
+)
 
 
 APP_PATH = (
@@ -38,6 +41,7 @@ def test_streamlit_landing_page_renders() -> None:
     assert {button.label for button in app.button} == {
         "清空当前对话",
         "上传并重建索引",
+        "重新构建现有知识库",
         "公司一直没和我签书面劳动合同，我可以要求什么？",
         "酒后驾驶机动车会受到什么处罚？",
         "消费者买到不符合食品安全标准的食品，可以要求赔偿吗？",
@@ -113,4 +117,48 @@ def test_upload_new_law_rebuilds_and_shows_notice(
     assert any(
         "已成功添加" in item.value
         for item in app.success
+    )
+
+
+def test_rebuild_existing_knowledge_base_from_sidebar(
+    monkeypatch,
+) -> None:
+    calls: dict[str, object] = {}
+
+    def fake_rebuild_knowledge_base(
+        **kwargs,
+    ) -> RebuildKnowledgeBaseResult:
+        calls.update(kwargs)
+        kwargs["progress_callback"](
+            "complete",
+            "现有知识库重建全部完成。",
+        )
+        return RebuildKnowledgeBaseResult(
+            law_count=15,
+            chunk_total=2998,
+        )
+
+    monkeypatch.setattr(
+        "rag_law.knowledge_base.rebuild_knowledge_base",
+        fake_rebuild_knowledge_base,
+    )
+
+    app = AppTest.from_file(str(APP_PATH)).run(timeout=15)
+    rebuild_button = next(
+        button
+        for button in app.button
+        if button.label == "重新构建现有知识库"
+    )
+    rebuild_button.click()
+    app.run(timeout=30)
+
+    assert not app.exception
+    assert callable(calls["progress_callback"])
+    assert any(
+        "知识库重建完成" in item.value
+        for item in app.success
+    )
+    assert any(
+        "重启 API" in item.value
+        for item in app.info
     )

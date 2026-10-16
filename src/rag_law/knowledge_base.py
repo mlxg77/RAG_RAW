@@ -79,6 +79,14 @@ class AddDocumentResult:
     manifest_updated: bool
 
 
+@dataclass(frozen=True)
+class RebuildKnowledgeBaseResult:
+    """一次全量知识库重建的结果摘要。"""
+
+    law_count: int
+    chunk_total: int
+
+
 def _emit_progress(
     progress_callback: ProgressCallback | None,
     stage: str,
@@ -175,6 +183,123 @@ def _validate_source_file(
         )
 
     return split_result
+
+
+def _rebuild_all(
+    *,
+    manifest_path: Path,
+    project_root: Path,
+    articles_path: Path,
+    report_path: Path,
+    bm25_index_path: Path,
+    chroma_directory: Path,
+    max_chars: int,
+    embeddings: Embeddings | None,
+    progress_callback: ProgressCallback | None,
+    completion_message: str,
+) -> dict:
+    """从 manifest 重建结构化语料、BM25 与 Chroma。"""
+
+    _emit_progress(
+        progress_callback,
+        "pipeline",
+        "正在重跑阶段 1 流水线…",
+    )
+
+    report = run_pipeline(
+        manifest_path=manifest_path,
+        output_path=articles_path,
+        report_path=report_path,
+        project_root=project_root,
+        max_chars=max_chars,
+    )
+
+    summary = report["summary"]
+
+    _emit_progress(
+        progress_callback,
+        "pipeline",
+        "阶段 1 完成："
+        f"全库 {summary['law_count']} 部法律、"
+        f"{summary['chunk_count']} 个 chunk",
+    )
+
+    _emit_progress(
+        progress_callback,
+        "bm25",
+        "正在重建 BM25 索引…",
+    )
+
+    bm25_retriever = BM25Retriever.build(articles_path)
+    bm25_retriever.save(bm25_index_path)
+
+    _emit_progress(
+        progress_callback,
+        "bm25",
+        "BM25 索引重建完成："
+        f"{len(bm25_retriever.chunks)} 条法条",
+    )
+
+    _emit_progress(
+        progress_callback,
+        "dense",
+        "正在重建 Chroma 向量库"
+        "（将调用 Embedding 接口，请耐心等待）…",
+    )
+
+    DenseRetriever.build(
+        articles_path=articles_path,
+        persist_directory=chroma_directory,
+        embeddings=embeddings,
+    )
+
+    _emit_progress(
+        progress_callback,
+        "dense",
+        "Chroma 向量库重建完成",
+    )
+
+    _emit_progress(
+        progress_callback,
+        "complete",
+        completion_message,
+    )
+
+    return report
+
+
+def rebuild_knowledge_base(
+    *,
+    manifest_path: Path = DEFAULT_MANIFEST_PATH,
+    project_root: Path = PROJECT_ROOT,
+    articles_path: Path = DEFAULT_OUTPUT_PATH,
+    report_path: Path = DEFAULT_REPORT_PATH,
+    bm25_index_path: Path = DEFAULT_BM25_INDEX_PATH,
+    chroma_directory: Path = DEFAULT_CHROMA_DIRECTORY,
+    max_chars: int = DEFAULT_MAX_CHARS,
+    embeddings: Embeddings | None = None,
+    progress_callback: ProgressCallback | None = None,
+) -> RebuildKnowledgeBaseResult:
+    """使用已有 manifest 和原始文件全量重建知识库。"""
+
+    report = _rebuild_all(
+        manifest_path=manifest_path,
+        project_root=project_root,
+        articles_path=articles_path,
+        report_path=report_path,
+        bm25_index_path=bm25_index_path,
+        chroma_directory=chroma_directory,
+        max_chars=max_chars,
+        embeddings=embeddings,
+        progress_callback=progress_callback,
+        completion_message="现有知识库重建全部完成。",
+    )
+    summary = report["summary"]
+
+    return RebuildKnowledgeBaseResult(
+        law_count=summary["law_count"],
+        chunk_total=summary["chunk_count"],
+    )
 
 
 def add_document(
@@ -334,18 +459,17 @@ def add_document(
             "该法律此前已登记，直接执行重建",
         )
 
-    _emit_progress(
-        progress_callback,
-        "pipeline",
-        "正在重跑阶段 1 流水线…",
-    )
-
-    report = run_pipeline(
+    report = _rebuild_all(
         manifest_path=manifest_path,
-        output_path=articles_path,
-        report_path=report_path,
         project_root=project_root,
+        articles_path=articles_path,
+        report_path=report_path,
+        bm25_index_path=bm25_index_path,
+        chroma_directory=chroma_directory,
         max_chars=max_chars,
+        embeddings=embeddings,
+        progress_callback=progress_callback,
+        completion_message="添加与重建全部完成。",
     )
 
     law_report = next(
@@ -363,55 +487,6 @@ def add_document(
         )
 
     summary = report["summary"]
-
-    _emit_progress(
-        progress_callback,
-        "pipeline",
-        "阶段 1 完成："
-        f"全库 {summary['law_count']} 部法律、"
-        f"{summary['chunk_count']} 个 chunk",
-    )
-
-    _emit_progress(
-        progress_callback,
-        "bm25",
-        "正在重建 BM25 索引…",
-    )
-
-    bm25_retriever = BM25Retriever.build(articles_path)
-    bm25_retriever.save(bm25_index_path)
-
-    _emit_progress(
-        progress_callback,
-        "bm25",
-        "BM25 索引重建完成："
-        f"{len(bm25_retriever.chunks)} 条法条",
-    )
-
-    _emit_progress(
-        progress_callback,
-        "dense",
-        "正在重建 Chroma 向量库"
-        "（将调用 Embedding 接口，请耐心等待）…",
-    )
-
-    DenseRetriever.build(
-        articles_path=articles_path,
-        persist_directory=chroma_directory,
-        embeddings=embeddings,
-    )
-
-    _emit_progress(
-        progress_callback,
-        "dense",
-        "Chroma 向量库重建完成",
-    )
-
-    _emit_progress(
-        progress_callback,
-        "complete",
-        "添加与重建全部完成。",
-    )
 
     return AddDocumentResult(
         law_id=law_id,

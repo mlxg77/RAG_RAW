@@ -13,7 +13,9 @@ from rag_law.cli import (
 )
 from rag_law.knowledge_base import (
     AddDocumentResult,
+    RebuildKnowledgeBaseResult,
     add_document,
+    rebuild_knowledge_base,
 )
 from rag_law.retrieval.bm25 import BM25Retriever
 
@@ -151,6 +153,50 @@ def call_add_document(
         embeddings=FakeEmbeddings(),
         progress_callback=progress_callback,
     )
+
+
+def call_rebuild_knowledge_base(
+    environment: dict[str, Path],
+    *,
+    progress_callback=None,
+) -> RebuildKnowledgeBaseResult:
+    return rebuild_knowledge_base(
+        manifest_path=environment["manifest_path"],
+        project_root=environment["project_root"],
+        articles_path=environment["articles_path"],
+        report_path=environment["report_path"],
+        bm25_index_path=environment["bm25_index_path"],
+        chroma_directory=environment["chroma_directory"],
+        embeddings=FakeEmbeddings(),
+        progress_callback=progress_callback,
+    )
+
+
+def test_rebuild_existing_knowledge_base_builds_all_outputs(
+    tmp_path: Path,
+) -> None:
+    environment = make_environment(tmp_path)
+    events: list[tuple[str, str]] = []
+
+    result = call_rebuild_knowledge_base(
+        environment,
+        progress_callback=lambda stage, message: events.append(
+            (stage, message)
+        ),
+    )
+
+    assert result == RebuildKnowledgeBaseResult(
+        law_count=1,
+        chunk_total=2,
+    )
+    assert environment["articles_path"].is_file()
+    assert environment["report_path"].is_file()
+    assert environment["bm25_index_path"].is_file()
+    assert (
+        environment["chroma_directory"] / "chroma.sqlite3"
+    ).is_file()
+    assert [stage for stage, _ in events][-1] == "complete"
+    assert "现有知识库重建全部完成" in events[-1][1]
 
 
 def test_add_document_builds_full_chain(

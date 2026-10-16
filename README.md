@@ -6,6 +6,8 @@
 
 ## 当前进度
 
+**V1.0 已完成。** 阶段 5 的不可回答题行为准确率未达到原定目标，已作为后续优化代办保留，不阻塞 V1.0 收尾。
+
 | 阶段 | 内容 | 状态 |
 |---|---|---|
 | 阶段 0 | 范围与基线（项目骨架、法律清单、评测集、环境验证） | 完成 |
@@ -13,8 +15,8 @@
 | 阶段 2 | BM25、Dense、RRF 混合检索与量化基线 | 完成（存在已记录限制） |
 | 阶段 3 | Reranker 精排与可追溯上下文构建 | 完成（存在已记录限制） |
 | 阶段 4 | 结构化答案生成、引用校验、拒答与脱敏日志 | 完成（存在已记录限制） |
-| 阶段 5 | 独立 holdout 端到端评测与质量门槛 | 已实现（1 项质量门槛未通过） |
-| 阶段 6 | API、界面与部署 | 进行中（API 与演示界面已完成） |
+| 阶段 5 | 独立 holdout 端到端评测与质量门槛 | 完成（1 项质量指标转后续代办） |
+| 阶段 6 | API、界面与部署 | 完成 |
 
 详见 [docs/plan/v1/](docs/plan/v1/)。
 
@@ -69,6 +71,9 @@ uv run streamlit run src/rag_law/ui/app.py
 ```
 
 页面支持连续提问、按法律筛选、展示回答状态、适用条件、边界限制和已经过校验的法条引用。启动前需按上文完成环境变量配置，并确保 `data/processed/` 与 `indexes/` 已生成。
+侧栏“维护现有知识库”中的“重新构建现有知识库”按钮可直接使用服务器已有的
+`data/manifest.yaml` 和 `data/raw/` 全量生成结构化语料、BM25 与 Chroma，无需重新上传法律文件。
+如果 API 在独立进程或容器中运行，重建完成后需重启 API 以加载新索引。
 
 ### 启动 HTTP API
 
@@ -88,6 +93,77 @@ API 单进程默认按客户端 IP 限制为每分钟 30 次请求，单次查�
 `504`，过于频繁返回 `429`，缺少索引或模型配置时返回 `503`。`/v1/health` 会逐项报告
 manifest、法条数据、BM25 和 Chroma 索引是否就绪。多实例部署时请将内存限流替换为网关或共享存储限流。
 
+### 使用 Docker Compose 部署
+
+常规启动前需准备好 `.env`、`data/processed/`、`indexes/bm25/` 和 `indexes/chroma/`；
+首次部署也可以只准备 `.env` 与仓库中的原始法律，再通过下文的页面按钮建库。
+Compose 会构建一个锁定依赖的镜像，并分别启动 API 与 Streamlit：
+
+```bash
+docker compose config --quiet
+docker compose build
+docker compose up -d --wait
+docker compose ps
+```
+
+默认地址：
+
+- API：<http://127.0.0.1:8000>，交互文档位于 `/docs`；
+- Streamlit：<http://127.0.0.1:8501>；
+- API 健康检查：<http://127.0.0.1:8000/v1/health>。
+
+启动后的冒烟检查：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/v1/health
+Invoke-WebRequest http://127.0.0.1:8501/_stcore/health
+```
+
+如果服务器只有 GitHub 中的 `data/raw/` 和 `data/manifest.yaml`，尚无结构化语料和索引，
+可以先只启动界面：
+
+```bash
+docker compose build
+docker compose up -d ui
+```
+
+打开 Streamlit，在侧栏展开“维护现有知识库”，点击“重新构建现有知识库”。页面显示完成后再执行：
+
+```bash
+docker compose up -d api
+curl http://127.0.0.1:8000/v1/health
+```
+
+健康检查中的四项均为 `true` 后，服务器首次建库完成。
+
+可通过环境变量修改宿主机端口，例如：
+
+```powershell
+$env:RAG_LAW_API_PORT = "18000"
+$env:RAG_LAW_UI_PORT = "18501"
+docker compose up -d
+```
+
+`data/`、`indexes/` 和 `logs/` 挂载到宿主机，删除或重建容器不会删除语料、索引和日志。
+API 对知识库使用只读挂载；Streamlit 保留上传法律和重建索引所需的写权限。通过界面重建后，
+执行 `docker compose restart api`，使 API 丢弃内存中的旧流水线并重新加载索引。
+
+Compose 默认以 UID/GID `1000:1000` 访问挂载目录。Linux 上若当前用户不是 1000，可在启动前设置：
+
+```bash
+export RAG_LAW_UID=$(id -u)
+export RAG_LAW_GID=$(id -g)
+docker compose up -d
+```
+
+查看日志或停止服务：
+
+```bash
+docker compose logs -f api
+docker compose logs -f ui
+docker compose down
+```
+
 ### 重建索引与故障排查
 
 新增法律可在演示页“添加新法律”上传，也可使用管理命令：
@@ -100,6 +176,10 @@ uv run python -m rag_law.cli add-document --file path/to/law.md --law-id cn_exam
 `data/manifest.yaml` 和原始文件存在，再运行上述添加命令或按项目既有流程重建索引。若 API
 返回 `503`，检查 `.env` 中三组模型配置并运行 `uv run python scripts/verify_env.py`。日志写入
 `logs/answer_runs.jsonl` 前会脱敏身份证号、手机号、邮箱、银行卡号和座机号；API 错误日志不会记录请求原文。
+
+容器异常时先运行 `docker compose ps` 和 `docker compose logs --tail=200 api ui`。健康状态为
+`unhealthy` 通常表示挂载中缺少结构化法条或索引；出现 `PermissionError` 时检查上述 UID/GID
+设置以及宿主机目录权限。
 
 ## 目录结构
 

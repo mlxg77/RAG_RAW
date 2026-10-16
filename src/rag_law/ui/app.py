@@ -10,7 +10,10 @@ from typing import Any
 
 import streamlit as st
 
-from rag_law.knowledge_base import add_document
+from rag_law.knowledge_base import (
+    add_document,
+    rebuild_knowledge_base,
+)
 from rag_law.schemas import AnswerPipelineResult, ValidatedCitation
 from rag_law.ui.presentation import (
     EXAMPLE_QUESTIONS,
@@ -105,6 +108,61 @@ def _render_add_law_form() -> None:
         use_container_width=True,
     ):
         _add_uploaded_law(uploaded, law_id, law_name)
+
+
+def _render_rebuild_form() -> None:
+    """渲染已有语料的全量重建入口。"""
+
+    st.caption(
+        "根据 manifest.yaml 和 data/raw 重新生成结构化语料、"
+        "BM25 与 Chroma。该操作会调用 Embedding 服务。"
+    )
+    if st.button(
+        "重新构建现有知识库",
+        use_container_width=True,
+    ):
+        _rebuild_existing_knowledge_base()
+
+
+def _rebuild_existing_knowledge_base() -> None:
+    """从服务器已有原始文件重建全部知识库产物。"""
+
+    _load_pipeline.clear()
+    _load_laws.clear()
+
+    with st.status(
+        "正在重新构建现有知识库…",
+        expanded=True,
+    ) as progress:
+
+        def show_progress(stage: str, message: str) -> None:
+            progress.update(
+                label=message,
+                state="complete" if stage == "complete" else "running",
+            )
+            progress.write(message)
+
+        try:
+            result = rebuild_knowledge_base(
+                progress_callback=show_progress,
+            )
+        except Exception as error:
+            progress.update(
+                label="重建失败",
+                state="error",
+                expanded=True,
+            )
+            st.error(
+                "重建失败：请检查 manifest、原始法律文件、模型配置和目录权限。"
+                f"\n\n技术信息：{type(error).__name__}: {error}"
+            )
+            return
+
+    st.session_state.rebuild_notice = (
+        "知识库重建完成："
+        f"{result.law_count} 部法律、{result.chunk_total} 个 chunk。"
+    )
+    st.rerun()
 
 
 def _add_uploaded_law(
@@ -212,6 +270,19 @@ def _render_sidebar(law_names: list[str]) -> str | None:
 
         with st.expander("添加新法律"):
             _render_add_law_form()
+
+        with st.expander("维护现有知识库"):
+            _render_rebuild_form()
+
+        rebuild_notice = st.session_state.pop(
+            "rebuild_notice",
+            None,
+        )
+        if rebuild_notice:
+            st.success(rebuild_notice)
+            st.info(
+                "若 API 运行在独立进程或容器中，请重启 API 以加载新索引。"
+            )
 
         st.markdown("---")
         st.caption("回答仅供法律信息检索与参考，不构成法律意见。")
