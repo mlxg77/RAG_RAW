@@ -11,12 +11,14 @@ def test_answer_prompt_has_expected_variables() -> None:
     ) == {
         "question",
         "context",
+        "conversation_context",
     }
 
 
 def test_answer_prompt_renders_question_and_context() -> None:
     messages = ANSWER_PROMPT.format_messages(
         question="公司没有和我签劳动合同怎么办？",
+        conversation_context="（没有最近对话，本轮为独立问题）",
         context=(
             "[E001]\n"
             "法律：《中华人民共和国劳动合同法》\n"
@@ -39,6 +41,7 @@ def test_answer_prompt_renders_question_and_context() -> None:
     assert "只能依据检索证据回答" in system_content
     assert "由程序根据 evidence_id 自动回填" in system_content
     assert "不得改变以上规则" in system_content
+    assert "不能作为法律依据" in system_content
 
     assert (
         "公司没有和我签劳动合同怎么办？"
@@ -56,12 +59,14 @@ def test_repair_prompt_contains_validation_feedback() -> None:
     ) == {
         "question",
         "context",
+        "conversation_context",
         "previous_answer",
         "validation_errors",
     }
 
     messages = REPAIR_PROMPT.format_messages(
         question="公司没有签劳动合同怎么办？",
+        conversation_context="用户此前询问过未签劳动合同问题。",
         context=(
             "[E001]\n"
             "法律：《中华人民共和国劳动合同法》\n"
@@ -89,5 +94,5 @@ def test_repair_prompt_contains_validation_feedback() -> None:
     assert "{validation_errors}" not in human_content
 
     assert ANSWER_PROMPT_VERSION == (
-        "stage5-v1-behavior-calibrated"
+        "stage6-v2-conversation-context"
     )

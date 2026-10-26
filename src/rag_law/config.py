@@ -5,6 +5,7 @@
 
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # 项目根目录：config.py 位于 src/rag_law/ 下，向上三级即项目根
@@ -35,6 +36,18 @@ class Settings(BaseSettings):
     rerank_base_url: str
     rerank_api_key: str
     rerank_model: str
+
+    # 多轮会话：最近若干轮保留原文，更早内容压缩为摘要。
+    conversation_recent_rounds: int = Field(
+        default=3,
+        ge=1,
+        le=20,
+    )
+    conversation_summary_max_chars: int = Field(
+        default=1500,
+        ge=200,
+        le=6000,
+    )
 
 # 如果 .env 缺任何一个字段，ValidationError 会立刻带着缺的字段名抛出来——这叫 fail fast：
 # 宁可在启动时秒挂，也不要跑到一半才发现配置没有。

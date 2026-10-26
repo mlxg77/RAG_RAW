@@ -14,7 +14,11 @@ from rag_law.knowledge_base import (
     add_document,
     rebuild_knowledge_base,
 )
-from rag_law.schemas import AnswerPipelineResult, ValidatedCitation
+from rag_law.schemas import (
+    AnswerPipelineResult,
+    ConversationTurn,
+    ValidatedCitation,
+)
 from rag_law.ui.presentation import (
     EXAMPLE_QUESTIONS,
     citation_location,
@@ -302,6 +306,7 @@ def _render_hero(law_count: int) -> None:
           <p>描述你的情况，系统会从本地法律知识库检索依据、生成说明，并只展示通过校验的引用。</p>
           <div class="scope-strip">
             <span class="scope-chip">{law_count} 部法律</span>
+            <span class="scope-chip">支持多轮追问</span>
             <span class="scope-chip">引用可追溯</span>
             <span class="scope-chip">证据不足时拒答</span>
             <span class="scope-chip">不保存完整检索正文</span>
@@ -391,7 +396,44 @@ def _render_history(messages: list[dict[str, Any]]) -> None:
                 st.error(message["content"])
 
 
+def _conversation_history(
+    messages: list[dict[str, Any]],
+) -> list[ConversationTurn]:
+    """把当前页面会话转换为核心流水线的历史消息。"""
+
+    turns: list[ConversationTurn] = []
+    for message in messages:
+        if message["role"] == "user" and message.get("content"):
+            turns.append(
+                ConversationTurn(
+                    role="user",
+                    content=message["content"],
+                )
+            )
+            continue
+
+        if message["role"] != "assistant" or not message.get("result"):
+            continue
+
+        answer = from_session_payload(message["result"]).answer
+        parts = [answer.summary, answer.analysis]
+        if answer.conditions:
+            parts.append("适用条件：" + "；".join(answer.conditions))
+        if answer.follow_up_question:
+            parts.append("追问：" + answer.follow_up_question)
+        content = "\n".join(part for part in parts if part).strip()
+        if content:
+            turns.append(
+                ConversationTurn(
+                    role="assistant",
+                    content=content[:2000],
+                )
+            )
+    return turns
+
+
 def _answer(query: str, law_name: str | None) -> None:
+    history = _conversation_history(st.session_state.messages)
     st.session_state.messages.append(
         {"role": "user", "content": query, "law_name": law_name}
     )
@@ -433,6 +475,7 @@ def _answer(query: str, law_name: str | None) -> None:
                 result = _load_pipeline().run(
                     query,
                     law_name=law_name,
+                    history=history,
                     progress_callback=show_progress,
                 )
             _render_result(result)

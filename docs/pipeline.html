@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RagLaw · 全链路交互式流水线图</title>
+<style>
+  :root {
+    --bg: #eef1f6;
+    --card: #ffffff;
+    --ink: #1e293b;
+    --ink-2: #475569;
+    --ink-3: #64748b;
+    --line: #e2e8f0;
+    --slate: #64748b;
+    --blue: #3b82f6;
+    --red: #dc2626;
+    --amber: #d97706;
+    --band-a: #2563eb;
+    --band-b: #059669;
+    --band-c: #7c3aed;
+    --band-d: #ea580c;
+    --band-e: #475569;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  header {
+    background: linear-gradient(120deg, #0f172a 0%, #1e3a5f 60%, #134e4a 100%);
+    color: #f8fafc;
+    padding: 26px 36px 20px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: .5px; }
+  header .sub { color: #cbd5e1; font-size: 13px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .stat {
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+  }
+  .stat b { color: #7dd3fc; font-size: 15px; margin-right: 4px; }
+  .toolbar { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .btn {
+    border: 1px solid rgba(255,255,255,.35);
+    background: rgba(255,255,255,.12);
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 7px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .btn:hover { background: rgba(255,255,255,.25); }
+  .btn.primary { background: #f59e0b; border-color: #f59e0b; color: #1c1917; font-weight: 600; }
+  .btn.primary:hover { background: #fbbf24; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 18px; align-items: center;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 10px 36px;
+    font-size: 12px;
+    color: var(--ink-2);
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 1px 4px rgba(15,23,42,.06);
+  }
+  .legend .item { display: flex; align-items: center; gap: 6px; }
+  .legend svg { display: block; }
+  .chip {
+    display: inline-block; width: 14px; height: 14px;
+    border-radius: 4px; border: 1px solid #cbd5e1; background: #fff;
+  }
+  .chip.data { border-style: dashed; background: #f1f5f9; }
+  .chip.artifact { background: #fef3c7; border-color: #fcd34d; }
+  .chip.cloud { background: #ede9fe; border-color: #c4b5fd; position: relative; }
+  .chip.cloud::after { content: "☁"; position: absolute; inset: 0; font-size: 9px; text-align: center; line-height: 13px; color: #6d28d9; }
+
+  .canvas-wrap { overflow-x: auto; padding: 18px 0 30px; }
+  .canvas {
+    position: relative;
+    width: 1660px; height: 1660px;
+    margin: 0 auto;
+    background:
+      radial-gradient(circle at 20% 10%, rgba(59,130,246,.04), transparent 40%),
+      radial-gradient(circle at 80% 60%, rgba(16,185,129,.04), transparent 40%),
+      var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(15,23,42,.07);
+  }
+  .band {
+    position: absolute;
+    border-radius: 12px;
+    border: 1px solid transparent;
+  }
+  .band.a { background: rgba(37,99,235,.045);  border-color: rgba(37,99,235,.18); }
+  .band.b { background: rgba(5,150,105,.045);  border-color: rgba(5,150,105,.18); }
+  .band.c { background: rgba(124,58,237,.045); border-color: rgba(124,58,237,.18); }
+  .band.d { background: rgba(234,88,12,.045);  border-color: rgba(234,88,12,.18); }
+  .band.e { background: rgba(71,85,105,.05);   border-color: rgba(71,85,105,.18); }
+  .band-title {
+    position: absolute;
+    font-size: 14.5px; font-weight: 700; color: var(--ink);
+    display: flex; align-items: center; gap: 10px;
+    white-space: nowrap;
+  }
+  .band-title .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .pill {
+    font-size: 11px; font-weight: 500;
+    background: #fff; border: 1px solid var(--line);
+    color: var(--ink-3);
+    border-radius: 999px; padding: 2px 10px;
+  }
+  .band-note {
+    position: absolute; font-size: 11.5px; color: var(--ink-3);
+  }
+
+  svg#edges { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
+  .edge {
+    fill: none; stroke: var(--slate); stroke-width: 1.7;
+    transition: opacity .15s, stroke-width .15s;
+  }
+  .edge.parallel { stroke: var(--blue); stroke-width: 1.8; }
+  .edge.loop { stroke: var(--red); stroke-width: 1.7; stroke-dasharray: 6 4; }
+  .edge.thin { stroke-width: 1.3; opacity: .85; }
+  .edge.dim { opacity: .10; }
+  .edge.hl { stroke-width: 3; }
+  .edge.playing {
+    stroke: #f59e0b; stroke-width: 3;
+    stroke-dasharray: 10 6;
+    animation: dash .6s linear infinite;
+  }
+  @keyframes dash { to { stroke-dashoffset: -16; } }
+  .elabel {
+    font-size: 11px; fill: var(--ink-2);
+    paint-order: stroke; stroke: #ffffff; stroke-width: 4px;
+    font-weight: 600;
+  }
+  .elabel.warn { fill: var(--red); }
+  .forkdot { fill: var(--blue); stroke: #fff; stroke-width: 1.5; }
+  .forklabel { font-size: 10.5px; fill: var(--blue); paint-order: stroke; stroke: #fff; stroke-width: 3.5px; font-weight: 700; }
+
+  .node {
+    position: absolute; z-index: 2;
+    background: var(--card);
+    border: 1px solid #d7dee9;
+    border-left-width: 4px;
+    border-radius: 10px;
+    padding: 9px 11px 8px;
+    box-shadow: 0 1px 4px rgba(15,23,42,.08);
+    cursor: pointer;
+    overflow: hidden;
+    transition: box-shadow .15s, transform .15s, border-color .15s;
+  }
+  .node:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(15,23,42,.14); }
+  .node.hl { border-color: #0ea5e9; box-shadow: 0 0 0 2px rgba(14,165,233,.35), 0 4px 12px rgba(15,23,42,.14); }
+  .node.hl2 { box-shadow: 0 0 0 2px rgba(148,163,184,.35); }
+  .node.playing {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,.55), 0 0 18px rgba(245,158,11,.45);
+  }
+  .node.b-a { border-left-color: var(--band-a); }
+  .node.b-b { border-left-color: var(--band-b); }
+  .node.b-c { border-left-color: var(--band-c); }
+  .node.b-d { border-left-color: var(--band-d); }
+  .node.b-e { border-left-color: var(--band-e); }
+  .node.k-data {
+    border-style: dashed; border-left-style: solid;
+    background: #f8fafc;
+  }
+  .node.k-artifact {
+    background: #fffbeb;
+    border-color: #fcd34d;
+  }
+  .node.k-artifact.b-a { border-left-color: var(--amber); }
+  .node.k-artifact.b-b { border-left-color: var(--amber); }
+  .node.k-artifact.b-c { border-left-color: var(--amber); }
+  .n-tag {
+    font-size: 9.5px; font-weight: 700; letter-spacing: .4px;
+    text-transform: uppercase; color: var(--ink-3);
+    margin-bottom: 3px;
+  }
+  .n-title { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
+  .n-files {
+    margin-top: 5px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 10px; color: var(--ink-3); line-height: 1.45;
+    word-break: break-all;
+  }
+  .n-io {
+    margin-top: 4px; font-size: 10px; color: #94a3b8;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .cloud {
+    position: absolute; top: 6px; right: 7px;
+    font-size: 10px; line-height: 1;
+    background: #ede9fe; color: #6d28d9;
+    border: 1px solid #c4b5fd;
+    border-radius: 999px; padding: 3px 7px;
+    font-weight: 700;
+  }
+  .para {
+    position: absolute; bottom: 6px; right: 7px;
+    font-size: 10px; line-height: 1;
+    background: #dbeafe; color: #1d4ed8;
+    border: 1px solid #93c5fd;
+    border-radius: 999px; padding: 3px 7px;
+    font-weight: 700;
+  }
+
+  .detail-panel {
+    position: fixed; top: 96px; right: 24px; z-index: 100;
+    width: 360px; max-height: 76vh; overflow-y: auto;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 10px 34px rgba(15,23,42,.22);
+    padding: 16px 18px;
+    display: none;
+  }
+  .detail-panel.show { display: block; }
+  .detail-panel h3 { margin: 0 0 4px; font-size: 15.5px; }
+  .detail-panel .d-band {
+    display: inline-block; font-size: 10.5px; font-weight: 700;
+    border-radius: 999px; padding: 2px 10px; margin-bottom: 10px;
+    color: #fff;
+  }
+  .detail-panel h4 {
+    margin: 12px 0 4px; font-size: 11px; letter-spacing: .6px;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+  .detail-panel p { margin: 4px 0; font-size: 12.5px; line-height: 1.65; color: var(--ink-2); }
+  .detail-panel ul { margin: 4px 0; padding-left: 18px; font-size: 12px; color: var(--ink-2); }
+  .detail-panel li { margin: 2px 0; line-height: 1.5; }
+  .detail-panel code, .filelist code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 11.5px;
+    background: #f1f5f9; border: 1px solid var(--line);
+    border-radius: 4px; padding: 1px 5px;
+    color: #0f172a;
+  }
+  .d-close {
+    position: absolute; top: 10px; right: 12px;
+    border: none; background: none; font-size: 16px;
+    color: var(--ink-3); cursor: pointer;
+  }
+  footer {
+    text-align: center; color: var(--ink-3);
+    font-size: 12px; padding: 6px 20px 26px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RagLaw · 全链路交互式流水线图</h1>
+  <div class="sub">对应 docs/plan/v1 的阶段 0 → 阶段 6 · 节点 = 一个或多个 Python 文件 · 支持串行依赖与并行分支</div>
+  <div class="stats">
+    <span class="stat"><b>6</b>大阶段</span>
+    <span class="stat"><b>33</b>个节点</span>
+    <span class="stat"><b>31</b>个 Python 文件</span>
+    <span class="stat"><b>4</b>组并行分支</span>
+    <span class="stat"><b>1</b>条引用修复回路</span>
+  </div>
+  <div class="toolbar">
+    <button class="btn primary" id="btnPlay">▶ 播放主流程</button>
+    <button class="btn" id="btnReset">重置视图</button>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="item"><svg width="34" height="10"><line x1="0" y1="5" x2="26" y2="5" stroke="#64748b" stroke-width="1.7"/><polygon points="26,1.5 33,5 26,8.5" fill="#64748b"/></svg>串行依赖</span>
+  <span class="item"><svg width="34" height="10"><line x1="0" y1="5" x2="26" y2="5" stroke="#3b82f6" stroke-width="1.8"/><polygon points="26,1.5 33,5 26,8.5" fill="#3b82f6"/></svg>并行分叉 / 汇聚</span>
+  <span class="item"><svg width="34" height="10"><line x1="0" y1="5" x2="26" y2="5" stroke="#dc2626" stroke-width="1.7" stroke-dasharray="6 4"/><polygon points="26,1.5 33,5 26,8.5" fill="#dc2626"/></svg>循环 / 降级路径</span>
+  <span class="item"><span class="chip"></span>处理节点（Python）</span>
+  <span class="item"><span class="chip data"></span>原始数据 / 输入</span>
+  <span class="item"><span class="chip artifact"></span>数据产物 / 输出</span>
+  <span class="item"><span class="chip cloud"></span>调用外部模型 API</span>
+  <span class="item"><span class="chip" style="border-color:#93c5fd;color:#1d4ed8;font-size:9px;text-align:center;line-height:12px;">∥</span>可与相邻节点并行</span>
+  <span class="item" style="color:#94a3b8;">提示：悬停高亮上下游，点击节点查看文件与职责</span>
+</div>
+
+<div class="canvas-wrap">
+  <div class="canvas" id="canvas">
+    <!-- 阶段分区背景 -->
+    <div class="band a" style="left:24px;top:16px;width:1612px;height:280px;"></div>
+    <div class="band b" style="left:24px;top:330px;width:1612px;height:586px;"></div>
+    <div class="band c" style="left:24px;top:940px;width:1612px;height:256px;"></div>
+    <div class="band d" style="left:24px;top:1228px;width:1612px;height:204px;"></div>
+    <div class="band e" style="left:24px;top:1462px;width:1612px;height:160px;"></div>
+
+    <div class="band-title" style="left:40px;top:30px;"><span class="dot" style="background:var(--band-a)"></span>① 离线建库链（阶段 0 → 2）<span class="pill">编排：knowledge_base.py（add_document / rebuild）</span></div>
+    <div class="band-title" style="left:40px;top:340px;"><span class="dot" style="background:var(--band-b)"></span>② 在线问答链（阶段 2 → 4 · 核心查询路径）</div>
+    <div class="band-note" style="left:40px;top:908px;">conversation / retrieve / evidence / generate / cite / repair / degrade / log 均由 generation/answer_pipeline.py 的同一次 run() 编排</div>
+    <div class="band-title" style="left:40px;top:950px;"><span class="dot" style="background:var(--band-c)"></span>③ 离线评测链（阶段 5 · 四路并行，互不依赖）</div>
+    <div class="band-title" style="left:40px;top:1240px;"><span class="dot" style="background:var(--band-d)"></span>④ 服务与入口层（阶段 6 · 四个独立入口可并行运行）<span class="pill">API / UI / CLI 均调用上方「在线问答链」</span></div>
+    <div class="band-title" style="left:40px;top:1474px;"><span class="dot" style="background:var(--band-e)"></span>⑤ 横向支撑层（被所有阶段引用）</div>
+
+    <svg id="edges" viewBox="0 0 1660 1660">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+        </marker>
+        <marker id="arrBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/>
+        </marker>
+        <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+        </marker>
+      </defs>
+      <g id="edgeLayer"></g>
+      <g id="forkLayer"></g>
+      <g id="labelLayer"></g>
+    </svg>
+
+    <div id="nodeLayer"></div>
+  </div>
+</div>
+
+<aside class="detail-panel" id="panel">
+  <button class="d-close" id="panelClose">✕</button>
+  <div id="panelBody"></div>
+</aside>
+
+<footer>
+  RagLaw 全链路流水线图 · 由 src/rag_law 源码结构梳理生成 · 单文件离线可用，直接用浏览器打开即可
+</footer>
+
+<script>
+/* ================= 节点定义（x, y, w, h 为画布坐标） ================= */
+const NODES = [
+  /* ---------- ① 离线建库链 ---------- */
+  { id:'n_raw', band:'a', kind:'data', x:40,  y:70,  w:200, h:112,
+    tag:'阶段 0 · 数据源', title:'原始法律文件库',
+    files:'data/raw/*.pdf|docx|md · data/manifest.yaml',
+    io:'输出 → 阶段 1 解析输入',
+    desc:'15 部法律原文（PDF / DOCX / Markdown）。data/manifest.yaml 以列表登记每部法律的 law_id、law_name 与 file 路径，是整条建库链的唯一事实来源。',
+    ioList:{ '输入':'新增法律文件（任意位置）', '输出':'阶段 1：文档解析与法条切分' } },
+
+  { id:'n_ingest', band:'a', kind:'stage', x:300, y:70, w:220, h:112,
+    tag:'阶段 1 · ingestion', title:'文档解析与法条切分',
+    files:'loaders.py → normalizer.py → article_splitter.py → pipeline.py',
+    io:'输入：原始文件 · 输出：articles.jsonl',
+    desc:'节点内部为串行小流水线：loaders 按 PDF/DOCX/MD 分别抽取文本与页码；normalizer 统一空白与全半角；article_splitter 按「第 X 条」正则切分法条，超长条再按句子切成 chunk；pipeline.py 遍历 manifest 全量编排，原子写出语料与质量报告。',
+    cmds:['uv run python -m rag_law.ingestion.pipeline --max-chars 1200'],
+    ioList:{ '输入':'data/raw 文件 + manifest.yaml', '输出':'articles.jsonl、parse_report.json（交给双索引构建）' } },
+
+  { id:'n_articles', band:'a', kind:'artifact', x:580, y:70, w:210, h:104,
+    tag:'产物 · data/processed', title:'结构化法条语料',
+    files:'data/processed/articles.jsonl · parse_report.json',
+    io:'双索引构建的公共输入',
+    desc:'全库唯一的法条 chunk 语料：chunk_id、law_name、article_no、正文、页码等字段。parse_report.json 记录每部法律的条数、空条、重复条号与超长 chunk 警告。',
+    ioList:{ '输入':'阶段 1 切分结果', '输出':'并行交给 BM25 构建与 Chroma 构建' } },
+
+  { id:'n_bm25_build', band:'a', kind:'stage', x:870, y:58, w:230, h:92,
+    tag:'阶段 2 · 索引构建', title:'BM25 稀疏索引构建',
+    files:'retrieval/bm25.py（BM25Retriever.build / save）',
+    io:'输入：articles.jsonl · 输出：bm25_index.json',
+    para:true,
+    desc:'用 jieba 对全部 chunk 分词，构建 BM25 倒排索引并落盘为 JSON。与 Chroma 向量库构建相互独立、互不依赖，因此两路可并行执行。',
+    ioList:{ '输入':'articles.jsonl', '输出':'indexes/bm25/bm25_index.json' } },
+
+  { id:'n_dense_build', band:'a', kind:'stage', x:870, y:182, w:230, h:92,
+    tag:'阶段 2 · 索引构建', title:'Chroma 向量库构建',
+    files:'retrieval/dense.py（DenseRetriever.build）',
+    io:'输入：articles.jsonl · 输出：indexes/chroma/',
+    para:true, cloud:'☁ Embedding',
+    desc:'逐 chunk 调用 Embedding 接口生成语义向量，写入持久化 Chroma 集合。与 BM25 构建相互独立，可并行执行（当前代码为顺序执行，无数据依赖）。',
+    ext:'OpenAI 兼容 Embedding 接口 · .env: RAG_LAW_EMBEDDING_*',
+    ioList:{ '输入':'articles.jsonl', '输出':'indexes/chroma/（含 chroma.sqlite3 与 HNSW 段文件）' } },
+
+  { id:'n_index', band:'a', kind:'artifact', x:1180, y:70, w:240, h:112,
+    tag:'产物 · indexes/', title:'双索引产物',
+    files:'indexes/bm25/bm25_index.json · indexes/chroma/',
+    io:'在线问答链的两路召回来源',
+    desc:'建库链的最终产物：BM25 倒排索引 + Chroma 向量库。API 的 /v1/health 会检查这两项是否存在，用于定位索引缺失。',
+    ioList:{ '输入':'两路构建节点汇聚', '输出':'在线问答链：BM25 召回 / Dense 召回' } },
+
+  /* ---------- ② 在线问答链 ---------- */
+  { id:'n_query', band:'b', kind:'data', x:40, y:372, w:180, h:96,
+    tag:'入口', title:'当前问题 + 可选历史',
+    files:'API / UI / CLI / 评测器',
+    io:'进入统一在线问答链',
+    desc:'FastAPI /v1/query 与 Streamlit 可携带当前问题之前的 ConversationTurn 历史；API 不保存服务端会话，Streamlit 只保存在当前 session_state。CLI、/v1/retrieve 与现有评测器仍可按单轮方式调用。',
+    ioList:{ '输入':'query + 可选 history[]', '输出':'会话上下文准备；无历史时保持原单轮行为' } },
+
+  { id:'n_conversation', band:'b', kind:'stage', x:40, y:490, w:180, h:116,
+    tag:'多轮会话 · 可选 LLM', title:'会话上下文准备',
+    files:'generation/conversation.py',
+    io:'最近 N 轮原文 + 更早摘要',
+    cloud:'☁ LLM',
+    desc:'ConversationContextBuilder 按用户消息计轮：最近 N 轮保留原文，N 由 RAG_LAW_CONVERSATION_RECENT_ROUNDS 配置；更早历史由 LLM 压缩为用户事实、讨论主题和未解决问题，摘要失败则退化为限长原文摘录。摘要与最近用户问题组成 contextualized retrieval query，完整会话背景另送生成 Prompt。历史仅存在当前请求/页面会话，不接 PostgreSQL。',
+    ext:'OpenAI 兼容 Chat 接口（仅存在更早历史时用于摘要）· .env: RAG_LAW_CONVERSATION_*',
+    ioList:{ '输入':'ConversationTurn[]', '输出 1':'上下文化检索问题 → 双路召回', '输出 2':'会话背景 → 结构化生成（明确标记为非法律证据）' } },
+
+  { id:'n_bm25_search', band:'b', kind:'stage', x:300, y:372, w:210, h:88,
+    tag:'阶段 2 · 召回', title:'BM25 稀疏召回',
+    files:'retrieval/bm25.py（BM25Retriever.load / search）',
+    io:'输出：Top-K 候选 → RRF 融合',
+    para:true,
+    desc:'加载磁盘上的 BM25 索引，对查询分词后按词频相关性打分，取 Top-K 候选法条。擅长精确术语匹配（如「劳动合同」「经济补偿」）。',
+    ioList:{ '输入':'上下文化检索问题', '输出':'Top-K 候选 → RRF 混合融合' } },
+
+  { id:'n_dense_search', band:'b', kind:'stage', x:300, y:478, w:210, h:88,
+    tag:'阶段 2 · 召回', title:'Dense 向量召回',
+    files:'retrieval/dense.py（DenseRetriever.load / search）',
+    io:'输出：Top-K 候选 → RRF 融合',
+    para:true, cloud:'☁ Embedding',
+    desc:'查询先经 Embedding 接口向量化，再到 Chroma 做最近邻检索，取语义相近的 Top-K 候选。擅长口语化问法与法条措辞不一致的场景。',
+    ext:'OpenAI 兼容 Embedding 接口 · .env: RAG_LAW_EMBEDDING_*',
+    ioList:{ '输入':'上下文化检索问题', '输出':'Top-K 候选 → RRF 混合融合' } },
+
+  { id:'n_fusion', band:'b', kind:'stage', x:585, y:372, w:205, h:88,
+    tag:'阶段 2 · 融合', title:'RRF 混合融合',
+    files:'retrieval/fusion.py（HybridRetriever）',
+    io:'输入：双路候选 · 输出：融合排名',
+    desc:'按倒数排名融合（Reciprocal Rank Fusion，参数 rrf_k）合并两路候选，并叠加 bm25_weight / dense_weight 加权；结果附带两路分路排名，便于调试。',
+    ioList:{ '输入':'BM25 候选 + Dense 候选（并行汇聚）', '输出':'融合候选列表 → Rerank 精排' } },
+
+  { id:'n_rerank', band:'b', kind:'stage', x:835, y:372, w:215, h:88,
+    tag:'阶段 2 → 3 · 精排', title:'Rerank 精排',
+    files:'retrieval/reranker.py（RerankedRetriever + SiliconFlowReranker）',
+    io:'输入：融合候选 · 输出：Top-N',
+    cloud:'☁ Rerank',
+    desc:'把「问题-法条」成对送入交叉编码器重打分，输出按真实相关度排序的 Top-N（rerank_top_n）。该分数同时用于后续证据充分性判断（阈值 0.15）。',
+    ext:'SiliconFlow Rerank 接口 · .env: RAG_LAW_RERANK_*',
+    ioList:{ '输入':'融合后的候选列表', '输出':'Top-N 精排结果 → 上下文构建' } },
+
+  { id:'n_context', band:'b', kind:'stage', x:1095, y:372, w:235, h:96,
+    tag:'阶段 3 · 编排 + 构建', title:'证据上下文构建',
+    files:'retrieval/context_builder.py + retrieval_context_pipeline.py',
+    io:'输出：BuiltContext（编号证据）',
+    desc:'context_builder 为精排结果补充相邻法条（带分数门槛）、对长法条做片段选择，打包成带 evidence_id 编号的 BuiltContext 并控制 token 上限；retrieval_context_pipeline 负责整体编排与分阶段耗时统计。',
+    ioList:{ '输入':'Top-N 精排结果', '输出':'RetrievalContextResult → 阶段 4 证据检查' } },
+
+  { id:'n_evidence', band:'b', kind:'stage', x:1095, y:636, w:235, h:100,
+    tag:'阶段 4 · 前置检查', title:'证据充分性检查',
+    files:'generation/answer_pipeline.py（_has_sufficient_evidence）',
+    io:'通过 → 生成；不通过 → 安全降级',
+    desc:'调用大模型前的守门检查：Top1 Rerank 分数 ≥ min_answer_score（默认 0.15）且证据非空、上下文文本非空。不达标则直接返回「证据不足」回答，绝不无依据作答。',
+    ioList:{ '输入':'RetrievalContextResult', '输出':'通过 → 结构化生成；不足 → 安全降级回答' } },
+
+  { id:'n_generate', band:'b', kind:'stage', x:835, y:636, w:215, h:104,
+    tag:'阶段 4 · 生成', title:'结构化生成',
+    files:'generation/prompts.py + generation/chain.py（answer_chain）',
+    io:'输入：问题 + 会话背景 + 编号证据',
+    cloud:'☁ LLM',
+    desc:'版本化 Prompt（stage6-v2-conversation-context）同时接收当前问题、裁剪后的会话背景和本轮 BuiltContext。会话历史只用于理解省略、指代和用户陈述，不能作为法律依据；历史与本轮证据冲突时以本轮证据为准。模型仍强制返回结构化 GeneratedAnswer，空结果自动重试一次。',
+    ext:'OpenAI 兼容 Chat 接口 · .env: RAG_LAW_LLM_*',
+    ioList:{ '输入':'query + conversation.prompt_text + context.text', '输出':'GeneratedAnswer → 引用校验' } },
+
+  { id:'n_cite', band:'b', kind:'stage', x:585, y:636, w:205, h:100,
+    tag:'阶段 4 · 校验', title:'引用校验',
+    files:'generation/citation_validator.py',
+    io:'通过 → 最终回答；失败 → 修复链',
+    desc:'逐条核对模型给出的证据编号能否映射回 BuiltContext 中的 evidence，并回溯原始法条原文、源文件与页码生成 ValidatedCitation。任一编号无效即整体判为不通过。',
+    ioList:{ '输入':'GeneratedAnswer + BuiltContext', '输出':'通过 → 最终回答；失败 → 引用修复链（限 1 次）' } },
+
+  { id:'n_repair', band:'b', kind:'stage', x:585, y:800, w:205, h:92,
+    tag:'阶段 4 · 修复回路', title:'引用修复链（≤1 次）',
+    files:'generation/chain.py（repair_chain）',
+    io:'修复后回到引用校验',
+    cloud:'☁ LLM',
+    desc:'把同一份会话背景、本轮证据、校验错误清单与原回答一起回喂模型，重新生成完整结构化回答；不得沿用错误引用，证据不支持时必须收缩结论。修复后重新校验：通过则放行，再失败即安全降级。整个回路最多执行一次。',
+    ext:'OpenAI 兼容 Chat 接口',
+    ioList:{ '输入':'原回答 + validation_errors', '输出':'修复答案 → 引用校验（第 2 次）' } },
+
+  { id:'n_answer', band:'b', kind:'artifact', x:300, y:636, w:215, h:112,
+    tag:'输出 · AnswerResponse', title:'最终回答（带校验引用）',
+    files:'schemas.py: AnswerResponse / AnswerPipelineResult',
+    io:'四种状态之一 + 引用列表',
+    desc:'status ∈ answered / needs_clarification / insufficient_evidence / generation_failed。每条引用附法条原文、源文件与页码；「回答限制」固定声明仅供参考、不替代律师意见。',
+    ioList:{ '输入':'校验通过的引用 + 生成内容', '输出':'展示给用户；同时侧写运行日志' } },
+
+  { id:'n_log', band:'b', kind:'artifact', x:40, y:636, w:205, h:100,
+    tag:'产物 · logs/', title:'运行日志落盘',
+    files:'generation/run_logger.py → logs/answer_runs.jsonl',
+    io:'每次回答一行 JSONL（脱敏）',
+    desc:'以脱敏形式记录每次回答的状态、分阶段耗时、生成次数与引用统计。日志写入失败只记 stderr，不会让已完成的回答丢失。',
+    ioList:{ '输入':'AnswerPipelineResult', '输出':'logs/answer_runs.jsonl' } },
+
+  { id:'n_degrade', band:'b', kind:'artifact', x:835, y:800, w:215, h:96,
+    tag:'输出 · 安全降级', title:'安全降级回答',
+    files:'generation/answer_pipeline.py（内置兜底回答）',
+    io:'证据不足 / 生成失败 / 校验失败时返回',
+    desc:'三条降级路径共用：① Top1 分数不足；② 结构化生成异常（含重试后仍为空）；③ 两轮引用校验均失败。只返回固定的安全话术，绝不输出未核验的法律结论。',
+    ioList:{ '输入':'任一失败分支', '输出':'status = insufficient_evidence 或 generation_failed' } },
+
+  /* ---------- ③ 离线评测链 ---------- */
+  { id:'n_questions', band:'c', kind:'data', x:40, y:1000, w:200, h:122,
+    tag:'阶段 5 · 输入', title:'评测题集',
+    files:'data/eval/questions_v1.yaml',
+    io:'分发 → 四路并行评测',
+    desc:'带标准法条标注（gold chunks）的问题集，含 development 与 holdout 两个切片，支持按题目 ID / 数量筛选，供四路评测共用。',
+    ioList:{ '输入':'人工标注题集', '输出':'并行分发给四个评测器' } },
+
+  { id:'m1', band:'c', kind:'stage', x:300, y:1000, w:230, h:122,
+    tag:'阶段 5 · 评测 1', title:'检索基线评测',
+    files:'evaluation/retrieval_metrics.py',
+    io:'→ retrieval_baseline_v1.json',
+    para:true,
+    desc:'对 bm25 / dense / hybrid 三种方法批量跑 Recall@{1,3,5,10}、MRR 与延迟分位数，生成检索基线报告；另提供共享的指标函数（ndcg / recall / MRR）。',
+    cmds:['uv run python -m rag_law.cli evaluate'],
+    ioList:{ '输入':'题集 + 双索引', '输出':'data/eval/results/retrieval_baseline_v1.json' } },
+
+  { id:'m2', band:'c', kind:'stage', x:560, y:1000, w:230, h:122,
+    tag:'阶段 5 · 评测 2', title:'重排与上下文评测',
+    files:'evaluation/rerank_context_metrics.py',
+    io:'→ rerank_context_v1.json',
+    para:true, cloud:'☁ Rerank',
+    desc:'评估 Rerank 后的排序质量（gold 命中、排名变化）与上下文结构（证据数量、token 占用、截断率），验证阶段 3 的参数配置。',
+    ioList:{ '输入':'题集 + 精排与上下文组件', '输出':'data/eval/results/rerank_context_v1.json' } },
+
+  { id:'m3', band:'c', kind:'stage', x:820, y:1000, w:230, h:122,
+    tag:'阶段 5 · 评测 3', title:'RRF 融合调参',
+    files:'evaluation/fusion_tuning.py',
+    io:'→ fusion_tuning_v1.json',
+    para:true,
+    desc:'基于缓存的 BM25 / Dense 候选离线网格搜索 candidate_top_k、rrf_k 与两路权重，选出最优融合参数再回填到在线链配置。',
+    ioList:{ '输入':'题集 + 缓存候选', '输出':'data/eval/results/fusion_tuning_v1.json' } },
+
+  { id:'m4', band:'c', kind:'stage', x:1080, y:1000, w:240, h:122,
+    tag:'阶段 5 · 评测 4', title:'端到端系统评测',
+    files:'evaluation/answer_metrics.py',
+    io:'→ answer_quality_v1.json + .md',
+    para:true, cloud:'☁ LLM',
+    desc:'复用完整 AnswerPipeline（检索+生成+校验），统计回答状态分布、引用有效率、延迟与质量门槛（quality gates），支持 --fail-on-gates 作为发布卡口。',
+    cmds:['uv run python -m rag_law.cli evaluate-system'],
+    ioList:{ '输入':'题集 + AnswerPipeline', '输出':'answer_quality_v1.json / .md' } },
+
+  { id:'n_reports', band:'c', kind:'artifact', x:1360, y:1000, w:250, h:122,
+    tag:'产物 · data/eval/results', title:'评测报告',
+    files:'retrieval_baseline_v1.json · rerank_context_v1.json · fusion_tuning_v1.json · answer_quality_v1.json|md',
+    io:'调参依据 / 发布卡口',
+    desc:'四路评测的落盘报告：记录指标、参数、语料指纹（sha256）与时间戳，用于横向对比与质量门槛判断。语料重建后旧报告需重跑。',
+    ioList:{ '输入':'四路评测汇聚', '输出':'参数调优结论 + 质量门槛' } },
+
+  /* ---------- ④ 服务与入口层 ---------- */
+  { id:'n_cli', band:'d', kind:'stage', x:40, y:1300, w:210, h:118,
+    tag:'阶段 6 · 入口 1', title:'CLI 统一入口',
+    files:'cli.py',
+    io:'retrieve / context / answer / evaluate / evaluate-system / add-document',
+    para:true,
+    desc:'项目统一命令行：六个子命令分别触发在线问答链、评测链与建库链（add-document 走 knowledge_base.add_document 完成登记+重建）。',
+    cmds:['uv run python -m rag_law.cli answer --query "公司没签劳动合同，能要赔偿吗？"'],
+    ioList:{ '调用':'在线问答链 / 评测链 / 建库链', '输出':'控制台结果或 JSON' } },
+
+  { id:'n_api', band:'d', kind:'stage', x:300, y:1300, w:210, h:118,
+    tag:'阶段 6 · 入口 2', title:'FastAPI 服务',
+    files:'api/main.py',
+    io:'GET /v1/health · GET /v1/laws · POST /v1/retrieve · POST /v1/query',
+    para:true,
+    desc:'HTTP 服务：/v1/query 接受最多 50 条显式 history 消息并转交 AnswerPipeline，但服务端不保存会话；同时提供滑动窗口限流（30 次/分钟）、60s 超时和延迟加载。/v1/health 检查 manifest、语料与双索引完整性。',
+    cmds:['uv run uvicorn rag_law.api.main:app --host 127.0.0.1 --port 8000'],
+    ioList:{ '调用':'AnswerPipeline / RetrievalContextPipeline', '输出':'JSON 响应' } },
+
+  { id:'n_ui', band:'d', kind:'stage', x:560, y:1300, w:210, h:118,
+    tag:'阶段 6 · 入口 3', title:'Streamlit 界面',
+    files:'ui/app.py + ui/presentation.py + ui/styles.css',
+    io:'多轮追问 / 进度展示 / 引用卡片 / 知识库维护',
+    para:true,
+    desc:'演示页面：使用 session_state 展示并保存当前页面内的消息；每次提问把历史转换为 ConversationTurn 后传给 AnswerPipeline，清空对话即删除这些内存历史。页面同时提供法条过滤、进度展示、引用与来源页码渲染，以及知识库添加/重建。',
+    cmds:['uv run streamlit run src/rag_law/ui/app.py'],
+    ioList:{ '调用':'AnswerPipeline / knowledge_base', '输出':'网页交互界面' } },
+
+  { id:'n_deploy', band:'d', kind:'stage', x:820, y:1300, w:210, h:118,
+    tag:'阶段 6 · 交付', title:'部署交付',
+    files:'Dockerfile · compose.yaml · .streamlit/config.toml',
+    io:'容器化构建与编排',
+    para:true,
+    desc:'容器镜像构建与服务编排配置，.streamlit/config.toml 控制页面主题。与前三个入口相互独立，可按需单独部署。',
+    ioList:{ '输入':'源码 + 配置', '输出':'可运行容器服务' } },
+
+  /* ---------- ⑤ 横向支撑层 ---------- */
+  { id:'n_schemas', band:'e', kind:'stage', x:40, y:1512, w:480, h:96,
+    tag:'支撑 · 数据契约', title:'schemas.py',
+    files:'ConversationTurn / ArticleChunk / RetrievalResult / BuiltContext / GeneratedAnswer / AnswerPipelineResult …',
+    io:'全链共享的 Pydantic 模型',
+    desc:'定义阶段间传递的全部数据结构：ConversationTurn 约束 user / assistant 历史消息；阶段 1 产出 ArticleChunk，阶段 3 产出 BuiltContext / RetrievalContextResult，阶段 4 产出 GeneratedAnswer / AnswerPipelineResult。任何字段变更都会波及全链，是事实上的「接口契约」。',
+    ioList:{ '被引用':'ingestion / retrieval / generation / evaluation / api / ui 全部模块' } },
+
+  { id:'n_config', band:'e', kind:'stage', x:560, y:1512, w:480, h:96,
+    tag:'支撑 · 全局配置', title:'config.py',
+    files:'.env（RAG_LAW_ 前缀） → Settings',
+    io:'模型服务 + 会话保留轮数 / 摘要长度',
+    desc:'用 pydantic-settings 从 .env 读取配置，生成全局 settings 对象；除三组模型服务外，RAG_LAW_CONVERSATION_RECENT_ROUNDS 控制保留原文的最近轮数（默认 3），RAG_LAW_CONVERSATION_SUMMARY_MAX_CHARS 控制早期摘要长度（默认 1500）。',
+    ioList:{ '被引用':'dense.py / reranker.py / chain.py / conversation.py / run_logger.py 等' } },
+
+  { id:'n_scripts', band:'e', kind:'stage', x:1080, y:1512, w:530, h:96,
+    tag:'支撑 · 运维脚本', title:'scripts/',
+    files:'verify_env.py · check_manifest.py · verify_generation.py',
+    io:'环境自检 / 清单校验 / 生成链冒烟',
+    desc:'verify_env 校验 .env 与三方依赖版本；check_manifest 校验 manifest 命名规范（cn_ 前缀）与文件存在性；verify_generation 用真实服务冒烟验证生成与校验链路。',
+    ioList:{ '被使用':'开发调试与部署前检查' } },
+];
+
+/* ================= 边定义（kind: serial | parallel | loop） ================= */
+const EDGES = [
+  /* ① 建库链 */
+  { id:'e1',  kind:'serial',   d:'M240,126 L300,126',                       from:'n_raw', to:'n_ingest' },
+  { id:'e2',  kind:'serial',   d:'M520,126 L580,122',                       from:'n_ingest', to:'n_articles' },
+  { id:'e3',  kind:'parallel', d:'M790,122 C812,122 825,140 825,166',       from:'n_articles', to:'n_bm25_build' },
+  { id:'e4',  kind:'parallel', d:'M825,166 C825,128 844,104 870,104',       from:'n_articles', to:'n_bm25_build', arrow:'arrBlue' },
+  { id:'e5',  kind:'parallel', d:'M825,166 C825,204 844,228 870,228',       from:'n_articles', to:'n_dense_build', arrow:'arrBlue' },
+  { id:'e6',  kind:'parallel', d:'M1100,104 C1124,104 1140,130 1140,166',   from:'n_bm25_build', to:'n_index' },
+  { id:'e7',  kind:'parallel', d:'M1100,228 C1124,228 1140,202 1140,166',   from:'n_dense_build', to:'n_index' },
+  { id:'e8',  kind:'serial',   d:'M1140,166 C1140,142 1158,126 1180,126',   from:'n_bm25_build', to:'n_index', arrow:'arr' },
+
+  /* ② 在线问答链 */
+  { id:'e9',  kind:'serial',   d:'M130,468 L130,490',                       from:'n_query', to:'n_conversation', label:'可选历史', lx:166, ly:482 },
+  { id:'e9a', kind:'parallel', d:'M220,548 C234,548 244,522 255,522',       from:'n_conversation', to:'n_bm25_search' },
+  { id:'e10', kind:'parallel', d:'M255,522 C255,462 274,416 300,416',       from:'n_conversation', to:'n_bm25_search', arrow:'arrBlue' },
+  { id:'e11', kind:'parallel', d:'M255,522 L300,522',                       from:'n_conversation', to:'n_dense_search', arrow:'arrBlue' },
+  { id:'e12', kind:'parallel', d:'M510,416 C524,416 534,418 540,420',       from:'n_bm25_search', to:'n_fusion' },
+  { id:'e13', kind:'parallel', d:'M510,522 C532,522 540,468 540,420',       from:'n_dense_search', to:'n_fusion' },
+  { id:'e14', kind:'serial',   d:'M540,420 C552,420 568,416 585,416',       from:'n_bm25_search', to:'n_fusion', arrow:'arr' },
+  { id:'e15', kind:'serial',   d:'M790,416 L835,416',                       from:'n_fusion', to:'n_rerank', label:'Top 候选', lx:812, ly:406 },
+  { id:'e16', kind:'serial',   d:'M1050,416 L1095,420',                     from:'n_rerank', to:'n_context', label:'Top N', lx:1072, ly:406 },
+  { id:'e17', kind:'serial',   d:'M1212,468 L1212,636',                     from:'n_context', to:'n_evidence', label:'进入阶段 4', lx:1212, ly:556 },
+  { id:'e17a',kind:'serial thin', d:'M130,606 L130,614 L942,614 L942,636',  from:'n_conversation', to:'n_generate', label:'会话背景（非证据）', lx:520, ly:608 },
+  { id:'e18', kind:'serial',   d:'M1095,686 L1050,688',                     from:'n_evidence', to:'n_generate', label:'证据充分', lx:1072, ly:676 },
+  { id:'e19', kind:'serial',   d:'M835,688 L790,686',                       from:'n_generate', to:'n_cite' },
+  { id:'e20', kind:'serial',   d:'M585,686 L515,692',                       from:'n_cite', to:'n_answer', label:'校验通过', lx:550, ly:676 },
+  { id:'e21', kind:'serial thin', d:'M300,692 L245,686',                    from:'n_answer', to:'n_log', label:'落盘', lx:272, ly:676 },
+  { id:'e22', kind:'loop',     d:'M1160,736 C1160,792 1112,828 1050,834',   from:'n_evidence', to:'n_degrade', label:'Top1 分数不足', lx:1128, ly:784, arrow:'arrRed', warn:true },
+  { id:'e23', kind:'loop',     d:'M660,736 L660,800',                       from:'n_cite', to:'n_repair', label:'校验失败', lx:652, ly:772, arrow:'arrRed', warn:true },
+  { id:'e24', kind:'loop',     d:'M715,800 L715,736',                       from:'n_repair', to:'n_cite', label:'修复后重校验 ≤1次', lx:724, ly:768, arrow:'arrRed', warn:true },
+  { id:'e25', kind:'loop',     d:'M790,846 L835,846',                       from:'n_repair', to:'n_degrade', label:'仍失败', lx:812, ly:838, arrow:'arrRed', warn:true },
+
+  /* ③ 评测链（fork 母线 + 刺线 + join 母线） */
+  { id:'e26', kind:'parallel', d:'M240,1061 L270,1061 L270,1166',           from:'n_questions', to:'m1' },
+  { id:'e27', kind:'parallel', d:'M270,1166 L1195,1166',                    from:'n_questions', to:'m1' },
+  { id:'e28a',kind:'parallel', d:'M415,1166 L415,1122',                     from:'n_questions', to:'m1', arrow:'arrBlue' },
+  { id:'e28b',kind:'parallel', d:'M675,1166 L675,1122',                     from:'n_questions', to:'m2', arrow:'arrBlue' },
+  { id:'e28c',kind:'parallel', d:'M935,1166 L935,1122',                     from:'n_questions', to:'m3', arrow:'arrBlue' },
+  { id:'e28d',kind:'parallel', d:'M1195,1166 L1195,1122',                   from:'n_questions', to:'m4', arrow:'arrBlue' },
+  { id:'e29a',kind:'parallel', d:'M415,1000 L415,978',                      from:'m1', to:'n_reports' },
+  { id:'e29b',kind:'parallel', d:'M675,1000 L675,978',                      from:'m2', to:'n_reports' },
+  { id:'e29c',kind:'parallel', d:'M935,1000 L935,978',                      from:'m3', to:'n_reports' },
+  { id:'e29d',kind:'parallel', d:'M1195,1000 L1195,978',                    from:'m4', to:'n_reports' },
+  { id:'e30', kind:'parallel', d:'M415,978 L1485,978 L1485,1000',           from:'m4', to:'n_reports', arrow:'arrBlue' },
+
+  /* ④ 服务入口层（fork 母线） */
+  { id:'e31', kind:'parallel', d:'M145,1280 L925,1280',                     from:'n_cli', to:'n_deploy' },
+  { id:'e32a',kind:'parallel', d:'M145,1280 L145,1300',                     from:'n_cli', to:'n_deploy', arrow:'arrBlue' },
+  { id:'e32b',kind:'parallel', d:'M405,1280 L405,1300',                     from:'n_api', to:'n_deploy', arrow:'arrBlue' },
+  { id:'e32c',kind:'parallel', d:'M665,1280 L665,1300',                     from:'n_ui', to:'n_deploy', arrow:'arrBlue' },
+  { id:'e32d',kind:'parallel', d:'M925,1280 L925,1300',                     from:'n_deploy', to:'n_deploy', arrow:'arrBlue' },
+];
+
+/* fork/join 汇聚点 */
+const FORKS = [
+  { x:825,  y:166,  label:'∥ 并行', lx:825, ly:150 },
+  { x:1140, y:166,  label:'∥ 汇聚', lx:1140, ly:188 },
+  { x:255,  y:522,  label:'∥ 召回', lx:255, ly:506 },
+  { x:540,  y:420,  label:'∥ 汇聚', lx:540, ly:442 },
+];
+
+/* 播放序列：主流程（建库 → 在线问答） */
+const PLAY = ['n_raw','n_ingest','n_articles','n_bm25_build','n_dense_build','n_index',
+              'n_query','n_conversation','n_bm25_search','n_dense_search','n_fusion','n_rerank','n_context',
+              'n_evidence','n_generate','n_cite','n_answer','n_log'];
+
+/* ================= 渲染 ================= */
+const nodeLayer = document.getElementById('nodeLayer');
+const edgeLayer = document.getElementById('edgeLayer');
+const labelLayer = document.getElementById('labelLayer');
+const forkLayer = document.getElementById('forkLayer');
+
+function renderNodes() {
+  nodeLayer.innerHTML = NODES.map(n => `
+    <div class="node k-${n.kind} b-${n.band}" id="${n.id}"
+         style="left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;">
+      <div class="n-tag">${n.tag}</div>
+      <div class="n-title">${n.title}</div>
+      ${n.files ? `<div class="n-files">${n.files}</div>` : ''}
+      ${n.io ? `<div class="n-io">${n.io}</div>` : ''}
+      ${n.cloud ? `<span class="cloud">${n.cloud}</span>` : ''}
+      ${n.para ? '<span class="para">∥</span>' : ''}
+    </div>`).join('');
+}
+
+function renderEdges() {
+  edgeLayer.innerHTML = EDGES.map(e => {
+    const cls = 'edge ' + e.kind;
+    const marker = e.arrow ? ` marker-end="url(#${e.arrow})"` : (e.kind.startsWith('serial') ? ' marker-end="url(#arr)"' : '');
+    return `<path id="${e.id}" class="${cls}" d="${e.d}"${marker}/>`;
+  }).join('');
+  labelLayer.innerHTML = EDGES.filter(e => e.label).map(e =>
+    `<text class="elabel${e.warn ? ' warn' : ''}" x="${e.lx}" y="${e.ly}" text-anchor="middle">${e.label}</text>`
+  ).join('');
+  forkLayer.innerHTML = FORKS.map(f => `
+    <circle class="forkdot" cx="${f.x}" cy="${f.y}" r="4.5"/>
+    <text class="forklabel" x="${f.lx}" y="${f.ly}" text-anchor="middle">${f.label}</text>`).join('')
+    + `<text class="forklabel" x="535" y="1272" text-anchor="middle">四个独立入口 · 可并行运行</text>`;
+}
+
+/* ================= 交互 ================= */
+const nodeById = Object.fromEntries(NODES.map(n => [n.id, n]));
+const panel = document.getElementById('panel');
+const panelBody = document.getElementById('panelBody');
+
+function edgesOf(id) {
+  return EDGES.filter(e => e.from === id || e.to === id);
+}
+function clearHighlights() {
+  document.querySelectorAll('.node.hl,.node.hl2').forEach(el => el.classList.remove('hl', 'hl2'));
+  document.querySelectorAll('.edge.hl,.edge.dim').forEach(el => el.classList.remove('hl', 'dim'));
+}
+function highlight(id) {
+  clearHighlights();
+  const related = edgesOf(id);
+  const neighborIds = new Set();
+  related.forEach(e => {
+    document.getElementById(e.id).classList.add('hl');
+    neighborIds.add(e.from === id ? e.to : e.from);
+  });
+  document.getElementById(id).classList.add('hl');
+  EDGES.forEach(e => {
+    if (!related.includes(e)) document.getElementById(e.id).classList.add('dim');
+  });
+  neighborIds.forEach(nid => {
+    if (nid !== id) document.getElementById(nid).classList.add('hl2');
+  });
+}
+
+function showPanel(n) {
+  const bandNames = { a:'① 离线建库链', b:'② 在线问答链', c:'③ 离线评测链', d:'④ 服务与入口层', e:'⑤ 横向支撑层' };
+  const bandColors = { a:'#2563eb', b:'#059669', c:'#7c3aed', d:'#ea580c', e:'#475569' };
+  let html = `
+    <h3>${n.title}</h3>
+    <span class="d-band" style="background:${bandColors[n.band]}">${bandNames[n.band]} · ${n.tag}</span>
+    <h4>组成文件</h4>
+    <p class="filelist">${n.files ? n.files.split('·').map(f => `<code>${f.trim()}</code>`).join(' ') : '<em>非文件节点</em>'}</p>
+    <h4>职责</h4>
+    <p>${n.desc}</p>`;
+  if (n.ext) html += `<h4>外部依赖</h4><p>${n.ext}</p>`;
+  if (n.cmds) html += `<h4>运行命令</h4><ul>${n.cmds.map(c => `<li><code>${c}</code></li>`).join('')}</ul>`;
+  if (n.ioList) {
+    html += '<h4>输入 / 输出</h4><ul>';
+    for (const [k, v] of Object.entries(n.ioList)) html += `<li><b>${k}</b>：${v}</li>`;
+    html += '</ul>';
+  }
+  panelBody.innerHTML = html;
+  panel.classList.add('show');
+}
+
+function bindNodes() {
+  NODES.forEach(n => {
+    const el = document.getElementById(n.id);
+    el.addEventListener('mouseenter', () => highlight(n.id));
+    el.addEventListener('mouseleave', clearHighlights);
+    el.addEventListener('click', ev => { ev.stopPropagation(); showPanel(n); highlight(n.id); });
+  });
+}
+document.getElementById('panelClose').addEventListener('click', () => panel.classList.remove('show'));
+document.addEventListener('click', () => panel.classList.remove('show'));
+
+/* ================= 播放主流程 ================= */
+let playTimer = null;
+function stopPlay() {
+  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  document.querySelectorAll('.node.playing').forEach(el => el.classList.remove('playing'));
+  document.querySelectorAll('.edge.playing').forEach(el => el.classList.remove('playing'));
+}
+function playMainFlow() {
+  stopPlay();
+  clearHighlights();
+  panel.classList.remove('show');
+  let i = 0;
+  const step = () => {
+    if (i >= PLAY.length) { playTimer = setTimeout(stopPlay, 2200); return; }
+    const cur = PLAY[i];
+    document.getElementById(cur).classList.add('playing');
+    if (i > 0) {
+      const prev = PLAY[i - 1];
+      EDGES.forEach(e => {
+        const connects = (e.from === prev && e.to === cur) || (e.from === cur && e.to === prev);
+        if (connects) document.getElementById(e.id).classList.add('playing');
+      });
+    }
+    i++;
+    playTimer = setTimeout(step, 620);
+  };
+  step();
+}
+document.getElementById('btnPlay').addEventListener('click', ev => { ev.stopPropagation(); playMainFlow(); });
+document.getElementById('btnReset').addEventListener('click', () => { stopPlay(); clearHighlights(); panel.classList.remove('show'); });
+
+renderNodes();
+renderEdges();
+bindNodes();
+</script>
+</body>
+</html>

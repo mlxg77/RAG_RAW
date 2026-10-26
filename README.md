@@ -70,7 +70,7 @@ uv run streamlit run src/rag_law/ui/app.py --server.port 8502
 uv run streamlit run src/rag_law/ui/app.py
 ```
 
-页面支持连续提问、按法律筛选、展示回答状态、适用条件、边界限制和已经过校验的法条引用。启动前需按上文完成环境变量配置，并确保 `data/processed/` 与 `indexes/` 已生成。
+页面支持连续提问和多轮上下文、按法律筛选、展示回答状态、适用条件、边界限制和已经过校验的法条引用。最近几轮保留原文，更早对话自动压缩为摘要；保留轮数可通过 `RAG_LAW_CONVERSATION_RECENT_ROUNDS` 配置。历史只存在当前页面会话中，不写入数据库，且不能作为法律证据。启动前需按上文完成环境变量配置，并确保 `data/processed/` 与 `indexes/` 已生成。
 侧栏“维护现有知识库”中的“重新构建现有知识库”按钮可直接使用服务器已有的
 `data/manifest.yaml` 和 `data/raw/` 全量生成结构化语料、BM25 与 Chroma，无需重新上传法律文件。
 如果 API 在独立进程或容器中运行，重建完成后需重启 API 以加载新索引。
@@ -86,7 +86,8 @@ uv run uvicorn rag_law.api.main:app --host 127.0.0.1 --port 8000
 ```
 
 接口包括 `GET /v1/health`、`GET /v1/laws`、`POST /v1/retrieve` 和
-`POST /v1/query`。后两个接口的请求体为 `{"query":"问题","law_name":"可选法律名称"}`；
+`POST /v1/query`。`/v1/query` 可额外传入 `history`，例如 `{"query":"那赔偿怎么算？","history":[{"role":"user","content":"公司三个月没有和我签合同"}]}`；API 不在服务端保存会话。
+`/v1/retrieve` 的请求体仍为 `{"query":"问题","law_name":"可选法律名称"}`；
 `/v1/retrieve` 还可接受 `top_k`（1–20）。`/v1/query` 返回完整、已校验的结构化回答。
 
 API 单进程默认按客户端 IP 限制为每分钟 30 次请求，单次查询超时为 60 秒；超时返回

@@ -8,6 +8,16 @@ from pydantic import BaseModel, Field
 SourceFormat = Literal["pdf", "docx", "markdown"]
 
 
+ConversationRole = Literal["user", "assistant"]
+
+
+class ConversationTurn(BaseModel):
+    """当前请求之前的一条历史消息。"""
+
+    role: ConversationRole
+    content: str = Field(min_length=1, max_length=2000)
+
+
 class SourceBlock(BaseModel):
     """Loader 提取出的最小原始文本块。
 

@@ -2,7 +2,7 @@ import time
 
 from fastapi.testclient import TestClient
 
-from rag_law.api.main import ApiServices, create_app
+from rag_law.api.main import ApiServices, QueryRequest, create_app
 from rag_law.schemas import (
     BuiltContext,
     RetrievalContextResult,
@@ -59,6 +59,27 @@ def test_health_reports_index_readiness() -> None:
     assert set(response.json()["checks"]) == {
         "manifest", "articles", "bm25_index", "chroma_index"
     }
+
+
+def test_query_request_accepts_explicit_conversation_history() -> None:
+    request = QueryRequest.model_validate(
+        {
+            "query": "那赔偿怎么算？",
+            "history": [
+                {
+                    "role": "user",
+                    "content": "公司三个月没有和我签合同。",
+                },
+                {
+                    "role": "assistant",
+                    "content": "需要结合工作时间继续判断。",
+                },
+            ],
+        }
+    )
+
+    assert request.history[0].role == "user"
+    assert request.history[1].role == "assistant"
 
 
 def test_laws_returns_manifest_entries() -> None:

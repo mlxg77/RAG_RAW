@@ -9,10 +9,14 @@ from rag_law.generation.chain import (
 from rag_law.generation.citation_validator import (
     CitationValidator,
 )
+from rag_law.generation.conversation import (
+    ConversationContextBuilder,
+)
 from rag_law.schemas import (
     ArticleChunk,
     BuiltContext,
     ContextEvidence,
+    ConversationTurn,
     GeneratedAnswer,
     GeneratedCitation,
     RetrievalContextResult,
@@ -280,6 +284,41 @@ def test_valid_answer_is_returned() -> None:
     assert len(retrieval.calls) == 1
     assert len(answer_chain.calls) == 1
     assert len(repair_chain.calls) == 0
+
+
+def test_history_is_used_for_retrieval_and_answer_prompt() -> None:
+    (
+        pipeline,
+        retrieval,
+        answer_chain,
+        _,
+    ) = make_pipeline(
+        answer_responses=[make_answer()]
+    )
+    pipeline.conversation_context_builder = ConversationContextBuilder(
+        recent_rounds=2,
+        summary_max_chars=200,
+        summarizer=None,
+    )
+    history = [
+        ConversationTurn(
+            role="user",
+            content="公司三个月没有和我签劳动合同。",
+        ),
+        ConversationTurn(
+            role="assistant",
+            content="需要继续确认工作时间。",
+        ),
+    ]
+
+    result = pipeline.run("那赔偿怎么算？", history=history)
+
+    assert "公司三个月没有和我签劳动合同" in retrieval.calls[0][0]
+    assert "那赔偿怎么算" in retrieval.calls[0][0]
+    assert result.query == "那赔偿怎么算？"
+    assert "助手：需要继续确认工作时间" in (
+        answer_chain.calls[0]["conversation_context"]
+    )
 
 
 def test_low_score_refuses_without_calling_llm() -> None:

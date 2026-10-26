@@ -5,7 +5,7 @@
 
 import logging
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from typing import Protocol
 
 from rag_law.generation.chain import (
@@ -14,6 +14,10 @@ from rag_law.generation.chain import (
 )
 from rag_law.generation.citation_validator import (
     CitationValidator,
+)
+from rag_law.generation.conversation import (
+    ConversationContextBuilder,
+    build_contextualized_retrieval_query,
 )
 from rag_law.generation.prompts import (
     ANSWER_PROMPT_VERSION,
@@ -28,6 +32,7 @@ from rag_law.schemas import (
     AnswerPipelineResult,
     AnswerResponse,
     CitationValidationResult,
+    ConversationTurn,
     GeneratedAnswer,
     RetrievalContextResult,
 )
@@ -98,6 +103,9 @@ class AnswerPipeline:
         retrieval_pipeline: RetrievalPipelineProtocol,
         generation_chains: GenerationChains,
         citation_validator: CitationValidatorProtocol,
+        conversation_context_builder: (
+            ConversationContextBuilder | None
+        ) = None,
         run_logger: AnswerRunLoggerProtocol | None = None,
         min_answer_score: float = (
             DEFAULT_MIN_ANSWER_SCORE
@@ -111,6 +119,14 @@ class AnswerPipeline:
         self.retrieval_pipeline = retrieval_pipeline
         self.generation_chains = generation_chains
         self.citation_validator = citation_validator
+        self.conversation_context_builder = (
+            conversation_context_builder
+            or ConversationContextBuilder(
+                recent_rounds=3,
+                summary_max_chars=1500,
+                summarizer=None,
+            )
+        )
         self.run_logger = run_logger
         self.min_answer_score = min_answer_score
 
@@ -133,6 +149,9 @@ class AnswerPipeline:
             ),
             citation_validator=(
                 CitationValidator.load()
+            ),
+            conversation_context_builder=(
+                ConversationContextBuilder.load()
             ),
             run_logger=(
                 AnswerRunLogger.from_settings()
@@ -390,20 +409,23 @@ class AnswerPipeline:
         query: str,
         *,
         law_name: str | None = None,
+        history: Sequence[ConversationTurn] | None = None,
         progress_callback: ProgressCallback | None = None,
     ) -> AnswerPipelineResult:
         """执行完整流水线，并记录脱敏运行日志。"""
 
         logger.info(
-            "[RAG] request started query_chars=%d law_filter=%s",
+            "[RAG] request started query_chars=%d law_filter=%s history_turns=%d",
             len(query.strip()),
             law_name or "ALL",
+            len(history or []),
         )
 
         try:
             result = self._run(
                 query,
                 law_name=law_name,
+                history=history,
                 progress_callback=progress_callback,
             )
         except Exception:
@@ -455,6 +477,7 @@ class AnswerPipeline:
         query: str,
         *,
         law_name: str | None = None,
+        history: Sequence[ConversationTurn] | None = None,
         progress_callback: ProgressCallback | None = None,
     ) -> AnswerPipelineResult:
         """执行阶段 4 完整流水线，不负责写运行日志。"""
@@ -466,8 +489,16 @@ class AnswerPipeline:
 
         total_started_at = time.perf_counter()
 
-        retrieval = self.retrieval_pipeline.run(
+        conversation = self.conversation_context_builder.prepare(
+            history
+        )
+        retrieval_query = build_contextualized_retrieval_query(
             normalized_query,
+            conversation,
+        )
+
+        retrieval = self.retrieval_pipeline.run(
+            retrieval_query,
             law_name=law_name,
             progress_callback=lambda stage, message: self._emit_progress(
                 progress_callback,
@@ -522,6 +553,7 @@ class AnswerPipeline:
                 .invoke(
                     {
                         "question": normalized_query,
+                        "conversation_context": conversation.prompt_text,
                         "context": (
                             retrieval.context.text
                         ),
@@ -542,6 +574,7 @@ class AnswerPipeline:
                     .invoke(
                         {
                             "question": normalized_query,
+                            "conversation_context": conversation.prompt_text,
                             "context": (
                                 retrieval.context.text
                             ),
@@ -673,6 +706,7 @@ class AnswerPipeline:
                 .invoke(
                     {
                         "question": normalized_query,
+                        "conversation_context": conversation.prompt_text,
                         "context": (
                             retrieval.context.text
                         ),

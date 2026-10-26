@@ -20,7 +20,11 @@ from pydantic import BaseModel, Field
 from rag_law.knowledge_base import PROJECT_ROOT
 from rag_law.retrieval.bm25 import DEFAULT_BM25_INDEX_PATH
 from rag_law.retrieval.dense import DEFAULT_CHROMA_DIRECTORY
-from rag_law.schemas import AnswerPipelineResult, RetrievalResult
+from rag_law.schemas import (
+    AnswerPipelineResult,
+    ConversationTurn,
+    RetrievalResult,
+)
 from rag_law.ui.presentation import LawOption, load_law_options
 
 
@@ -32,12 +36,20 @@ DEFAULT_RATE_LIMIT = 30
 DEFAULT_RATE_WINDOW_SECONDS = 60.0
 
 
-class QueryRequest(BaseModel):
+class BaseQueryRequest(BaseModel):
     query: str = Field(min_length=1, max_length=1000)
     law_name: str | None = Field(default=None, max_length=200)
 
 
-class RetrieveRequest(QueryRequest):
+class QueryRequest(BaseQueryRequest):
+    history: list[ConversationTurn] = Field(
+        default_factory=list,
+        max_length=50,
+        description="当前问题之前的对话历史；服务端不保存会话。",
+    )
+
+
+class RetrieveRequest(BaseQueryRequest):
     top_k: int = Field(default=5, ge=1, le=20)
 
 
@@ -193,7 +205,9 @@ def create_app(
             raise HTTPException(status_code=422, detail="查询问题不能为空")
         return await _run_with_timeout(
             lambda: app.state.services.get_answer_pipeline().run(
-                normalized_query, law_name=law_name
+                normalized_query,
+                law_name=law_name,
+                history=payload.history,
             ),
             timeout_seconds=app.state.timeout_seconds,
         )

@@ -109,6 +109,7 @@ def test_answer_chain_returns_generated_answer() -> None:
             "question": (
                 "公司没有和我签劳动合同怎么办？"
             ),
+            "conversation_context": "（没有最近对话，本轮为独立问题）",
             "context": make_context(),
         }
     )
@@ -148,6 +149,7 @@ def test_repair_chain_receives_validation_errors() -> None:
             "question": (
                 "公司没有和我签劳动合同怎么办？"
             ),
+            "conversation_context": "用户此前询问过劳动合同问题。",
             "context": make_context(),
             "previous_answer": (
                 '{"citations": ['
