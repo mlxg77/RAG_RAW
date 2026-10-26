@@ -15,4 +15,6 @@ indexes
 logs
 docs
 tests
+web/node_modules
+web/dist
 app

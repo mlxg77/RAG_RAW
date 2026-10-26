@@ -2,7 +2,6 @@
 .env
 .env.*
 !.env.example
-.streamlit/secrets.toml
 
 # Python 虚拟环境
 .venv/
@@ -38,6 +37,13 @@ htmlcov/
 # RAG 生成数据与本地索引
 data/processed/
 indexes/
+
+# 前端依赖与构建产物
+web/node_modules/
+web/dist/
+web/coverage/
+web/.vite/
+*.tsbuildinfo
 
 # 模型与应用运行缓存
 .cache/

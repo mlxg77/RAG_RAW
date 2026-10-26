@@ -24,6 +24,7 @@
 
 - Python 3.11+（`.python-version` 已锁定 3.13）
 - [uv](https://docs.astral.sh/uv/) 包管理工具
+- Node.js 20.19+ 与 npm（仅开发或构建 Vue 前端时需要；Docker 镜像内由多阶段构建自动完成）
 - 一个模型服务（本项目当前使用 SiliconFlow：`Qwen/Qwen3-8B`、`BAAI/bge-m3` 和 `BAAI/bge-reranker-v2-m3`）
 
 ## 快速开始
@@ -62,18 +63,50 @@ uv run python -m rag_law.cli evaluate-system --split holdout --fail-on-gates
 `data/eval/results/answer_quality_v1.md`。评测集共 100 题：原 30 题作为
 development，新增 70 题作为独立 holdout。
 
-### 启动演示界面
+### 启动 Web 界面（Vue + FastAPI）
+
+界面位于 `web/`，技术栈为 Vue 3 + TypeScript + Vite + Element Plus。FastAPI 直接托管构建产物，
+生产环境只有一个服务。
 
 ```bash
-# 启动演示界面（本次的方式）
-uv run streamlit run src/rag_law/ui/app.py --server.port 8502
-uv run streamlit run src/rag_law/ui/app.py
+# 生产模式：构建静态页面，再由 FastAPI 同时提供页面与接口
+cd web
+npm install          # 首次执行
+npm run build
+cd ..
+uv run uvicorn rag_law.api.main:app --host 127.0.0.1 --port 8000
+# 打开 http://127.0.0.1:8000/
 ```
 
-页面支持连续提问和多轮上下文、按法律筛选、展示回答状态、适用条件、边界限制和已经过校验的法条引用。最近几轮保留原文，更早对话自动压缩为摘要；保留轮数可通过 `RAG_LAW_CONVERSATION_RECENT_ROUNDS` 配置。历史只存在当前页面会话中，不写入数据库，且不能作为法律证据。启动前需按上文完成环境变量配置，并确保 `data/processed/` 与 `indexes/` 已生成。
-侧栏“维护现有知识库”中的“重新构建现有知识库”按钮可直接使用服务器已有的
-`data/manifest.yaml` 和 `data/raw/` 全量生成结构化语料、BM25 与 Chroma，无需重新上传法律文件。
-如果 API 在独立进程或容器中运行，重建完成后需重启 API 以加载新索引。
+开发模式下前后端分别启动，Vite 会把 `/v1` 代理到本机 8000：
+
+```bash
+# 终端 1
+uv run uvicorn rag_law.api.main:app --host 127.0.0.1 --port 8000
+
+# 终端 2
+cd web
+npm run dev
+# 打开 http://127.0.0.1:5173/
+```
+
+页面支持连续提问和多轮上下文、按法律筛选、展示回答状态、适用条件、边界限制和已经过校验的法条引用。
+最近几轮保留原文，更早对话自动压缩为摘要；保留轮数可通过 `RAG_LAW_CONVERSATION_RECENT_ROUNDS` 配置。
+历史只保存在当前浏览器页面内，刷新即清空，不写入数据库，且不能作为法律证据。
+侧栏可以查看法律清单、上传新法律并重建索引，也可以对已有语料做全量重建；
+重建过程通过 SSE 实时显示进度，完成后 API 会自动丢弃旧流水线并加载新索引，无需重启进程。
+
+### 运行测试
+
+```bash
+# 后端测试
+uv run pytest -q
+
+# 前端类型检查与单元测试
+cd web
+npm run build      # 包含 vue-tsc 类型检查
+npm test           # vitest run
+```
 
 ### 启动 HTTP API
 
@@ -85,10 +118,15 @@ uv run uvicorn rag_law.api.main:app --host 127.0.0.1 --port 8000
 # http://127.0.0.1:8000/docs
 ```
 
-接口包括 `GET /v1/health`、`GET /v1/laws`、`POST /v1/retrieve` 和
-`POST /v1/query`。`/v1/query` 可额外传入 `history`，例如 `{"query":"那赔偿怎么算？","history":[{"role":"user","content":"公司三个月没有和我签合同"}]}`；API 不在服务端保存会话。
+接口包括 `GET /v1/health`、`GET /v1/laws`、`POST /v1/retrieve`、`POST /v1/query`，
+以及页面维护知识库使用的 `POST /v1/laws/upload`（multipart，字段 `file` / `law_id` / `law_name`）
+与 `POST /v1/knowledge-base/rebuild`。两个知识库接口返回 `text/event-stream`，
+以 `progress`、`complete`、`error` 三类事件推送进度；同一时间只允许一个重建任务，
+重复提交会返回 `409`。`/v1/query` 可额外传入 `history`，例如 `{"query":"那赔偿怎么算？","history":[{"role":"user","content":"公司三个月没有和我签合同"}]}`；API 不在服务端保存会话。
 `/v1/retrieve` 的请求体仍为 `{"query":"问题","law_name":"可选法律名称"}`；
 `/v1/retrieve` 还可接受 `top_k`（1–20）。`/v1/query` 返回完整、已校验的结构化回答。
+若存在 `web/dist/`，FastAPI 会把页面挂载在根路径；`/v1` 与 `/docs` 保持可用。
+前端单独部署时，可通过 `RAG_LAW_CORS_ORIGINS`（逗号分隔）放行来源。
 
 API 单进程默认按客户端 IP 限制为每分钟 30 次请求，单次查询超时为 60 秒；超时返回
 `504`，过于频繁返回 `429`，缺少索引或模型配置时返回 `503`。`/v1/health` 会逐项报告
@@ -97,8 +135,8 @@ manifest、法条数据、BM25 和 Chroma 索引是否就绪。多实例部署�
 ### 使用 Docker Compose 部署
 
 常规启动前需准备好 `.env`、`data/processed/`、`indexes/bm25/` 和 `indexes/chroma/`；
-首次部署也可以只准备 `.env` 与仓库中的原始法律，再通过下文的页面按钮建库。
-Compose 会构建一个锁定依赖的镜像，并分别启动 API 与 Streamlit：
+首次部署也可以只准备 `.env` 与仓库中的原始法律，再通过页面按钮建库。
+Compose 只启动一个服务：多阶段构建先用 Node 打包 Vue，再由 FastAPI 同时提供页面与接口。
 
 ```bash
 docker compose config --quiet
@@ -113,52 +151,38 @@ docker compose ps
 
 ```bash
 export RAG_LAW_PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.13-slim
+export RAG_LAW_NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
 docker compose build
 ```
 
-镜像内的 `uv` 与全部 Python 依赖均从阿里云 PyPI 镜像源安装，构建过程无需访问 ghcr.io。
+镜像内的 `uv` 与 Python 依赖从阿里云 PyPI 镜像源安装，npm 依赖从 npmmirror 安装，
+构建过程无需访问 ghcr.io。
 
 默认地址：
 
-- API：<http://127.0.0.1:8000>，交互文档位于 `/docs`；
-- Streamlit：<http://127.0.0.1:8501>；
-- API 健康检查：<http://127.0.0.1:8000/v1/health>。
+- 页面与 API：<http://127.0.0.1:8000>，交互文档位于 `/docs`；
+- 健康检查：<http://127.0.0.1:8000/v1/health>。
 
 启动后的冒烟检查：
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8000/v1/health
-Invoke-WebRequest http://127.0.0.1:8501/_stcore/health
+Invoke-WebRequest http://127.0.0.1:8000/ -UseBasicParsing
 ```
 
 如果服务器只有 GitHub 中的 `data/raw/` 和 `data/manifest.yaml`，尚无结构化语料和索引，
-可以先只启动界面：
-
-```bash
-docker compose build
-docker compose up -d ui
-```
-
-打开 Streamlit，在侧栏展开“维护现有知识库”，点击“重新构建现有知识库”。页面显示完成后再执行：
-
-```bash
-docker compose up -d api
-curl http://127.0.0.1:8000/v1/health
-```
-
-健康检查中的四项均为 `true` 后，服务器首次建库完成。
+先执行 `docker compose up -d`，打开页面，在侧栏“重新构建现有知识库”中点击“开始重建”。
+完成后健康检查四项均为 `true`，服务器首次建库即完成；API 会自动加载新索引，无需重启容器。
 
 可通过环境变量修改宿主机端口，例如：
 
 ```powershell
 $env:RAG_LAW_API_PORT = "18000"
-$env:RAG_LAW_UI_PORT = "18501"
 docker compose up -d
 ```
 
 `data/`、`indexes/` 和 `logs/` 挂载到宿主机，删除或重建容器不会删除语料、索引和日志。
-API 对知识库使用只读挂载；Streamlit 保留上传法律和重建索引所需的写权限。通过界面重建后，
-执行 `docker compose restart api`，使 API 丢弃内存中的旧流水线并重新加载索引。
+API 容器对 `data/` 与 `indexes/` 保留读写权限，因为页面上的上传与重建需要写入新索引。
 
 Compose 默认以 UID/GID `1000:1000` 访问挂载目录。Linux 上若当前用户不是 1000，可在启动前设置：
 
@@ -172,13 +196,12 @@ docker compose up -d
 
 ```bash
 docker compose logs -f api
-docker compose logs -f ui
 docker compose down
 ```
 
 ### 重建索引与故障排查
 
-新增法律可在演示页“添加新法律”上传，也可使用管理命令：
+新增法律可在页面侧栏“添加新法律”上传，也可使用管理命令：
 
 ```bash
 uv run python -m rag_law.cli add-document --file path/to/law.md --law-id cn_example_law
@@ -189,7 +212,7 @@ uv run python -m rag_law.cli add-document --file path/to/law.md --law-id cn_exam
 返回 `503`，检查 `.env` 中三组模型配置并运行 `uv run python scripts/verify_env.py`。日志写入
 `logs/answer_runs.jsonl` 前会脱敏身份证号、手机号、邮箱、银行卡号和座机号；API 错误日志不会记录请求原文。
 
-容器异常时先运行 `docker compose ps` 和 `docker compose logs --tail=200 api ui`。健康状态为
+容器异常时先运行 `docker compose ps` 和 `docker compose logs --tail=200 api`。健康状态为
 `unhealthy` 通常表示挂载中缺少结构化法条或索引；出现 `PermissionError` 时检查上述 UID/GID
 设置以及宿主机目录权限。
 
@@ -206,9 +229,16 @@ docs/
   note/v1/             # 各阶段实施后的知识沉淀
 scripts/               # 开发辅助脚本（环境自检、清单校验）
 src/rag_law/
+  api/                 # FastAPI 接口、SSE 进度流与静态页面托管
+  catalog.py           # 法律清单读取
   config.py            # 全局配置对象（从 .env 读取）
+  ingestion/           # 文档解析、归一化与法条切分
+  retrieval/           # BM25、Dense、RRF 融合、重排与上下文构建
   generation/          # 结构化生成、引用校验、拒答与脱敏日志
-  ui/                  # Streamlit 演示界面与展示规则
+web/                   # Vue 3 + TypeScript + Vite + Element Plus 前端
+  src/api/             # 接口与 SSE 客户端
+  src/components/      # 页面组件（对话、回答卡片、上传与重建弹窗）
+  src/composables/     # 对话与知识库状态
 indexes/               # 检索索引（不入 Git）
 logs/                  # 本地脱敏运行日志（不入 Git）
 ```
