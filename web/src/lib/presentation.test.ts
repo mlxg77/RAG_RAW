@@ -9,6 +9,7 @@ import type {
 import {
   buildConversationHistory,
   citationLocation,
+  formatConversationTime,
   friendlyErrorMessage,
   resultMetrics,
   statusPresentation,
@@ -146,6 +147,23 @@ describe('buildConversationHistory', () => {
       role: 'user',
       content: '最后的问题',
     })
+  })
+})
+
+describe('formatConversationTime', () => {
+  const now = new Date('2026-10-26T20:00:00+08:00')
+
+  it('shows the clock for today and the date for earlier days', () => {
+    expect(
+      formatConversationTime('2026-10-26T09:30:00+08:00', now),
+    ).toContain('09')
+    expect(
+      formatConversationTime('2026-10-20T09:30:00+08:00', now),
+    ).toContain('20')
+  })
+
+  it('returns an empty string for unusable timestamps', () => {
+    expect(formatConversationTime('not-a-date', now)).toBe('')
   })
 })
 

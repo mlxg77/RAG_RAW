@@ -5,6 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from rag_law.api.main import ApiServices, QueryRequest, create_app
+from rag_law.auth.state import AuthState
 from rag_law.knowledge_base import (
     AddDocumentResult,
     RebuildKnowledgeBaseResult,
@@ -106,10 +107,61 @@ def _sse_events(body: str) -> list[tuple[str, dict]]:
     return events
 
 
-def _client(*, retrieval_pipeline, **kwargs) -> TestClient:
+class StubAuthState(AuthState):
+    """内存账号，不连数据库，免得测试依赖外部 PostgreSQL。"""
+
+    def __init__(self) -> None:
+        super().__init__(
+            dsn="",
+            cookie_name="rag_law_sid",
+            session_ttl_seconds=600,
+            cookie_secure=False,
+        )
+
+    def authenticate(self, username: str, password: str) -> dict | None:
+        if username.lower() != "tester" or password != "secret":
+            return None
+        return {
+            "id": 1,
+            "username": "tester",
+            "role": "user",
+            "status": 1,
+        }
+
+
+def _login(client: TestClient) -> None:
+    """用内存账号完成一次会话握手。"""
+
+    response = client.post(
+        "/v1/auth/login", json={"username": "tester", "password": "secret"}
+    )
+    assert response.status_code == 200
+
+
+def _client(
+    *, retrieval_pipeline, authenticated: bool = True, **kwargs
+) -> TestClient:
     services = ApiServices()
     services.retrieval_pipeline = retrieval_pipeline
-    return TestClient(create_app(services=services, **kwargs))
+    client = TestClient(
+        create_app(services=services, auth=StubAuthState(), **kwargs)
+    )
+    if authenticated:
+        # 业务接口都要求登录，默认先完成一次会话握手。
+        _login(client)
+    return client
+
+
+def _authed_client(
+    services: ApiServices, **kwargs
+) -> TestClient:
+    """直接给业务接口测试用的已登录客户端。"""
+
+    client = TestClient(
+        create_app(services=services, auth=StubAuthState(), **kwargs)
+    )
+    _login(client)
+    return client
 
 
 def test_health_reports_index_readiness() -> None:
@@ -192,7 +244,7 @@ def test_rate_limit_rejects_excess_request() -> None:
 
 def test_upload_law_streams_progress_and_complete() -> None:
     services = StubServices()
-    client = TestClient(create_app(services=services))
+    client = _authed_client(services)
 
     response = client.post(
         "/v1/laws/upload",
@@ -210,7 +262,7 @@ def test_upload_law_streams_progress_and_complete() -> None:
 
 
 def test_upload_rejects_unsupported_suffix() -> None:
-    client = TestClient(create_app(services=StubServices()))
+    client = _authed_client(StubServices())
 
     response = client.post(
         "/v1/laws/upload",
@@ -223,7 +275,7 @@ def test_upload_rejects_unsupported_suffix() -> None:
 
 
 def test_upload_rejects_invalid_law_id() -> None:
-    client = TestClient(create_app(services=StubServices()))
+    client = _authed_client(StubServices())
 
     response = client.post(
         "/v1/laws/upload",
@@ -243,7 +295,7 @@ def test_upload_reports_failure_as_error_event() -> None:
 
             return add_document
 
-    client = TestClient(create_app(services=FailingServices()))
+    client = _authed_client(FailingServices())
 
     response = client.post(
         "/v1/laws/upload",
@@ -260,7 +312,7 @@ def test_upload_reports_failure_as_error_event() -> None:
 
 def test_rebuild_streams_completion_result() -> None:
     services = StubServices()
-    client = TestClient(create_app(services=services))
+    client = _authed_client(services)
 
     response = client.post("/v1/knowledge-base/rebuild")
 
@@ -272,10 +324,12 @@ def test_rebuild_streams_completion_result() -> None:
 
 
 def test_knowledge_update_rejects_concurrent_task() -> None:
-    app = create_app(services=StubServices())
+    app = create_app(services=StubServices(), auth=StubAuthState())
+    client = TestClient(app)
+    _login(client)
     app.state.knowledge_lock.acquire()
     try:
-        response = TestClient(app).post("/v1/knowledge-base/rebuild")
+        response = client.post("/v1/knowledge-base/rebuild")
         assert response.status_code == 409
     finally:
         app.state.knowledge_lock.release()

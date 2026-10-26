@@ -1,13 +1,27 @@
-"""
-阶段 4 完整回答流水线。
-《太难看了！！！》
+"""阶段 4 完整回答流水线，编排由 LangGraph 驱动。
+
+对外仍暴露 AnswerPipeline.run / load，检索、生成链、引用校验器
+与运行日志保持原有注入方式，方便测试替换。
 """
 
 import logging
 import time
 from collections.abc import Callable, Sequence
-from typing import Protocol
 
+from rag_law.generation.answer_graph import (
+    STANDARD_LIMITATION,
+    build_answer_graph,
+    clarification_answer,
+    emit_progress,
+    finalize_generated_answer,
+    format_exception,
+    generation_failed_answer,
+    has_sufficient_evidence,
+    insufficient_answer,
+    normalize_conditions,
+    normalize_follow_up,
+    top_score,
+)
 from rag_law.generation.chain import (
     GenerationChains,
     load_generation_chains,
@@ -17,7 +31,7 @@ from rag_law.generation.citation_validator import (
 )
 from rag_law.generation.conversation import (
     ConversationContextBuilder,
-    build_contextualized_retrieval_query,
+    ConversationSummaryCacheProtocol,
 )
 from rag_law.generation.prompts import (
     ANSWER_PROMPT_VERSION,
@@ -41,7 +55,7 @@ from rag_law.schemas import (
 logger = logging.getLogger(__name__)
 
 # 接收 (str, str) 两个参数，返回 None。
-# 回调只是"通知"，不需要回复
+# 回调只是“通知”，不需要回复。
 ProgressCallback = Callable[[str, str], None]
 
 # 临时阈值：
@@ -51,62 +65,19 @@ ProgressCallback = Callable[[str, str], None]
 DEFAULT_MIN_ANSWER_SCORE = 0.15
 
 
-STANDARD_LIMITATION = (
-    "本回答仅依据当前知识库中的检索证据，"
-    "不能替代律师针对具体事实提供的正式法律意见。"
-)
-
-
-class RetrievalPipelineProtocol(Protocol):
-    """回答流水线依赖的检索接口。"""
-
-    def run(
-        self,
-        query: str,
-        *,
-        law_name: str | None = None,
-        progress_callback: ProgressCallback | None = None,
-    ) -> RetrievalContextResult:
-        ...
-
-
-class CitationValidatorProtocol(Protocol):
-    """回答流水线依赖的引用校验接口。"""
-
-    def validate(
-        self,
-        *,
-        answer: GeneratedAnswer,
-        context,
-    ) -> CitationValidationResult:
-        ...
-
-
-class AnswerRunLoggerProtocol(Protocol):
-    """回答流水线依赖的运行日志接口。"""
-
-    def write(
-        self,
-        *,
-        result: AnswerPipelineResult,
-        law_name: str | None = None,
-    ) -> None:
-        ...
-
-
 class AnswerPipeline:
     """检索、生成、引用校验和安全降级。"""
 
     def __init__(
         self,
         *,
-        retrieval_pipeline: RetrievalPipelineProtocol,
+        retrieval_pipeline,
         generation_chains: GenerationChains,
-        citation_validator: CitationValidatorProtocol,
+        citation_validator,
         conversation_context_builder: (
             ConversationContextBuilder | None
         ) = None,
-        run_logger: AnswerRunLoggerProtocol | None = None,
+        run_logger=None,
         min_answer_score: float = (
             DEFAULT_MIN_ANSWER_SCORE
         ),
@@ -129,6 +100,10 @@ class AnswerPipeline:
         )
         self.run_logger = run_logger
         self.min_answer_score = min_answer_score
+
+        # 图节点在运行时读取上面的属性，
+        # 因此测试替换组件后无需重新编译。
+        self._graph = build_answer_graph(self)
 
     @classmethod
     def load(
@@ -159,144 +134,56 @@ class AnswerPipeline:
             min_answer_score=min_answer_score,
         )
 
+    # ---------- 兼容旧接口的静态委托 ----------
+
     @staticmethod
     def _emit_progress(
         callback: ProgressCallback | None,
         stage: str,
         message: str,
     ) -> None:
-        """通知界面当前阶段；展示失败不能中断回答流水线。"""
-
-        logger.info(
-            "[RAG] stage=%s message=%s",
-            stage,
-            message,
-        )
-
-        if callback is None:
-            return
-
-        try:
-            # 流水线调用了 UI 交给它的函数。（app.py 341–360 行 定义的 show_progress）
-            callback(stage, message)
-        except Exception:
-            logger.exception(
-                "[RAG] progress callback failed at stage=%s",
-                stage,
-            )
+        emit_progress(callback, stage, message)
 
     @staticmethod
     def _top_score(
         retrieval: RetrievalContextResult,
     ) -> float | None:
-        if not retrieval.reranked_results:
-            return None
-
-        return retrieval.reranked_results[0].score
+        return top_score(retrieval)
 
     def _has_sufficient_evidence(
         self,
         retrieval: RetrievalContextResult,
     ) -> bool:
-        """
-        调用大模型之前的一道检查：先看检索到的证据靠不靠谱，不靠谱就不让模型回答，免得它在没有法条依据的情况下编一个法律结论出来。
-        """
-        top_score = self._top_score(retrieval)
-
-        return (
-            top_score is not None
-            and top_score >= self.min_answer_score
-            and bool(retrieval.context.evidences)
-            and bool(retrieval.context.text.strip())
+        return has_sufficient_evidence(
+            retrieval,
+            self.min_answer_score,
         )
 
     @staticmethod
     def _normalize_follow_up(
         value: str | None,
     ) -> str | None:
-        if value is None:
-            return None
-
-        normalized = value.strip()
-
-        return normalized or None
+        return normalize_follow_up(value)
 
     @staticmethod
     def _normalize_conditions(
         conditions: list[str],
     ) -> list[str]:
-        return [
-            condition.strip()
-            for condition in conditions
-            if condition.strip()
-        ]
+        return normalize_conditions(conditions)
 
     @staticmethod
     def _insufficient_answer() -> AnswerResponse:
-        return AnswerResponse(
-            status="insufficient_evidence",
-            summary=(
-                "现有知识库未找到足够相关的"
-                "法律依据，暂时无法确认。"
-            ),
-            analysis=(
-                "检索结果的相关度不足，"
-                "因此系统没有调用模型生成法律结论。"
-            ),
-            conditions=[],
-            citations=[],
-            limitations=STANDARD_LIMITATION,
-            follow_up_question=None,
-        )
+        return insufficient_answer()
 
     @staticmethod
     def _generation_failed_answer() -> AnswerResponse:
-        return AnswerResponse(
-            status="generation_failed",
-            summary=(
-                "本次回答未能通过结构化输出"
-                "或引用校验，暂时无法提供法律结论。"
-            ),
-            analysis=(
-                "为避免展示无法核验的法律名称、"
-                "条号或引文，系统已安全降级。"
-            ),
-            conditions=[],
-            citations=[],
-            limitations=STANDARD_LIMITATION,
-            follow_up_question=None,
-        )
+        return generation_failed_answer()
 
     @staticmethod
     def _clarification_answer(
         generated: GeneratedAnswer,
     ) -> AnswerResponse:
-        """没有有效引用但存在追问时，只返回安全追问。"""
-
-        follow_up = (
-            AnswerPipeline._normalize_follow_up(
-                generated.follow_up_question
-            )
-        )
-
-        return AnswerResponse(
-            status="needs_clarification",
-            summary=(
-                "还需要确认关键事实后才能判断。"
-            ),
-            analysis=(
-                "当前信息不足以确定哪些法律规定"
-                "适用于你的具体情况。"
-            ),
-            conditions=(
-                AnswerPipeline._normalize_conditions(
-                    generated.conditions
-                )
-            ),
-            citations=[],
-            limitations=STANDARD_LIMITATION,
-            follow_up_question=follow_up,
-        )
+        return clarification_answer(generated)
 
     @staticmethod
     def _finalize_generated_answer(
@@ -304,46 +191,9 @@ class AnswerPipeline:
         generated: GeneratedAnswer,
         validation: CitationValidationResult,
     ) -> AnswerResponse:
-        """把模型回答转换成最终可展示回答。"""
-
-        follow_up = (
-            AnswerPipeline._normalize_follow_up(
-                generated.follow_up_question
-            )
-        )
-
-        # 没有引用时，不能展示模型生成的实质性法律分析。
-        if not validation.citations:
-            if follow_up is not None:
-                return (
-                    AnswerPipeline._clarification_answer(
-                        generated
-                    )
-                )
-
-            return AnswerPipeline._insufficient_answer()
-
-        status = (
-            "needs_clarification"
-            if follow_up is not None
-            else "answered"
-        )
-
-        return AnswerResponse(
-            status=status,
-            summary=generated.summary.strip(),
-            analysis=generated.analysis.strip(),
-            conditions=(
-                AnswerPipeline._normalize_conditions(
-                    generated.conditions
-                )
-            ),
-            citations=validation.citations,
-            limitations=(
-                generated.limitations.strip()
-                or STANDARD_LIMITATION
-            ),
-            follow_up_question=follow_up,
+        return finalize_generated_answer(
+            generated=generated,
+            validation=validation,
         )
 
     @staticmethod
@@ -352,11 +202,9 @@ class AnswerPipeline:
         stage: str,
         error: Exception,
     ) -> str:
-        """生成内部诊断信息，不直接作为用户回答展示。"""
-
-        return (
-            f"{stage}失败："
-            f"{type(error).__name__}: {error}"
+        return format_exception(
+            stage=stage,
+            error=error,
         )
 
     @staticmethod
@@ -371,6 +219,7 @@ class AnswerPipeline:
         generation_started_at: float | None,
     ) -> AnswerPipelineResult:
         """构建最终结果：流水线所有出口共用的打包函数。"""
+
         if generation_started_at is None:
             generation_latency_ms = 0.0
         else:
@@ -391,10 +240,8 @@ class AnswerPipeline:
             generation_attempts=(
                 generation_attempts
             ),
-            top_relevance_score=(
-                AnswerPipeline._top_score(
-                    retrieval
-                )
+            top_relevance_score=top_score(
+                retrieval
             ),
             validation_errors=validation_errors,
             prompt_version=ANSWER_PROMPT_VERSION,
@@ -410,12 +257,14 @@ class AnswerPipeline:
         *,
         law_name: str | None = None,
         history: Sequence[ConversationTurn] | None = None,
+        summary_cache: ConversationSummaryCacheProtocol | None = None,
         progress_callback: ProgressCallback | None = None,
     ) -> AnswerPipelineResult:
         """执行完整流水线，并记录脱敏运行日志。"""
 
         logger.info(
-            "[RAG] request started query_chars=%d law_filter=%s history_turns=%d",
+            "[RAG] request started query_chars=%d "
+            "law_filter=%s history_turns=%d",
             len(query.strip()),
             law_name or "ALL",
             len(history or []),
@@ -426,6 +275,7 @@ class AnswerPipeline:
                 query,
                 law_name=law_name,
                 history=history,
+                summary_cache=summary_cache,
                 progress_callback=progress_callback,
             )
         except Exception:
@@ -478,6 +328,7 @@ class AnswerPipeline:
         *,
         law_name: str | None = None,
         history: Sequence[ConversationTurn] | None = None,
+        summary_cache: ConversationSummaryCacheProtocol | None = None,
         progress_callback: ProgressCallback | None = None,
     ) -> AnswerPipelineResult:
         """执行阶段 4 完整流水线，不负责写运行日志。"""
@@ -489,349 +340,35 @@ class AnswerPipeline:
 
         total_started_at = time.perf_counter()
 
-        conversation = self.conversation_context_builder.prepare(
-            history
-        )
-        retrieval_query = build_contextualized_retrieval_query(
-            normalized_query,
-            conversation,
-        )
-
-        retrieval = self.retrieval_pipeline.run(
-            retrieval_query,
-            law_name=law_name,
-            progress_callback=lambda stage, message: self._emit_progress(
-                progress_callback,
-                stage,
-                message,
-            ),
-        )
-        logger.info(
-            "[RAG] retrieval completed results=%d retrieval_ms=%.1f context_ms=%.1f",
-            len(retrieval.reranked_results),
-            retrieval.retrieval_latency_ms,
-            retrieval.context_latency_ms,
-        )
-
-        self._emit_progress(
-            progress_callback,
-            "evidence_check",
-            "正在评估证据充分性…",
-        )
-
-        if not self._has_sufficient_evidence(
-            retrieval
-        ):
-            return self._build_result(
-                query=normalized_query,
-                answer=self._insufficient_answer(),
-                retrieval=retrieval,
-                generation_attempts=0,
-                validation_errors=[],
-                total_started_at=total_started_at,
-                generation_started_at=None,
-            )
-
-        generation_started_at = (
-            time.perf_counter()
-        )
-        generation_attempts = 0
-        validation_errors: list[str] = []
-
-        try:
-            generation_attempts += 1
-            attempt_started_at = time.perf_counter()
-            self._emit_progress(
-                progress_callback,
-                "generation",
-                "正在依据检索证据生成回答…",
-            )
-
-            generated = (
-                self.generation_chains
-                .answer_chain
-                .invoke(
-                    {
-                        "question": normalized_query,
-                        "conversation_context": conversation.prompt_text,
-                        "context": (
-                            retrieval.context.text
-                        ),
-                    }
-                )
-            )
-
-            # 部分 OpenAI 兼容服务偶尔返回空的 tool-call 结果。
-            # 这种瞬时空结果允许原样重试一次；其他异常仍立即安全降级。
-            if generated is None:
-                logger.warning(
-                    "[RAG] generation attempt=1 returned None; retrying once"
-                )
-                generation_attempts += 1
-                generated = (
-                    self.generation_chains
-                    .answer_chain
-                    .invoke(
-                        {
-                            "question": normalized_query,
-                            "conversation_context": conversation.prompt_text,
-                            "context": (
-                                retrieval.context.text
-                            ),
-                        }
-                    )
-                )
-
-            if not isinstance(
-                generated,
-                GeneratedAnswer,
-            ):
-                raise TypeError(
-                    "结构化生成结果不是 GeneratedAnswer："
-                    f"{type(generated)!r}"
-                )
-
-            logger.info(
-                "[RAG] generation attempt=1 completed elapsed_ms=%.1f citations=%d",
-                (time.perf_counter() - attempt_started_at) * 1000.0,
-                len(generated.citations),
-            )
-
-        except Exception as error:
-            logger.exception(
-                "[RAG] generation attempt=1 failed"
-            )
-            validation_errors.append(
-                self._format_exception(
-                    stage="首次结构化生成",
-                    error=error,
-                )
-            )
-
-            return self._build_result(
-                query=normalized_query,
-                answer=(
-                    self._generation_failed_answer()
+        state = self._graph.invoke(
+            {
+                "query": normalized_query,
+                "law_name": law_name,
+                "history": history,
+                "summary_cache": summary_cache,
+                "min_answer_score": (
+                    self.min_answer_score
                 ),
-                retrieval=retrieval,
-                generation_attempts=(
-                    generation_attempts
-                ),
-                validation_errors=validation_errors,
-                total_started_at=total_started_at,
-                generation_started_at=(
-                    generation_started_at
-                ),
-            )
-
-        self._emit_progress(
-            progress_callback,
-            "citation_validation",
-            "正在校验引用与原始法条…",
-        )
-        first_validation = (
-            self.citation_validator.validate(
-                answer=generated,
-                context=retrieval.context,
-            )
-        )
-        logger.info(
-            "[RAG] citation validation completed attempt=1 valid=%s citations=%d errors=%d",
-            first_validation.is_valid,
-            len(first_validation.citations),
-            len(first_validation.errors),
-        )
-
-        if first_validation.is_valid:
-            return self._build_result(
-                query=normalized_query,
-                answer=(
-                    self._finalize_generated_answer(
-                        generated=generated,
-                        validation=first_validation,
-                    )
-                ),
-                retrieval=retrieval,
-                generation_attempts=(
-                    generation_attempts
-                ),
-                validation_errors=[],
-                total_started_at=total_started_at,
-                generation_started_at=(
-                    generation_started_at
-                ),
-            )
-
-        validation_errors.extend(
-            f"首次生成：{error}"
-            for error in first_validation.errors
-        )
-        logger.warning(
-            "[RAG] citation validation failed attempt=1 errors=%s",
-            first_validation.errors,
-        )
-
-        if generation_attempts >= 2:
-            return self._build_result(
-                query=normalized_query,
-                answer=(
-                    self._generation_failed_answer()
-                ),
-                retrieval=retrieval,
-                generation_attempts=(
-                    generation_attempts
-                ),
-                validation_errors=(
-                    validation_errors
-                ),
-                total_started_at=total_started_at,
-                generation_started_at=(
-                    generation_started_at
-                ),
-            )
-
-        # 引用校验失败时只允许修复一次。
-        try:
-            generation_attempts += 1
-            repair_started_at = time.perf_counter()
-            self._emit_progress(
-                progress_callback,
-                "repair",
-                "证据编号未通过校验，正在进行一次安全修复…",
-            )
-
-            repaired = (
-                self.generation_chains
-                .repair_chain
-                .invoke(
-                    {
-                        "question": normalized_query,
-                        "conversation_context": conversation.prompt_text,
-                        "context": (
-                            retrieval.context.text
-                        ),
-                        "previous_answer": (
-                            generated.model_dump_json(
-                                indent=2
-                            )
-                        ),
-                        "validation_errors": (
-                            "\n".join(
-                                f"- {error}"
-                                for error
-                                in first_validation.errors
-                            )
-                        ),
-                    }
-                )
-            )
-
-            if not isinstance(
-                repaired,
-                GeneratedAnswer,
-            ):
-                raise TypeError(
-                    "修复结果不是 GeneratedAnswer："
-                    f"{type(repaired)!r}"
-                )
-
-            logger.info(
-                "[RAG] generation attempt=2 completed elapsed_ms=%.1f citations=%d",
-                (time.perf_counter() - repair_started_at) * 1000.0,
-                len(repaired.citations),
-            )
-
-        except Exception as error:
-            logger.exception(
-                "[RAG] generation attempt=2 failed"
-            )
-            validation_errors.append(
-                self._format_exception(
-                    stage="引用修复生成",
-                    error=error,
-                )
-            )
-
-            return self._build_result(
-                query=normalized_query,
-                answer=(
-                    self._generation_failed_answer()
-                ),
-                retrieval=retrieval,
-                generation_attempts=(
-                    generation_attempts
-                ),
-                validation_errors=validation_errors,
-                total_started_at=total_started_at,
-                generation_started_at=(
-                    generation_started_at
-                ),
-            )
-
-        self._emit_progress(
-            progress_callback,
-            "citation_validation",
-            "正在校验修复后的证据编号…",
-        )
-        repaired_validation = (
-            self.citation_validator.validate(
-                answer=repaired,
-                context=retrieval.context,
-            )
-        )
-        logger.info(
-            "[RAG] citation validation completed attempt=2 valid=%s citations=%d errors=%d",
-            repaired_validation.is_valid,
-            len(repaired_validation.citations),
-            len(repaired_validation.errors),
-        )
-
-        if repaired_validation.is_valid:
-            return self._build_result(
-                query=normalized_query,
-                answer=(
-                    self._finalize_generated_answer(
-                        generated=repaired,
-                        validation=(
-                            repaired_validation
-                        ),
-                    )
-                ),
-                retrieval=retrieval,
-                generation_attempts=(
-                    generation_attempts
-                ),
-                validation_errors=(
-                    validation_errors
-                ),
-                total_started_at=total_started_at,
-                generation_started_at=(
-                    generation_started_at
-                ),
-            )
-
-        validation_errors.extend(
-            f"修复生成：{error}"
-            for error
-            in repaired_validation.errors
-        )
-        logger.warning(
-            "[RAG] citation validation failed attempt=2 errors=%s",
-            repaired_validation.errors,
+                "progress_callback": progress_callback,
+                "total_started_at": total_started_at,
+                "attempts": 0,
+                "validation_errors": [],
+                "generation_started_at": None,
+            }
         )
 
         return self._build_result(
             query=normalized_query,
-            answer=(
-                self._generation_failed_answer()
+            answer=state["answer"],
+            retrieval=state["retrieval"],
+            generation_attempts=state.get(
+                "attempts", 0
             ),
-            retrieval=retrieval,
-            generation_attempts=(
-                generation_attempts
+            validation_errors=state.get(
+                "validation_errors", []
             ),
-            validation_errors=validation_errors,
             total_started_at=total_started_at,
-            generation_started_at=(
-                generation_started_at
+            generation_started_at=state.get(
+                "generation_started_at"
             ),
         )

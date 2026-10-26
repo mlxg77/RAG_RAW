@@ -8,13 +8,31 @@ import ChatThread from '@/components/ChatThread.vue'
 import ComposerBar from '@/components/ComposerBar.vue'
 import HeroPanel from '@/components/HeroPanel.vue'
 import LawListDialog from '@/components/LawListDialog.vue'
+import LoginView from '@/components/LoginView.vue'
 import RebuildDialog from '@/components/RebuildDialog.vue'
 import UploadLawDialog from '@/components/UploadLawDialog.vue'
+import { ApiError } from '@/api/client'
+import { useAuth } from '@/composables/useAuth'
 import { useChat } from '@/composables/useChat'
 import { useKnowledgeBase } from '@/composables/useKnowledgeBase'
 import type { RebuildResult, UploadResult } from '@/types'
 
-const { messages, sending, hasMessages, send, clear } = useChat()
+const { user, ready: authReady, bootstrap, signOut } = useAuth()
+const {
+  messages,
+  conversations,
+  conversationId,
+  sending,
+  loadingHistory,
+  hasMessages,
+  send,
+  startNew,
+  openConversation,
+  removeConversation,
+  clearCurrent,
+  restore,
+  forget,
+} = useChat()
 const {
   laws,
   health,
@@ -53,7 +71,23 @@ watch(laws, (list) => {
   }
 })
 
-onMounted(refresh)
+onMounted(bootstrap)
+
+// 登录成功（含刷新页面时已登录）后拉知识库信息，并把上一次的对话接回来。
+watch(
+  user,
+  (current, previous) => {
+    if (current) {
+      void refresh()
+      void restore()
+      return
+    }
+    if (previous) {
+      // 主动退出或登录过期：别把上一个账号的对话留在页面上。
+      forget()
+    }
+  },
+)
 
 async function handleSend(query: string): Promise<void> {
   if (sending.value) {
@@ -70,7 +104,7 @@ async function handleClear(): Promise<void> {
 
   try {
     await ElMessageBox.confirm(
-      '清空后当前页面里的问答记录都会消失，确定吗？',
+      '清空后这条对话会从历史记录里一起删掉，确定吗？',
       '清空对话',
       {
         confirmButtonText: '清空',
@@ -82,8 +116,52 @@ async function handleClear(): Promise<void> {
     return
   }
 
-  clear()
   sidebarOpen.value = false
+  try {
+    await clearCurrent()
+  } catch {
+    ElMessage.error('这条对话没能删掉，请稍后再试。')
+  }
+}
+
+function handleNewConversation(): void {
+  startNew()
+  sidebarOpen.value = false
+}
+
+async function handleSelectConversation(id: number): Promise<void> {
+  try {
+    await openConversation(id)
+    sidebarOpen.value = false
+  } catch (error) {
+    ElMessage.error(
+      error instanceof ApiError
+        ? error.message
+        : '这条对话打不开，请稍后重试。',
+    )
+  }
+}
+
+async function handleDeleteConversation(id: number): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      '删除后这条对话就找不回来了，确定吗？',
+      '删除对话',
+      {
+        confirmButtonText: '删除',
+        cancelButtonText: '再想想',
+        type: 'warning',
+      },
+    )
+  } catch {
+    return
+  }
+
+  try {
+    await removeConversation(id)
+  } catch {
+    ElMessage.error('这条对话没能删掉，请稍后再试。')
+  }
 }
 
 function handleOpenUpload(): void {
@@ -104,10 +182,34 @@ async function handleRebuildCompleted(result: RebuildResult): Promise<void> {
   ElMessage.success(`知识库已更新：共 ${result.law_count} 部法律。`)
   await refresh()
 }
+
+async function handleLogout(): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      '退出后要重新输入账号密码才能进入，确定吗？',
+      '退出登录',
+      {
+        confirmButtonText: '退出',
+        cancelButtonText: '再想想',
+        type: 'warning',
+      },
+    )
+  } catch {
+    return
+  }
+
+  sidebarOpen.value = false
+  await signOut()
+  forget()
+}
 </script>
 
 <template>
-  <div class="app-shell">
+  <div v-if="!authReady" class="app-boot">正在确认登录状态…</div>
+
+  <LoginView v-else-if="!user" />
+
+  <div v-else class="app-shell">
     <div
       v-if="sidebarOpen"
       class="sidebar-scrim"
@@ -116,6 +218,7 @@ async function handleRebuildCompleted(result: RebuildResult): Promise<void> {
 
     <AppSidebar
       :class="{ 'is-open': sidebarOpen }"
+      :user="user"
       :laws="laws"
       :selected-law="selectedLaw"
       :health="health"
@@ -123,11 +226,18 @@ async function handleRebuildCompleted(result: RebuildResult): Promise<void> {
       :checks="checks"
       :loading="loading"
       :has-messages="hasMessages"
+      :conversations="conversations"
+      :active-conversation-id="conversationId"
+      :history-loading="loadingHistory"
       @update:selected-law="selectedLaw = $event"
       @clear="handleClear"
       @open-law-list="lawListOpen = true"
       @open-upload="handleOpenUpload"
       @open-rebuild="rebuildOpen = true"
+      @new-conversation="handleNewConversation"
+      @select-conversation="handleSelectConversation"
+      @delete-conversation="handleDeleteConversation"
+      @logout="handleLogout"
     />
 
     <main class="main">

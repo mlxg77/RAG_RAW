@@ -16,6 +16,9 @@ class ConversationTurn(BaseModel):
 
     role: ConversationRole
     content: str = Field(min_length=1, max_length=2000)
+    # 从历史对话表回填时带消息序号，用于判断摘要已经覆盖到哪里；
+    # 前端随请求传来的历史没有这个字段。
+    seq: int | None = Field(default=None, ge=1)
 
 
 class SourceBlock(BaseModel):

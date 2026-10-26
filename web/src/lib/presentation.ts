@@ -66,6 +66,37 @@ export function citationLocation(citation: ValidatedCitation): string {
   return `${location} · 第 ${citation.page} 页`
 }
 
+/** 历史对话列表里的时间：今天只显示时分，更早显示日期。 */
+export function formatConversationTime(
+  value: string,
+  now: Date = new Date(),
+): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+  }
+
+  if (date.getFullYear() === now.getFullYear()) {
+    return date.toLocaleDateString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+    })
+  }
+
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+}
+
 export function resultMetrics(result: AnswerPipelineResult): Metric[] {
   return [
     { label: '引用', value: String(result.answer.citations.length) },
@@ -126,6 +157,10 @@ export function friendlyErrorMessage(
   detail?: string,
 ): string {
   switch (status) {
+    case 401:
+      return detail?.trim() || '登录已经过期，请重新登录。'
+    case 403:
+      return detail?.trim() || '当前账号暂时不能使用，请联系管理员。'
     case 409:
       return '知识库正在更新，等这次任务结束再试。'
     case 413:

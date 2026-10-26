@@ -1,4 +1,4 @@
-import { API_BASE, parseApiError } from '@/api/client'
+import { API_BASE, parseApiError, triggerUnauthorized } from '@/api/client'
 import type {
   ProgressEvent,
   RebuildResult,
@@ -60,6 +60,9 @@ async function streamKnowledgeRequest<T>(
 
   if (!response.ok) {
     const error = await parseApiError(response)
+    if (response.status === 401) {
+      triggerUnauthorized()
+    }
     handlers.onError({ message: error.message, detail: error.detail })
     return
   }

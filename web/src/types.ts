@@ -25,6 +25,17 @@ export interface HealthResponse {
   checks: Record<string, boolean>
 }
 
+export interface CurrentUser {
+  id: number
+  username: string
+  role: string
+}
+
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
 export interface ValidatedCitation {
   evidence_id: string
   chunk_id: string
@@ -116,6 +127,30 @@ export interface QueryRequest {
   query: string
   law_name: string | null
   history: ConversationTurn[]
+  /** 为空表示本轮不记入历史对话。 */
+  conversation_id?: number | null
+}
+
+export interface ConversationSummary {
+  id: number
+  title: string
+  law_name: string | null
+  message_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ConversationMessage {
+  id: number
+  role: 'user' | 'assistant'
+  content: string
+  /** 助手消息的完整流水线结果，用来还原引用卡片。 */
+  result: AnswerPipelineResult | null
+  created_at: string
+}
+
+export interface ConversationDetail extends ConversationSummary {
+  messages: ConversationMessage[]
 }
 
 export interface UploadResult {

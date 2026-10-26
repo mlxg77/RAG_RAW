@@ -1,12 +1,32 @@
 import { friendlyErrorMessage } from '@/lib/presentation'
 import type {
   AnswerPipelineResult,
+  ConversationDetail,
+  ConversationSummary,
+  CurrentUser,
   HealthResponse,
   LawOption,
+  LoginRequest,
   QueryRequest,
 } from '@/types'
 
 export const API_BASE = (import.meta.env.VITE_API_BASE ?? '').replace(/\/$/, '')
+
+let unauthorizedHandler: (() => void) | null = null
+
+/** 业务请求碰到 401 时触发，用来把界面切回登录页。 */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler
+}
+
+export function triggerUnauthorized(): void {
+  unauthorizedHandler?.()
+}
+
+interface RequestOptions {
+  /** 登录与登录态探测本身用 401 表达业务结果，不应触发全局登出。 */
+  skipUnauthorized?: boolean
+}
 
 export class ApiError extends Error {
   readonly status: number
@@ -46,6 +66,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
 async function requestJson<T>(
   path: string,
   init?: RequestInit,
+  options: RequestOptions = {},
 ): Promise<T> {
   let response: Response
 
@@ -56,7 +77,11 @@ async function requestJson<T>(
   }
 
   if (!response.ok) {
-    throw await parseApiError(response)
+    const error = await parseApiError(response)
+    if (error.status === 401 && !options.skipUnauthorized) {
+      triggerUnauthorized()
+    }
+    throw error
   }
 
   return (await response.json()) as T
@@ -77,5 +102,53 @@ export function queryAnswer(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+  })
+}
+
+export function fetchConversations(): Promise<ConversationSummary[]> {
+  return requestJson<ConversationSummary[]>('/v1/conversations')
+}
+
+export function createConversation(
+  lawName: string | null,
+): Promise<ConversationSummary> {
+  return requestJson<ConversationSummary>('/v1/conversations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ law_name: lawName }),
+  })
+}
+
+export function fetchConversation(id: number): Promise<ConversationDetail> {
+  return requestJson<ConversationDetail>(`/v1/conversations/${id}`)
+}
+
+export function deleteConversation(id: number): Promise<void> {
+  return requestJson<{ detail: string }>(`/v1/conversations/${id}`, {
+    method: 'DELETE',
+  }).then(() => undefined)
+}
+
+export function login(payload: LoginRequest): Promise<CurrentUser> {
+  return requestJson<CurrentUser>(
+    '/v1/auth/login',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+    { skipUnauthorized: true },
+  )
+}
+
+export function logout(): Promise<void> {
+  return requestJson<{ detail: string }>('/v1/auth/logout', {
+    method: 'POST',
+  }).then(() => undefined)
+}
+
+export function fetchCurrentUser(): Promise<CurrentUser> {
+  return requestJson<CurrentUser>('/v1/auth/me', undefined, {
+    skipUnauthorized: true,
   })
 }

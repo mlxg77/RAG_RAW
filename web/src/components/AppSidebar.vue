@@ -1,8 +1,20 @@
 <script setup lang="ts">
-import { Delete, Document, Plus, Refresh } from '@element-plus/icons-vue'
+import {
+  Delete,
+  Document,
+  Plus,
+  Refresh,
+  SwitchButton,
+} from '@element-plus/icons-vue'
 import { computed } from 'vue'
 
-import type { HealthResponse, LawOption } from '@/types'
+import { formatConversationTime } from '@/lib/presentation'
+import type {
+  ConversationSummary,
+  CurrentUser,
+  HealthResponse,
+  LawOption,
+} from '@/types'
 
 const props = defineProps<{
   laws: LawOption[]
@@ -12,14 +24,22 @@ const props = defineProps<{
   checks: Array<{ key: string; label: string; ok: boolean }>
   loading: boolean
   hasMessages: boolean
+  user: CurrentUser
+  conversations: ConversationSummary[]
+  activeConversationId: number | null
+  historyLoading: boolean
 }>()
 
 const emit = defineEmits<{
   'update:selectedLaw': [value: string | null]
   clear: []
+  logout: []
   openLawList: []
   openUpload: []
   openRebuild: []
+  newConversation: []
+  selectConversation: [id: number]
+  deleteConversation: [id: number]
 }>()
 
 const healthLabel = computed(() => {
@@ -36,6 +56,14 @@ const healthTagType = computed<'success' | 'warning' | 'info'>(() => {
   return props.ready ? 'success' : 'warning'
 })
 
+const avatarText = computed(() =>
+  props.user.username.slice(0, 1).toUpperCase(),
+)
+
+const roleLabel = computed(() =>
+  props.user.role === 'admin' ? '管理员' : '普通用户',
+)
+
 function handleLawChange(value: string): void {
   emit('update:selectedLaw', value || null)
 }
@@ -48,6 +76,52 @@ function handleLawChange(value: string): void {
         <div class="brand-mark">RAG Law</div>
         <p>证据优先的法律问答</p>
       </div>
+
+      <section class="sidebar-card">
+        <div class="card-head">
+          <h2>历史对话</h2>
+          <el-button
+            text
+            size="small"
+            :icon="Plus"
+            @click="emit('newConversation')"
+          >
+            新对话
+          </el-button>
+        </div>
+
+        <p v-if="historyLoading" class="hint">正在读取历史对话…</p>
+        <p v-else-if="!conversations.length" class="hint">
+          还没有历史对话，问一个问题就会自动存下来。
+        </p>
+
+        <ul v-else class="conversation-list">
+          <li
+            v-for="item in conversations"
+            :key="item.id"
+            :class="{ 'is-active': item.id === activeConversationId }"
+          >
+            <button
+              type="button"
+              class="conversation-main"
+              @click="emit('selectConversation', item.id)"
+            >
+              <span class="conversation-title">{{ item.title }}</span>
+              <span class="conversation-meta">
+                {{ formatConversationTime(item.updated_at) }} ·
+                {{ item.message_count }} 条
+              </span>
+            </button>
+            <el-button
+              text
+              size="small"
+              class="conversation-delete"
+              :icon="Delete"
+              @click="emit('deleteConversation', item.id)"
+            />
+          </li>
+        </ul>
+      </section>
 
       <section class="sidebar-card">
         <h2>检索范围</h2>
@@ -107,6 +181,19 @@ function handleLawChange(value: string): void {
       </section>
 
       <div class="sidebar-bottom">
+        <div class="user-card">
+          <el-avatar class="user-avatar" :size="32">
+            {{ avatarText }}
+          </el-avatar>
+          <div class="user-meta">
+            <strong>{{ user.username }}</strong>
+            <span>{{ roleLabel }}</span>
+          </div>
+          <el-button text :icon="SwitchButton" @click="emit('logout')">
+            退出
+          </el-button>
+        </div>
+
         <p class="disclaimer">
           回答仅供法律信息检索与参考，不构成法律意见。
         </p>

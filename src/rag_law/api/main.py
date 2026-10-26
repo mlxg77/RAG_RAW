@@ -13,11 +13,13 @@ import tempfile
 import time
 from collections import defaultdict, deque
 from collections.abc import Callable, Sequence
+from contextlib import asynccontextmanager
+from datetime import datetime
 from pathlib import Path
 from threading import Lock
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,9 +32,15 @@ from rag_law.retrieval.bm25 import DEFAULT_BM25_INDEX_PATH
 from rag_law.retrieval.dense import DEFAULT_CHROMA_DIRECTORY
 from rag_law.schemas import (
     AnswerPipelineResult,
+    ConversationRole,
     ConversationTurn,
     RetrievalResult,
 )
+
+if TYPE_CHECKING:
+    from rag_law.auth import AuthState
+    from rag_law.history import ConversationStore
+
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +55,10 @@ DEFAULT_CORS_ORIGINS = (
     "http://127.0.0.1:5173",
 )
 MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+# 单次回填的历史消息条数上限（约 50 轮）；更早的内容已进摘要。
+HISTORY_MESSAGE_LIMIT = 100
+# 与 ConversationTurn.content 的上限保持一致：库里存原文，回灌时要截断。
+MAX_HISTORY_CONTENT_CHARS = 2000
 
 
 class BaseQueryRequest(BaseModel):
@@ -58,8 +70,10 @@ class QueryRequest(BaseQueryRequest):
     history: list[ConversationTurn] = Field(
         default_factory=list,
         max_length=50,
-        description="当前问题之前的对话历史；服务端不保存会话。",
+        description="当前问题之前的对话历史；同时会随回答落到历史对话表。",
     )
+    # 为空表示这一轮不记历史（比如调试或未登录场景）。
+    conversation_id: int | None = Field(default=None, ge=1)
 
 
 class RetrieveRequest(BaseQueryRequest):
@@ -75,6 +89,85 @@ class RetrieveResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     checks: dict[str, bool]
+
+
+class ConversationMessage(BaseModel):
+    """历史对话中的一条消息；result 只在助手消息上出现。"""
+
+    id: int
+    role: ConversationRole
+    content: str
+    result: AnswerPipelineResult | None = None
+    created_at: datetime
+
+
+class ConversationSummary(BaseModel):
+    id: int
+    title: str
+    law_name: str | None = None
+    message_count: int = Field(default=0, ge=0)
+    created_at: datetime
+    updated_at: datetime
+
+
+class ConversationDetail(ConversationSummary):
+    messages: list[ConversationMessage] = Field(default_factory=list)
+
+
+class CreateConversationRequest(BaseModel):
+    law_name: str | None = Field(default=None, max_length=200)
+
+
+class ConversationSummaryCache:
+    """把早期对话摘要缓存在 conversations 表里。
+
+    任何一步失败都退化成「这一轮没有缓存」：摘要最多多算一次，
+    不能让历史存储的问题影响回答本身。
+    """
+
+    def __init__(
+        self,
+        store: Any,
+        *,
+        conversation_id: int,
+        user_id: int,
+        first_seq: int,
+    ) -> None:
+        self._store = store
+        self._conversation_id = conversation_id
+        self._user_id = user_id
+        self._first_seq = first_seq
+
+    def load(self) -> tuple[str, int]:
+        try:
+            summary, covered_seq = self._store.load_summary(
+                conversation_id=self._conversation_id,
+                user_id=self._user_id,
+            )
+        except Exception as error:
+            logger.warning(
+                "读取对话摘要缓存失败：%s", type(error).__name__
+            )
+            return "", 0
+
+        if covered_seq < self._first_seq - 1:
+            # 加载窗口没从第一条消息开始，摘要也没覆盖到窗口开头：
+            # 中间那段谁都没记过，增量合并会把它漏掉，这一轮不用缓存。
+            return "", 0
+        return summary, covered_seq
+
+    def save(self, summary: str, covered_seq: int) -> None:
+        try:
+            self._store.save_summary(
+                conversation_id=self._conversation_id,
+                user_id=self._user_id,
+                summary=summary,
+                covered_seq=covered_seq,
+            )
+        except Exception as error:
+            logger.warning(
+                "写入对话摘要缓存失败：%s", type(error).__name__
+            )
 
 
 class SlidingWindowRateLimiter:
@@ -276,6 +369,8 @@ def _resolve_cors_origins(configured: Sequence[str] | None) -> list[str]:
 def create_app(
     *,
     services: ApiServices | None = None,
+    auth: "AuthState | None" = None,
+    conversations: "ConversationStore | None" = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     rate_limit: int = DEFAULT_RATE_LIMIT,
     rate_window_seconds: float = DEFAULT_RATE_WINDOW_SECONDS,
@@ -284,8 +379,32 @@ def create_app(
 ) -> FastAPI:
     """创建应用；测试可传入短超时、预置 services 或临时静态目录。"""
 
-    app = FastAPI(title="RAG Law API", version="v1")
+    # 延迟导入：账号库与对话库驱动只在实际启用登录时才需要。
+    from rag_law.auth import AuthState, Session, require_user
+    from rag_law.auth import router as auth_router
+    from rag_law.config import settings
+    from rag_law.history import ConversationStore, ConversationStoreUnavailable
+
+    @asynccontextmanager
+    async def lifespan(application: FastAPI):
+        try:
+            yield
+        finally:
+            application.state.auth.close()
+            application.state.conversations.close()
+
+    app = FastAPI(title="RAG Law API", version="v1", lifespan=lifespan)
     app.state.services = services or ApiServices()
+    app.state.auth = auth or AuthState(
+        dsn=settings.database_url,
+        cookie_name=settings.session_cookie_name,
+        session_ttl_seconds=settings.session_ttl_seconds,
+        cookie_secure=settings.session_cookie_secure,
+    )
+    # 与账号库共用同一个 DSN，会话按 users.id 归属。
+    app.state.conversations = conversations or ConversationStore(
+        dsn=settings.database_url,
+    )
     app.state.timeout_seconds = timeout_seconds
     app.state.rate_limiter = SlidingWindowRateLimiter(
         limit=rate_limit, window_seconds=rate_window_seconds
@@ -298,9 +417,13 @@ def create_app(
         app.add_middleware(
             CORSMiddleware,
             allow_origins=resolved_origins,
-            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
             allow_headers=["*"],
         )
+
+    # 登录相关接口自身不做登录校验，其余业务接口统一挂 require_user。
+    app.include_router(auth_router)
 
     async def enforce_rate_limit(request: Request) -> None:
         client = request.client.host if request.client else "unknown"
@@ -314,30 +437,138 @@ def create_app(
             status="ok" if all(checks.values()) else "degraded", checks=checks
         )
 
-    @app.get("/v1/laws", response_model=list[LawOption], tags=["knowledge-base"])
+    @app.get(
+        "/v1/laws",
+        response_model=list[LawOption],
+        tags=["knowledge-base"],
+        dependencies=[Depends(require_user)],
+    )
     def laws() -> list[LawOption]:
         try:
             return load_law_options(MANIFEST_PATH)
         except (FileNotFoundError, ValueError) as error:
             raise HTTPException(status_code=503, detail="法律清单不可用") from error
 
-    @app.post("/v1/query", response_model=AnswerPipelineResult, tags=["query"])
-    async def query(payload: QueryRequest, request: Request) -> AnswerPipelineResult:
+    @app.post(
+        "/v1/query",
+        response_model=AnswerPipelineResult,
+        tags=["query"],
+    )
+    async def query(
+        payload: QueryRequest,
+        request: Request,
+        session: Session = Depends(require_user),
+    ) -> AnswerPipelineResult:
         await enforce_rate_limit(request)
         law_name = _validate_law_name(payload.law_name)
         normalized_query = payload.query.strip()
         if not normalized_query:
             raise HTTPException(status_code=422, detail="查询问题不能为空")
-        return await _run_with_timeout(
+        history, summary_cache = await _load_conversation_context(
+            conversation_id=payload.conversation_id,
+            user_id=session.user_id,
+            fallback=payload.history,
+        )
+        result = await _run_with_timeout(
             lambda: app.state.services.get_answer_pipeline().run(
                 normalized_query,
                 law_name=law_name,
-                history=payload.history,
+                history=history,
+                summary_cache=summary_cache,
             ),
             timeout_seconds=app.state.timeout_seconds,
         )
+        if payload.conversation_id is not None:
+            await _persist_exchange(
+                conversation_id=payload.conversation_id,
+                user_id=session.user_id,
+                query=normalized_query,
+                law_name=law_name,
+                result=result,
+            )
+        return result
 
-    @app.post("/v1/retrieve", response_model=RetrieveResponse, tags=["query"])
+    async def _persist_exchange(
+        *,
+        conversation_id: int,
+        user_id: int,
+        query: str,
+        law_name: str | None,
+        result: AnswerPipelineResult,
+    ) -> None:
+        """历史落库是附属动作：失败只记日志，不能反噬已经生成的回答。"""
+
+        try:
+            stored = await asyncio.to_thread(
+                app.state.conversations.append_exchange,
+                conversation_id=conversation_id,
+                user_id=user_id,
+                query=query,
+                law_name=law_name,
+                result=result,
+            )
+        except ConversationStoreUnavailable:
+            logger.warning("历史对话没能写入：会话库暂不可用")
+            return
+        except Exception:
+            logger.exception("历史对话写入异常")
+            return
+
+        if not stored:
+            logger.warning(
+                "会话 %s 不属于当前用户，本次未写入历史", conversation_id
+            )
+
+    async def _load_conversation_context(
+        *,
+        conversation_id: int | None,
+        user_id: int,
+        fallback: Sequence[ConversationTurn],
+    ) -> tuple[Sequence[ConversationTurn], ConversationSummaryCache | None]:
+        """有会话 id 时以库里的历史为准，这样才能用摘要缓存。
+
+        库里读不到（新会话、已删除、会话库不可用）就退回前端传来的 history，
+        保证即使历史存储全挂，多轮问答也能照旧进行。
+        """
+
+        if conversation_id is None:
+            return fallback, None
+
+        try:
+            rows = await asyncio.to_thread(
+                app.state.conversations.load_messages,
+                conversation_id=conversation_id,
+                user_id=user_id,
+                limit=HISTORY_MESSAGE_LIMIT,
+            )
+        except ConversationStoreUnavailable:
+            logger.warning("历史消息读取失败，改用前端传入的 history")
+            return fallback, None
+
+        if not rows:
+            return fallback, None
+
+        turns = [
+            ConversationTurn(
+                role=row["role"],
+                content=row["content"][:MAX_HISTORY_CONTENT_CHARS],
+                seq=row["seq"],
+            )
+            for row in rows
+        ]
+        return turns, ConversationSummaryCache(
+            app.state.conversations,
+            conversation_id=conversation_id,
+            user_id=user_id,
+            first_seq=rows[0]["seq"],
+        )
+
+    @app.post(
+        "/v1/retrieve",
+        response_model=RetrieveResponse,
+        tags=["query"],
+        dependencies=[Depends(require_user)],
+    )
     async def retrieve(payload: RetrieveRequest, request: Request) -> RetrieveResponse:
         await enforce_rate_limit(request)
         law_name = _validate_law_name(payload.law_name)
@@ -355,6 +586,90 @@ def create_app(
             results=result.reranked_results[: payload.top_k],
             total_latency_ms=result.total_latency_ms,
         )
+
+    # ---------- 历史对话：全部按当前登录用户隔离 ----------
+
+    def _conversation_store_error(error: Exception) -> HTTPException:
+        logger.warning("会话库不可用：%s", type(error).__name__)
+        return HTTPException(
+            status_code=503, detail="历史对话暂时打不开，请稍后再试"
+        )
+
+    @app.get(
+        "/v1/conversations",
+        response_model=list[ConversationSummary],
+        tags=["conversations"],
+    )
+    def list_conversations(
+        session: Session = Depends(require_user),
+    ) -> list[ConversationSummary]:
+        try:
+            rows = app.state.conversations.list_for_user(
+                user_id=session.user_id,
+                limit=settings.conversation_history_limit,
+            )
+        except ConversationStoreUnavailable as error:
+            raise _conversation_store_error(error) from error
+        return [ConversationSummary(**row) for row in rows]
+
+    @app.post(
+        "/v1/conversations",
+        response_model=ConversationSummary,
+        tags=["conversations"],
+    )
+    def create_conversation(
+        session: Session = Depends(require_user),
+        payload: CreateConversationRequest | None = None,
+    ) -> ConversationSummary:
+        law_name = _validate_law_name(payload.law_name if payload else None)
+        try:
+            row = app.state.conversations.create(
+                user_id=session.user_id,
+                law_name=law_name,
+            )
+        except ConversationStoreUnavailable as error:
+            raise _conversation_store_error(error) from error
+        return ConversationSummary(**row)
+
+    @app.get(
+        "/v1/conversations/{conversation_id}",
+        response_model=ConversationDetail,
+        tags=["conversations"],
+    )
+    def get_conversation(
+        conversation_id: int,
+        session: Session = Depends(require_user),
+    ) -> ConversationDetail:
+        try:
+            row = app.state.conversations.get(
+                conversation_id=conversation_id,
+                user_id=session.user_id,
+            )
+        except ConversationStoreUnavailable as error:
+            raise _conversation_store_error(error) from error
+        if row is None:
+            # 不是本人的会话与不存在的会话返回同一句话，避免枚举 id。
+            raise HTTPException(status_code=404, detail="这个对话不存在或已删除")
+        return ConversationDetail(**row)
+
+    @app.delete(
+        "/v1/conversations/{conversation_id}",
+        tags=["conversations"],
+    )
+    def delete_conversation(
+        conversation_id: int,
+        session: Session = Depends(require_user),
+    ) -> dict[str, str]:
+        try:
+            deleted = app.state.conversations.delete(
+                conversation_id=conversation_id,
+                user_id=session.user_id,
+            )
+        except ConversationStoreUnavailable as error:
+            raise _conversation_store_error(error) from error
+        if not deleted:
+            raise HTTPException(status_code=404, detail="这个对话不存在或已删除")
+        return {"detail": "对话已删除"}
 
     def start_knowledge_stream(
         operation: Callable[[Callable[[str, str], None]], dict[str, Any]],
@@ -387,7 +702,11 @@ def create_app(
             },
         )
 
-    @app.post("/v1/laws/upload", tags=["knowledge-base"])
+    @app.post(
+        "/v1/laws/upload",
+        tags=["knowledge-base"],
+        dependencies=[Depends(require_user)],
+    )
     async def upload_law(
         request: Request,
         file: UploadFile = File(...),
@@ -448,7 +767,11 @@ def create_app(
 
         return start_knowledge_stream(operation)
 
-    @app.post("/v1/knowledge-base/rebuild", tags=["knowledge-base"])
+    @app.post(
+        "/v1/knowledge-base/rebuild",
+        tags=["knowledge-base"],
+        dependencies=[Depends(require_user)],
+    )
     async def rebuild_knowledge_base_endpoint(
         request: Request,
     ) -> StreamingResponse:
