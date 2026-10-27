@@ -465,6 +465,141 @@ body {
   line-height: 1.6;
 }
 
+/* ---------- 思考过程与流式草稿 ---------- */
+
+.reasoning-panel {
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(251, 252, 250, 0.9);
+  overflow: hidden;
+}
+
+.reasoning-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reasoning-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: #9db3a8;
+}
+
+.reasoning-dot.is-live {
+  background: var(--forest);
+  animation: reasoning-pulse 1.4s ease-in-out infinite;
+}
+
+.reasoning-label {
+  color: #3c5a4d;
+  font-weight: 650;
+}
+
+.reasoning-meta {
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+.reasoning-chevron,
+.fold-chevron {
+  margin-left: auto;
+  transition: transform 0.2s ease;
+}
+
+.reasoning-chevron.is-open,
+.fold-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.reasoning-body {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0 14px 12px;
+  scroll-behavior: smooth;
+}
+
+.reasoning-text {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid #dfe9e3;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+@keyframes reasoning-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes typing-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.draft-card {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.draft-card .answer-summary,
+.draft-card .answer-text {
+  color: #3f5347;
+  opacity: 0.88;
+}
+
+.status-pill.draft {
+  align-items: center;
+  gap: 6px;
+  color: #315044;
+  background: #eef5f1;
+}
+
+.draft-placeholder {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.draft-step {
+  margin: 0.9rem 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.typing-caret {
+  display: inline-block;
+  width: 0.45em;
+  height: 1.05em;
+  margin-left: 2px;
+  background: var(--forest);
+  vertical-align: -0.16em;
+  animation: typing-blink 1s steps(2, start) infinite;
+}
+
 /* ---------- 回答卡片 ---------- */
 
 .answer-card {
@@ -579,37 +714,62 @@ body {
   line-height: 1.8;
 }
 
-.citation-collapse,
-.limit-collapse {
-  border-top: none;
-  border-bottom: none;
+.fold-section {
+  margin-top: 1.35rem;
 }
 
-.citation-collapse .el-collapse-item__header,
-.limit-collapse .el-collapse-item__header {
-  height: auto;
-  min-height: 42px;
-  padding: 4px 0;
-  border-bottom: 1px solid #eef3f0;
-  background: transparent;
+.fold-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #cad8d1;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
   color: #27483a;
-  font-weight: 650;
-  line-height: 1.5;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 
-.citation-collapse .el-collapse-item__wrap,
-.limit-collapse .el-collapse-item__wrap {
-  border-bottom: none;
-  background: transparent;
+.fold-toggle:hover {
+  border-color: var(--forest);
+  background: #f3f8f5;
 }
 
-.citation-collapse .el-collapse-item__content,
-.limit-collapse .el-collapse-item__content {
-  padding-bottom: 14px;
+.fold-meta {
+  color: var(--muted);
+  font-weight: 600;
 }
 
-.citation-title {
+.fold-body {
+  margin-top: 10px;
+}
+
+.citation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.citation-item {
+  padding: 12px 14px;
+  border: 1px solid #eef3f0;
+  border-radius: 12px;
+  background: rgba(251, 252, 250, 0.8);
+}
+
+.citation-item-title {
+  margin: 0 0 6px;
+  color: #27483a;
   font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .citation-meta {
@@ -625,10 +785,6 @@ body {
   border-radius: 0 10px 10px 0;
   background: #f3f8f5;
   line-height: 1.75;
-}
-
-.limit-collapse {
-  margin-top: 12px;
 }
 
 .disclaimer {

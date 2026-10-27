@@ -7,15 +7,13 @@ import {
   statusPresentation,
 } from '@/lib/presentation'
 import type { AnswerPipelineResult } from '@/types'
+import FoldSection from './FoldSection.vue'
 
 const props = defineProps<{ result: AnswerPipelineResult }>()
 
 const answer = computed(() => props.result.answer)
 const status = computed(() => statusPresentation(answer.value.status))
 const metrics = computed(() => resultMetrics(props.result))
-const defaultOpenCitations = computed(() =>
-  answer.value.citations.length > 0 ? ['citation-0'] : [],
-)
 </script>
 
 <template>
@@ -53,23 +51,22 @@ const defaultOpenCitations = computed(() =>
       </ul>
     </template>
 
-    <template v-if="answer.citations.length > 0">
-      <h3 class="section-kicker">法条依据</h3>
-      <el-collapse
-        class="citation-collapse"
-        :model-value="defaultOpenCitations"
-      >
-        <el-collapse-item
+    <FoldSection
+      v-if="answer.citations.length > 0"
+      class="citations-fold"
+      label="法条依据"
+      :meta="`${answer.citations.length} 条`"
+    >
+      <div class="citation-list">
+        <article
           v-for="(citation, index) in answer.citations"
           :key="citation.evidence_id"
-          :name="`citation-${index}`"
+          class="citation-item"
         >
-          <template #title>
-            <span class="citation-title">
-              {{ String(index + 1).padStart(2, '0') }} ·
-              {{ citation.law_name }} · {{ citation.article_no }}
-            </span>
-          </template>
+          <p class="citation-item-title">
+            {{ String(index + 1).padStart(2, '0') }} ·
+            {{ citation.law_name }} · {{ citation.article_no }}
+          </p>
           <p class="citation-meta">
             证据 {{ citation.evidence_id }} ·
             {{ citationLocation(citation) }}
@@ -77,15 +74,17 @@ const defaultOpenCitations = computed(() =>
           <blockquote class="citation-quote">
             {{ citation.quote }}
           </blockquote>
-        </el-collapse-item>
-      </el-collapse>
-    </template>
+        </article>
+      </div>
+    </FoldSection>
 
-    <el-collapse v-if="answer.limitations" class="limit-collapse">
-      <el-collapse-item title="边界与限制" name="limits">
-        <p class="answer-text">{{ answer.limitations }}</p>
-      </el-collapse-item>
-    </el-collapse>
+    <FoldSection
+      v-if="answer.limitations"
+      class="limits-fold"
+      label="边界与限制"
+    >
+      <p class="answer-text">{{ answer.limitations }}</p>
+    </FoldSection>
 
     <p class="disclaimer">
       引用经过程序校验，但法律适用仍取决于完整事实、有效版本和司法实践。

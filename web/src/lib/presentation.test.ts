@@ -64,6 +64,7 @@ function result(): AnswerPipelineResult {
     prompt_version: 'test-v1',
     generation_latency_ms: 1000,
     total_latency_ms: 2500,
+    reasoning: null,
   }
 }
 
@@ -116,7 +117,17 @@ describe('buildConversationHistory', () => {
       assistantMessage('a1'),
       { id: 'error', role: 'assistant', content: '这次没能完成', error: true },
       userMessage('那赔偿怎么算？', 'u2'),
-      { id: 'pending', role: 'assistant', pending: true },
+      {
+        id: 'pending',
+        role: 'assistant',
+        draft: {
+          phase: 'thinking',
+          reasoning: '',
+          summary: '',
+          analysis: '',
+          steps: [],
+        },
+      },
     ]
 
     const history = buildConversationHistory(messages)

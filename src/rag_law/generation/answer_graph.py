@@ -14,12 +14,16 @@ from langgraph.graph import END, START, StateGraph
 
 from rag_law.generation.chain import (
     GenerationChains,
+    GenerationStreamHandlers,
 )
 from rag_law.generation.conversation import (
     ConversationContextBuilder,
     ConversationSummaryCacheProtocol,
     PreparedConversation,
-    build_contextualized_retrieval_query,
+)
+from rag_law.generation.query_rewriter import (
+    QueryRewriterProtocol,
+    build_retrieval_query,
 )
 from rag_law.schemas import (
     AnswerResponse,
@@ -77,6 +81,8 @@ class AnswerGraphDependencies(Protocol):
     conversation_context_builder: (
         ConversationContextBuilder
     )
+    # 追问改写器；缺省时退回历史拼接。
+    query_rewriter: QueryRewriterProtocol | None
     min_answer_score: float
 
 
@@ -90,12 +96,15 @@ class AnswerGraphState(TypedDict, total=False):
     summary_cache: ConversationSummaryCacheProtocol | None
     min_answer_score: float
     progress_callback: ProgressCallback | None
+    # 流式展示回调；不传则只把结果一次性带回去。
+    stream_handlers: GenerationStreamHandlers | None
     total_started_at: float
 
     conversation: PreparedConversation
     retrieval_query: str
     retrieval: RetrievalContextResult
     generated: GeneratedAnswer
+    reasoning: str
     validation: CitationValidationResult
     attempts: int
     validation_errors: list[str]
@@ -364,9 +373,11 @@ def build_answer_graph(
         return {
             "conversation": conversation,
             "retrieval_query": (
-                build_contextualized_retrieval_query(
+                build_retrieval_query(
                     state["query"],
                     conversation,
+                    rewriter=deps.query_rewriter,
+                    law_name=state.get("law_name"),
                 )
             ),
         }
@@ -443,25 +454,41 @@ def build_answer_graph(
         attempt_started_at = time.perf_counter()
 
         try:
-            generated = (
-                deps.generation_chains
-                .answer_chain
-                .invoke(payload)
+            streamer = getattr(
+                deps.generation_chains,
+                "streamer",
+                None,
             )
-
-            # 部分 OpenAI 兼容服务偶尔返回空的 tool-call 结果。
-            # 这种瞬时空结果允许原样重试一次。
-            if generated is None:
-                logger.warning(
-                    "[RAG] generation attempt=1 "
-                    "returned None; retrying once"
+            if streamer is not None:
+                # 生产路径：一次调用同时拿到思考过程与结构化回答；
+                # 有回调时边生成边把文字推给前端。
+                streamed = streamer.stream(
+                    payload,
+                    state.get("stream_handlers"),
                 )
-                attempts += 1
+                generated = streamed.answer
+                reasoning = streamed.reasoning
+            else:
                 generated = (
                     deps.generation_chains
                     .answer_chain
                     .invoke(payload)
                 )
+                reasoning = ""
+
+                # 部分 OpenAI 兼容服务偶尔返回空结果，
+                # 这种瞬时空结果允许原样重试一次。
+                if generated is None:
+                    logger.warning(
+                        "[RAG] generation attempt=1 "
+                        "returned None; retrying once"
+                    )
+                    attempts += 1
+                    generated = (
+                        deps.generation_chains
+                        .answer_chain
+                        .invoke(payload)
+                    )
 
             if not isinstance(
                 generated,
@@ -474,13 +501,14 @@ def build_answer_graph(
 
             logger.info(
                 "[RAG] generation attempt=1 completed "
-                "elapsed_ms=%.1f citations=%d",
+                "elapsed_ms=%.1f citations=%d reasoning_chars=%d",
                 (
                     time.perf_counter()
                     - attempt_started_at
                 )
                 * 1000.0,
                 len(generated.citations),
+                len(reasoning),
             )
 
         except Exception as error:
@@ -503,6 +531,7 @@ def build_answer_graph(
 
         return {
             "generated": generated,
+            "reasoning": reasoning,
             "attempts": attempts,
             "generation_started_at": started_at,
             "validation_errors": errors,

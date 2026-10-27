@@ -189,6 +189,51 @@ class AnswerRunLogger:
             detected_types=detected_types,
         )
 
+        # 多轮追问时真正拿去检索的文本和原始问题不同：
+        # 它由早期摘要、此前各轮用户问题和本轮问题拼成。
+        # 只记这段文本而不记检索上下文正文，既够定位又不会把
+        # 法条全文重复写进日志。
+        redacted_retrieval_query = redact_value(
+            result.retrieval.query,
+            detected_types=detected_types,
+        )
+
+        reranked_article_nos = redact_value(
+            [
+                item.article_no
+                for item in result
+                .retrieval
+                .reranked_results
+            ],
+            detected_types=detected_types,
+        )
+
+        # 上下文里除精排命中的条号外还可能有邻条，
+        # 只有这份列表才等于「模型实际看到了哪些条」。
+        context_article_nos = redact_value(
+            [
+                evidence.article_no
+                for evidence in result
+                .retrieval
+                .context
+                .evidences
+            ],
+            detected_types=detected_types,
+        )
+
+        context_law_names = redact_value(
+            sorted(
+                {
+                    evidence.law_name
+                    for evidence in result
+                    .retrieval
+                    .context
+                    .evidences
+                }
+            ),
+            detected_types=detected_types,
+        )
+
         retrieval_results = [
             {
                 "rank": rank,
@@ -218,14 +263,26 @@ class AnswerRunLogger:
         )
 
         return {
-            "schema_version": "1.0",
+            "schema_version": "1.1",
             "run_id": str(uuid4()),
             "created_at": (
                 datetime.now(timezone.utc)
                 .isoformat()
             ),
             "query": redacted_query,
+            "retrieval_query": (
+                redacted_retrieval_query
+            ),
             "law_filter": redacted_law_name,
+            "reranked_article_nos": (
+                reranked_article_nos
+            ),
+            "context_article_nos": (
+                context_article_nos
+            ),
+            "context_law_names": (
+                context_law_names
+            ),
             "prompt_version": (
                 result.prompt_version
             ),

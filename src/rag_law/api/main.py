@@ -310,36 +310,63 @@ def _knowledge_error_payload(error: Exception) -> dict[str, str]:
     }
 
 
-async def _knowledge_event_stream(
-    operation: Callable[[Callable[[str, str], None]], dict[str, Any]],
+def _query_error_payload(error: Exception) -> dict[str, str]:
+    """把问答异常拆成用户能看懂的一句话。"""
+
+    if isinstance(error, TimeoutError):
+        message = "这次回答超时了，可以稍后重试，或把问题说得更简短一些。"
+    elif isinstance(error, (FileNotFoundError, OSError)):
+        message = "索引或法律文件读取失败了，请确认服务端文件完好后重试。"
+    else:
+        message = "这次回答没有生成成功，请稍后再试一次。"
+
+    return {
+        "message": message,
+        "detail": f"{type(error).__name__}: {error}",
+    }
+
+
+def _stream_payload(value: Any) -> Any:
+    """把流水线结果转成可以直接序列化的结构。"""
+
+    if hasattr(value, "model_dump"):
+        return value.model_dump(mode="json")
+    return value
+
+
+async def _stream_operation(
+    operation: Callable[[Callable[[str, Any], None]], Any],
     *,
-    services: "ApiServices",
+    error_handler: Callable[[Exception], dict[str, Any]],
+    failure_label: str,
+    on_finish: Callable[[], None] | None = None,
 ):
-    """在线程中执行耗时任务，并把进度逐条推给浏览器。"""
+    """在线程中执行耗时任务，并把事件逐条推给浏览器。
+
+    ``operation`` 拿到的 ``emit(event, payload)`` 可以在任意线程调用；
+    一次请求只允许以 complete 或 error 收尾。
+    """
 
     loop = asyncio.get_running_loop()
-    queue: asyncio.Queue[tuple[str, dict[str, Any]]] = asyncio.Queue()
+    queue: asyncio.Queue[tuple[str, Any]] = asyncio.Queue()
 
-    def report(stage: str, message: str) -> None:
-        loop.call_soon_threadsafe(
-            queue.put_nowait,
-            ("progress", {"stage": stage, "message": message}),
-        )
+    def emit(event: str, payload: Any) -> None:
+        loop.call_soon_threadsafe(queue.put_nowait, (event, payload))
 
     async def worker() -> None:
         try:
-            result = await asyncio.to_thread(operation, report)
+            result = await asyncio.to_thread(operation, emit)
         except Exception as error:
-            # 上传文件或查询正文可能敏感，日志只记录异常类型。
+            # 请求正文与上传文件可能敏感，日志只记录异常类型。
             logger.exception(
-                "Knowledge base update failed: %s", type(error).__name__
+                "%s failed: %s", failure_label, type(error).__name__
             )
-            await queue.put(("error", _knowledge_error_payload(error)))
+            await queue.put(("error", error_handler(error)))
         else:
-            await queue.put(("complete", result))
+            await queue.put(("complete", _stream_payload(result)))
         finally:
-            # 无论成败都丢弃旧流水线，避免继续使用过期索引。
-            services.reset()
+            if on_finish is not None:
+                on_finish()
 
     task = asyncio.create_task(worker())
     try:
@@ -351,6 +378,23 @@ async def _knowledge_event_stream(
     finally:
         if not task.done():
             task.cancel()
+
+
+async def _knowledge_event_stream(
+    operation: Callable[[Callable[[str, Any], None]], dict[str, Any]],
+    *,
+    services: "ApiServices",
+):
+    """知识库维护：线程内执行，结束后丢弃旧的流水线实例。"""
+
+    async for frame in _stream_operation(
+        operation,
+        error_handler=_knowledge_error_payload,
+        failure_label="Knowledge base update",
+        # 无论成败都丢弃旧流水线，避免继续使用过期索引。
+        on_finish=services.reset,
+    ):
+        yield frame
 
 
 def _resolve_cors_origins(configured: Sequence[str] | None) -> list[str]:
@@ -488,7 +532,103 @@ def create_app(
             )
         return result
 
+    @app.post(
+        "/v1/query/stream",
+        tags=["query"],
+    )
+    async def query_stream(
+        payload: QueryRequest,
+        request: Request,
+        session: Session = Depends(require_user),
+    ) -> StreamingResponse:
+        """与 /v1/query 结果相同，但把思考过程与正文逐段推给浏览器。
+
+        参数校验全部在开流前完成，所以这些错误仍能用正常状态码返回；
+        一旦开始推送，后续失败只能以 error 事件下发。
+        """
+
+        await enforce_rate_limit(request)
+        law_name = _validate_law_name(payload.law_name)
+        normalized_query = payload.query.strip()
+        if not normalized_query:
+            raise HTTPException(status_code=422, detail="查询问题不能为空")
+
+        history, summary_cache = await _load_conversation_context(
+            conversation_id=payload.conversation_id,
+            user_id=session.user_id,
+            fallback=payload.history,
+        )
+
+        from rag_law.generation.chain import GenerationStreamHandlers
+
+        def operation(
+            emit: Callable[[str, Any], None],
+        ) -> AnswerPipelineResult:
+            handlers = GenerationStreamHandlers(
+                on_reasoning=lambda text: emit(
+                    "reasoning", {"text": text}
+                ),
+                on_field=lambda field, text: emit(
+                    "answer", {"field": field, "text": text}
+                ),
+            )
+
+            result = app.state.services.get_answer_pipeline().run(
+                normalized_query,
+                law_name=law_name,
+                history=history,
+                summary_cache=summary_cache,
+                progress_callback=lambda stage, message: emit(
+                    "progress", {"stage": stage, "message": message}
+                ),
+                stream_handlers=handlers,
+            )
+
+            if payload.conversation_id is not None:
+                # 在推送完最终结果之前落库，浏览器中途断开也不丢这一轮。
+                _store_exchange(
+                    conversation_id=payload.conversation_id,
+                    user_id=session.user_id,
+                    query=normalized_query,
+                    law_name=law_name,
+                    result=result,
+                )
+
+            return result
+
+        return StreamingResponse(
+            _stream_operation(
+                operation,
+                error_handler=_query_error_payload,
+                failure_label="Answer stream",
+            ),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
     async def _persist_exchange(
+        *,
+        conversation_id: int,
+        user_id: int,
+        query: str,
+        law_name: str | None,
+        result: AnswerPipelineResult,
+    ) -> None:
+        """异步接口里落库；真正写入的实现在 _store_exchange。"""
+
+        await asyncio.to_thread(
+            _store_exchange,
+            conversation_id=conversation_id,
+            user_id=user_id,
+            query=query,
+            law_name=law_name,
+            result=result,
+        )
+
+    def _store_exchange(
         *,
         conversation_id: int,
         user_id: int,
@@ -499,8 +639,7 @@ def create_app(
         """历史落库是附属动作：失败只记日志，不能反噬已经生成的回答。"""
 
         try:
-            stored = await asyncio.to_thread(
-                app.state.conversations.append_exchange,
+            stored = app.state.conversations.append_exchange(
                 conversation_id=conversation_id,
                 user_id=user_id,
                 query=query,
@@ -742,9 +881,10 @@ def create_app(
         add_document = app.state.services.get_add_document()
         final_name = law_name.strip() or None
 
-        def operation(
-            report: Callable[[str, str], None],
-        ) -> dict[str, Any]:
+        def operation(emit: Callable[[str, Any], None]) -> dict[str, Any]:
+            def report(stage: str, message: str) -> None:
+                emit("progress", {"stage": stage, "message": message})
+
             with tempfile.TemporaryDirectory() as temp_dir:
                 uploaded_path = Path(temp_dir) / filename
                 uploaded_path.write_bytes(content)
@@ -778,9 +918,10 @@ def create_app(
         await enforce_rate_limit(request)
         rebuild = app.state.services.get_rebuild_knowledge_base()
 
-        def operation(
-            report: Callable[[str, str], None],
-        ) -> dict[str, Any]:
+        def operation(emit: Callable[[str, Any], None]) -> dict[str, Any]:
+            def report(stage: str, message: str) -> None:
+                emit("progress", {"stage": stage, "message": message})
+
             result = rebuild(progress_callback=report)
             return {
                 "law_count": result.law_count,

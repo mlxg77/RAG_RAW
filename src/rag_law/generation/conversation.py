@@ -102,7 +102,13 @@ class LLMConversationSummarizer:
 
     @classmethod
     def load(cls) -> "LLMConversationSummarizer":
-        model = build_chat_model()
+        from rag_law.config import settings
+
+        # 摘要不需要思考过程，用配置里的轻量模型即可，
+        # 避免每轮多花一次推理模型的延迟。
+        model = build_chat_model(
+            model=settings.resolved_summary_model()
+        )
         return cls(
             SUMMARY_PROMPT
             | model

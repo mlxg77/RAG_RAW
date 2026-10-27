@@ -94,5 +94,7 @@ def test_repair_prompt_contains_validation_feedback() -> None:
     assert "{validation_errors}" not in human_content
 
     assert ANSWER_PROMPT_VERSION == (
-        "stage6-v2-conversation-context"
+        "stage7-v1-json-stream"
     )
+    assert "只输出一个 JSON 对象" in messages[0].content
+    assert '"summary"' in messages[0].content

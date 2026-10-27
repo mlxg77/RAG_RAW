@@ -1,9 +1,11 @@
 """基于 LangGraph 的检索编排图。
 
-BM25 与 Dense 并行召回，再依次执行 RRF 融合、精排和上下文构建。
-图只负责编排，具体能力仍由现有检索器和上下文构建器提供。
+BM25 与 Dense 并行召回，再依次执行 RRF 融合、条号补召回、精排
+和上下文构建。图只负责编排，具体能力仍由现有检索器和上下文
+构建器提供。
 """
 
+import logging
 import time
 from collections.abc import Callable
 from typing import Protocol, TypedDict
@@ -23,6 +25,9 @@ from rag_law.schemas import (
 
 
 ProgressCallback = Callable[[str, str], None]
+
+
+logger = logging.getLogger(__name__)
 
 
 class SearchRetrieverProtocol(Protocol):
@@ -58,6 +63,18 @@ class ContextBuilderProtocol(Protocol):
         query: str,
         results: list[RetrievalResult],
     ) -> BuiltContext:
+        ...
+
+
+class ArticleAnchorProtocol(Protocol):
+    """按条号补召回的最小接口。"""
+
+    def resolve(
+        self,
+        query: str,
+        *,
+        law_name: str | None = None,
+    ) -> list[RetrievalResult]:
         ...
 
 
@@ -104,8 +121,9 @@ def build_retrieval_graph(
     bm25_weight: float,
     dense_weight: float,
     rerank_top_n: int,
+    article_anchor: ArticleAnchorProtocol | None = None,
 ):
-    """编译“并行召回 -> 融合 -> 精排 -> 上下文”检索图。"""
+    """编译并行召回 -> 融合 -> 补召回 -> 精排 -> 上下文 检索图。"""
 
     def bm25_search(
         state: RetrievalGraphState,
@@ -142,6 +160,43 @@ def build_retrieval_graph(
                 dense_weight=state["dense_weight"],
             )
         }
+
+    def anchor_articles(
+        state: RetrievalGraphState,
+    ) -> dict[str, object]:
+        """查询点名了「第几条」时，把那条法条直接补进候选集。"""
+
+        if article_anchor is None:
+            return {}
+
+        fused = state.get("fused_results", [])
+
+        extra = article_anchor.resolve(
+            state["query"],
+            law_name=state.get("law_name"),
+        )
+
+        if not extra:
+            return {}
+
+        existing = {item.chunk_id for item in fused}
+        fresh = [
+            item
+            for item in extra
+            if item.chunk_id not in existing
+        ]
+
+        if not fresh:
+            return {}
+
+        logger.info(
+            "[RAG] anchored candidates=%s",
+            [item.article_no for item in fresh],
+        )
+
+        # 放在最前面：候选顺序不参与精排打分，
+        # 但保留「补召回优先入选」的语义。
+        return {"fused_results": fresh + list(fused)}
 
     def rerank(
         state: RetrievalGraphState,
@@ -187,6 +242,9 @@ def build_retrieval_graph(
     builder.add_node("bm25_search", bm25_search)
     builder.add_node("dense_search", dense_search)
     builder.add_node("rrf_fuse", rrf_fuse)
+    builder.add_node(
+        "anchor_articles", anchor_articles
+    )
     builder.add_node("rerank", rerank)
     builder.add_node("build_context", build_context)
 
@@ -196,7 +254,8 @@ def build_retrieval_graph(
         ["bm25_search", "dense_search"],
         "rrf_fuse",
     )
-    builder.add_edge("rrf_fuse", "rerank")
+    builder.add_edge("rrf_fuse", "anchor_articles")
+    builder.add_edge("anchor_articles", "rerank")
     builder.add_edge("rerank", "build_context")
     builder.add_edge("build_context", END)
 

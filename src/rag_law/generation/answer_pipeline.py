@@ -24,6 +24,7 @@ from rag_law.generation.answer_graph import (
 )
 from rag_law.generation.chain import (
     GenerationChains,
+    GenerationStreamHandlers,
     load_generation_chains,
 )
 from rag_law.generation.citation_validator import (
@@ -35,6 +36,9 @@ from rag_law.generation.conversation import (
 )
 from rag_law.generation.prompts import (
     ANSWER_PROMPT_VERSION,
+)
+from rag_law.generation.query_rewriter import (
+    LLMQueryRewriter,
 )
 from rag_law.generation.run_logger import (
     AnswerRunLogger,
@@ -77,6 +81,7 @@ class AnswerPipeline:
         conversation_context_builder: (
             ConversationContextBuilder | None
         ) = None,
+        query_rewriter=None,
         run_logger=None,
         min_answer_score: float = (
             DEFAULT_MIN_ANSWER_SCORE
@@ -100,6 +105,8 @@ class AnswerPipeline:
         )
         self.run_logger = run_logger
         self.min_answer_score = min_answer_score
+        # 为 None 时不改写，直接拼历史；测试默认就是这条路径。
+        self.query_rewriter = query_rewriter
 
         # 图节点在运行时读取上面的属性，
         # 因此测试替换组件后无需重新编译。
@@ -115,6 +122,8 @@ class AnswerPipeline:
     ) -> "AnswerPipeline":
         """加载阶段 3 和阶段 4 的全部真实组件。"""
 
+        from rag_law.config import settings
+
         return cls(
             retrieval_pipeline=(
                 RetrievalContextPipeline.load()
@@ -127,6 +136,11 @@ class AnswerPipeline:
             ),
             conversation_context_builder=(
                 ConversationContextBuilder.load()
+            ),
+            query_rewriter=(
+                LLMQueryRewriter.load()
+                if settings.query_rewrite_enabled
+                else None
             ),
             run_logger=(
                 AnswerRunLogger.from_settings()
@@ -217,6 +231,7 @@ class AnswerPipeline:
         validation_errors: list[str],
         total_started_at: float,
         generation_started_at: float | None,
+        reasoning: str | None = None,
     ) -> AnswerPipelineResult:
         """构建最终结果：流水线所有出口共用的打包函数。"""
 
@@ -249,6 +264,7 @@ class AnswerPipeline:
                 generation_latency_ms
             ),
             total_latency_ms=total_latency_ms,
+            reasoning=reasoning or None,
         )
 
     def run(
@@ -259,6 +275,7 @@ class AnswerPipeline:
         history: Sequence[ConversationTurn] | None = None,
         summary_cache: ConversationSummaryCacheProtocol | None = None,
         progress_callback: ProgressCallback | None = None,
+        stream_handlers: GenerationStreamHandlers | None = None,
     ) -> AnswerPipelineResult:
         """执行完整流水线，并记录脱敏运行日志。"""
 
@@ -277,6 +294,7 @@ class AnswerPipeline:
                 history=history,
                 summary_cache=summary_cache,
                 progress_callback=progress_callback,
+                stream_handlers=stream_handlers,
             )
         except Exception:
             self._emit_progress(
@@ -330,6 +348,7 @@ class AnswerPipeline:
         history: Sequence[ConversationTurn] | None = None,
         summary_cache: ConversationSummaryCacheProtocol | None = None,
         progress_callback: ProgressCallback | None = None,
+        stream_handlers: GenerationStreamHandlers | None = None,
     ) -> AnswerPipelineResult:
         """执行阶段 4 完整流水线，不负责写运行日志。"""
 
@@ -350,10 +369,12 @@ class AnswerPipeline:
                     self.min_answer_score
                 ),
                 "progress_callback": progress_callback,
+                "stream_handlers": stream_handlers,
                 "total_started_at": total_started_at,
                 "attempts": 0,
                 "validation_errors": [],
                 "generation_started_at": None,
+                "reasoning": "",
             }
         )
 
@@ -371,4 +392,5 @@ class AnswerPipeline:
             generation_started_at=state.get(
                 "generation_started_at"
             ),
+            reasoning=state.get("reasoning"),
         )

@@ -349,3 +349,155 @@ def test_pipeline_uses_parallel_graph_in_load_path() -> None:
     assert output.total_latency_ms >= 0
     assert output.retrieval_latency_ms >= 0
     assert output.context_latency_ms >= 0
+
+
+class StubAnchor:
+    """按预设结果补召回，并记录收到的查询。"""
+
+    def __init__(
+        self,
+        results: list[RetrievalResult],
+    ) -> None:
+        self.results = results
+        self.calls: list[tuple[str, str | None]] = []
+
+    def resolve(
+        self,
+        query: str,
+        *,
+        law_name: str | None = None,
+    ) -> list[RetrievalResult]:
+        self.calls.append((query, law_name))
+        return self.results
+
+
+def _build_graph_with_anchor(
+    anchor: StubAnchor,
+    chunks: list[ArticleChunk],
+):
+    irrelevant, contract, compensation = chunks[:3]
+    scorer = FakeScorer()
+
+    graph = build_retrieval_graph(
+        bm25_retriever=RecordingRetriever(
+            [
+                make_results(
+                    contract, source="bm25", score=0.6
+                ),
+            ],
+            source="bm25",
+        ),
+        dense_retriever=RecordingRetriever(
+            [
+                make_results(
+                    compensation,
+                    source="dense",
+                    score=0.6,
+                ),
+                make_results(
+                    irrelevant,
+                    source="dense",
+                    score=0.5,
+                ),
+            ],
+            source="dense",
+        ),
+        scorer=scorer,
+        context_builder=ContextBuilder(
+            chunks=list(chunks),
+            scorer=scorer,
+            max_context_tokens=1000,
+            max_evidences=2,
+            max_evidence_tokens=200,
+            adjacent_for_top_n=0,
+            min_adjacent_score=0.35,
+        ),
+        candidate_top_k=3,
+        rrf_k=60,
+        bm25_weight=1.0,
+        dense_weight=2.0,
+        rerank_top_n=2,
+        article_anchor=anchor,
+    )
+
+    return graph
+
+
+def test_anchor_injects_missing_article_into_candidates() -> (
+    None
+):
+    irrelevant, contract, compensation = make_chunks()
+    # 「第九条」既不在 BM25 也不在 Dense 的召回结果里，
+    # 只有补召回能把它送进候选集，再靠精排留下。
+    ninth = make_chunk(
+        chunk_id="ninth",
+        article_no="第九条",
+        text="满一年未订立书面劳动合同，视为已订立无固定期限劳动合同。",
+    )
+    anchor = StubAnchor(
+        [
+            make_results(
+                ninth, source="hybrid", score=0.0
+            )
+        ]
+    )
+    graph = _build_graph_with_anchor(
+        anchor,
+        [
+            irrelevant,
+            contract,
+            compensation,
+            ninth,
+        ],
+    )
+
+    output = graph.invoke(
+        make_state(
+            query="测试法第九条是什么",
+            candidate_top_k=3,
+        )
+    )
+
+    assert anchor.calls == [
+        ("测试法第九条是什么", "中华人民共和国测试法")
+    ]
+    # 补召回结果排在候选集最前面，且参与精排打分。
+    assert output["fused_results"][0].chunk_id == "ninth"
+    reranked_ids = {
+        item.chunk_id
+        for item in output["reranked_results"]
+    }
+    assert "ninth" in reranked_ids
+
+
+def test_anchor_skips_duplicate_candidate() -> None:
+    chunks = make_chunks()
+    _irrelevant, contract, _compensation = chunks
+
+    # 补召回重复返回已在候选集中的 chunk，不能制造重复 chunk_id。
+    anchor = StubAnchor(
+        [
+            make_results(
+                contract, source="hybrid", score=0.0
+            )
+        ]
+    )
+    graph = _build_graph_with_anchor(anchor, list(chunks))
+
+    output = graph.invoke(
+        make_state(
+            query="测试法第十条是什么",
+            candidate_top_k=3,
+        )
+    )
+
+    fused_ids = [
+        item.chunk_id
+        for item in output["fused_results"]
+    ]
+    assert fused_ids.count("contract") == 1
+    assert len(fused_ids) == len(set(fused_ids))
+    # 候选集没有被重复项重新排序。
+    assert fused_ids[0] == "compensation"
+    assert output["reranked_results"]
+

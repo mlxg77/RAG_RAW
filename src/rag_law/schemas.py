@@ -294,3 +294,7 @@ class AnswerPipelineResult(BaseModel):
     prompt_version: str
     generation_latency_ms: float = Field(ge=0)
     total_latency_ms: float = Field(ge=0)
+
+    # 推理模型的思考过程；非流式路径或普通模型下为空。
+    # 随结果一起存进历史对话，回放时仍可展开查看。
+    reasoning: str | None = None

@@ -1,5 +1,7 @@
+import json
 from typing import Any
 
+import pytest
 from langchain_core.runnables import (
     RunnableLambda,
 )
@@ -7,28 +9,34 @@ from langchain_core.runnables import (
 from rag_law.generation.chain import (
     STRUCTURED_OUTPUT_METHOD,
     build_generation_chains,
-)
-from rag_law.schemas import (
-    GeneratedAnswer,
-    GeneratedCitation,
+    parse_generated_answer,
 )
 
 
-class FakeStructuredOutputModel:
-    """不访问网络的结构化模型替身。"""
+def make_payload() -> str:
+    return json.dumps(
+        {
+            "summary": "建立劳动关系应当订立书面劳动合同。",
+            "analysis": "检索证据说明了书面劳动合同要求。",
+            "conditions": ["需要确认双方是否已经建立劳动关系。"],
+            "citations": [{"evidence_id": "E001"}],
+            "limitations": "回答仅基于当前知识库，不能替代正式法律意见。",
+            "follow_up_question": None,
+        },
+        ensure_ascii=False,
+    )
 
-    def __init__(self) -> None:
-        self.schema: type | None = None
+
+class FakeJsonModel:
+    """不访问网络的 JSON 模式模型替身。"""
+
+    def __init__(self, output: str | None = None) -> None:
         self.options: dict[str, Any] = {}
         self.prompt_values: list[Any] = []
+        self.output = output if output is not None else make_payload()
 
-    def with_structured_output(
-        self,
-        schema: type,
-        **kwargs: Any,
-    ) -> RunnableLambda:
-        self.schema = schema
-        self.options = kwargs
+    def bind(self, **kwargs: Any) -> RunnableLambda:
+        self.options.update(kwargs)
 
         return RunnableLambda(
             self._invoke
@@ -37,33 +45,12 @@ class FakeStructuredOutputModel:
     def _invoke(
         self,
         prompt_value: Any,
-    ) -> GeneratedAnswer:
+    ) -> str:
         self.prompt_values.append(
             prompt_value
         )
 
-        return GeneratedAnswer(
-            summary=(
-                "建立劳动关系应当订立"
-                "书面劳动合同。"
-            ),
-            analysis=(
-                "检索证据说明了书面劳动合同要求。"
-            ),
-            conditions=[
-                "需要确认双方是否已经建立劳动关系。"
-            ],
-            citations=[
-                GeneratedCitation(
-                    evidence_id="E001",
-                )
-            ],
-            limitations=(
-                "回答仅基于当前知识库，"
-                "不能替代正式法律意见。"
-            ),
-            follow_up_question=None,
-        )
+        return self.output
 
 
 def make_context() -> str:
@@ -77,8 +64,8 @@ def make_context() -> str:
     )
 
 
-def test_build_chains_configures_structured_output() -> None:
-    model = FakeStructuredOutputModel()
+def test_build_chains_uses_json_mode_output() -> None:
+    model = FakeJsonModel()
 
     chains = build_generation_chains(
         model
@@ -87,19 +74,15 @@ def test_build_chains_configures_structured_output() -> None:
     assert chains.answer_chain is not None
     assert chains.repair_chain is not None
 
-    assert model.schema is GeneratedAnswer
-    assert (
-        model.options["method"]
-        == STRUCTURED_OUTPUT_METHOD
-    )
-    assert (
-        model.options["include_raw"]
-        is False
-    )
+    assert STRUCTURED_OUTPUT_METHOD == "json_mode"
+    assert model.options["response_format"] == {"type": "json_object"}
+
+    # 替身没有连接信息，不应该构造出流式通道。
+    assert chains.streamer is None
 
 
 def test_answer_chain_returns_generated_answer() -> None:
-    model = FakeStructuredOutputModel()
+    model = FakeJsonModel()
     chains = build_generation_chains(
         model
     )
@@ -114,11 +97,8 @@ def test_answer_chain_returns_generated_answer() -> None:
         }
     )
 
-    assert isinstance(
-        answer,
-        GeneratedAnswer,
-    )
     assert answer.citations[0].evidence_id == "E001"
+    assert answer.follow_up_question is None
 
     assert len(model.prompt_values) == 1
 
@@ -136,10 +116,11 @@ def test_answer_chain_returns_generated_answer() -> None:
     assert "一般法律规则" in system_content
     assert "不得追问其个人情况" in system_content
     assert "实时效力信息不在" in system_content
+    assert "只输出一个 JSON 对象" in system_content
 
 
 def test_repair_chain_receives_validation_errors() -> None:
-    model = FakeStructuredOutputModel()
+    model = FakeJsonModel()
     chains = build_generation_chains(
         model
     )
@@ -163,10 +144,7 @@ def test_repair_chain_receives_validation_errors() -> None:
         }
     )
 
-    assert isinstance(
-        answer,
-        GeneratedAnswer,
-    )
+    assert answer.citations[0].evidence_id == "E001"
 
     assert len(model.prompt_values) == 1
 
@@ -179,3 +157,16 @@ def test_repair_chain_receives_validation_errors() -> None:
     assert "E999" in human_content
     assert "不存在的证据编号" in human_content
     assert "[E001]" in human_content
+
+
+def test_parse_generated_answer_strips_code_fence() -> None:
+    fenced = f"```json\n{make_payload()}\n```"
+
+    answer = parse_generated_answer(fenced)
+
+    assert answer.summary.startswith("建立劳动关系")
+
+
+def test_parse_generated_answer_rejects_broken_json() -> None:
+    with pytest.raises(ValueError, match="不是合法 JSON"):
+        parse_generated_answer('{"summary": "只有一半')

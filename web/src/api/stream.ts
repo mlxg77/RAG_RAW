@@ -1,6 +1,9 @@
 import { API_BASE, parseApiError, triggerUnauthorized } from '@/api/client'
 import type {
+  AnswerPipelineResult,
+  AnswerTextField,
   ProgressEvent,
+  QueryRequest,
   RebuildResult,
   StreamErrorPayload,
   UploadResult,
@@ -8,6 +11,14 @@ import type {
 
 export interface KnowledgeStreamHandlers<T> {
   onProgress: (event: ProgressEvent) => void
+  onComplete: (result: T) => void
+  onError: (payload: StreamErrorPayload) => void
+}
+
+interface EventStreamHandlers<T> {
+  onProgress: (event: ProgressEvent) => void
+  /** progress 与终帧之外的中间事件，例如思考过程和正文增量。 */
+  onEvent?: (event: string, data: unknown) => void
   onComplete: (result: T) => void
   onError: (payload: StreamErrorPayload) => void
 }
@@ -40,19 +51,15 @@ function parseFrame(block: string): StreamFrame | null {
   }
 }
 
-async function streamKnowledgeRequest<T>(
+async function streamEventRequest<T>(
   path: string,
-  body: FormData,
-  handlers: KnowledgeStreamHandlers<T>,
+  init: RequestInit,
+  handlers: EventStreamHandlers<T>,
 ): Promise<void> {
   let response: Response
 
   try {
-    response = await fetch(`${API_BASE}${path}`, {
-      method: 'POST',
-      body,
-      headers: { Accept: 'text/event-stream' },
-    })
+    response = await fetch(`${API_BASE}${path}`, init)
   } catch {
     handlers.onError({ message: '连不上服务，请确认后端已经启动。' })
     return
@@ -93,6 +100,8 @@ async function streamKnowledgeRequest<T>(
     } else if (frame.event === 'error') {
       finished = true
       handlers.onError(frame.data as StreamErrorPayload)
+    } else {
+      handlers.onEvent?.(frame.event, frame.data)
     }
   }
 
@@ -128,6 +137,74 @@ async function streamKnowledgeRequest<T>(
   if (!finished) {
     handlers.onError({ message: '服务没有返回最终结果，请稍后重试。' })
   }
+}
+
+function streamKnowledgeRequest<T>(
+  path: string,
+  body: FormData,
+  handlers: KnowledgeStreamHandlers<T>,
+): Promise<void> {
+  return streamEventRequest<T>(
+    path,
+    {
+      method: 'POST',
+      body,
+      headers: { Accept: 'text/event-stream' },
+    },
+    handlers,
+  )
+}
+
+export interface AnswerStreamHandlers {
+  onProgress: (event: ProgressEvent) => void
+  /** 思考过程的增量文本，需要自己拼接。 */
+  onReasoning: (text: string) => void
+  /** 正文的全量快照，直接覆盖字段即可。 */
+  onAnswerField: (field: AnswerTextField, text: string) => void
+  onComplete: (result: AnswerPipelineResult) => void
+  onError: (payload: StreamErrorPayload) => void
+}
+
+/** 与 /v1/query 结果一致，但先推思考过程、再逐段推正文。 */
+export function streamAnswer(
+  payload: QueryRequest,
+  handlers: AnswerStreamHandlers,
+): Promise<void> {
+  return streamEventRequest<AnswerPipelineResult>(
+    '/v1/query/stream',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      },
+      body: JSON.stringify(payload),
+    },
+    {
+      onProgress: handlers.onProgress,
+      onEvent(event, data) {
+        if (event === 'reasoning') {
+          const { text } = data as { text?: unknown }
+          if (typeof text === 'string') {
+            handlers.onReasoning(text)
+          }
+          return
+        }
+
+        if (event === 'answer') {
+          const { field, text } = data as { field?: unknown; text?: unknown }
+          if (
+            (field === 'summary' || field === 'analysis') &&
+            typeof text === 'string'
+          ) {
+            handlers.onAnswerField(field, text)
+          }
+        }
+      },
+      onComplete: handlers.onComplete,
+      onError: handlers.onError,
+    },
+  )
 }
 
 export function uploadLaw(

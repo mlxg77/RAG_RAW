@@ -12,7 +12,7 @@
     --ink-2: #475569;
     --ink-3: #64748b;
     --line: #e2e8f0;
-    --slate: #64748b;
+    --slate: #52627a;
     --blue: #3b82f6;
     --red: #dc2626;
     --amber: #d97706;
@@ -21,6 +21,7 @@
     --band-c: #7c3aed;
     --band-d: #ea580c;
     --band-e: #475569;
+    --band-f: #0891b2;
   }
   * { box-sizing: border-box; }
   body {
@@ -84,7 +85,7 @@
   .canvas-wrap { overflow-x: auto; padding: 18px 0 30px; }
   .canvas {
     position: relative;
-    width: 1660px; height: 1660px;
+    width: 1660px; height: 1830px;
     margin: 0 auto;
     background:
       radial-gradient(circle at 20% 10%, rgba(59,130,246,.04), transparent 40%),
@@ -104,6 +105,7 @@
   .band.c { background: rgba(124,58,237,.045); border-color: rgba(124,58,237,.18); }
   .band.d { background: rgba(234,88,12,.045);  border-color: rgba(234,88,12,.18); }
   .band.e { background: rgba(71,85,105,.05);   border-color: rgba(71,85,105,.18); }
+  .band.f { background: rgba(8,145,178,.05);   border-color: rgba(8,145,178,.20); }
   .band-title {
     position: absolute;
     font-size: 14.5px; font-weight: 700; color: var(--ink);
@@ -117,20 +119,17 @@
     color: var(--ink-3);
     border-radius: 999px; padding: 2px 10px;
   }
-  .band-note {
-    position: absolute; font-size: 11.5px; color: var(--ink-3);
-  }
 
   svg#edges { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; }
   .edge {
-    fill: none; stroke: var(--slate); stroke-width: 1.7;
+    fill: none; stroke: var(--slate); stroke-width: 2;
     transition: opacity .15s, stroke-width .15s;
   }
-  .edge.parallel { stroke: var(--blue); stroke-width: 1.8; }
-  .edge.loop { stroke: var(--red); stroke-width: 1.7; stroke-dasharray: 6 4; }
-  .edge.thin { stroke-width: 1.3; opacity: .85; }
-  .edge.dim { opacity: .10; }
-  .edge.hl { stroke-width: 3; }
+  .edge.parallel { stroke: var(--blue); stroke-width: 2.1; }
+  .edge.loop { stroke: var(--red); stroke-width: 2; stroke-dasharray: 7 4; }
+  .edge.thin { stroke-width: 1.6; opacity: .9; }
+  .edge.dim { opacity: .12; }
+  .edge.hl { stroke-width: 3.4; }
   .edge.playing {
     stroke: #f59e0b; stroke-width: 3;
     stroke-dasharray: 10 6;
@@ -170,6 +169,7 @@
   .node.b-c { border-left-color: var(--band-c); }
   .node.b-d { border-left-color: var(--band-d); }
   .node.b-e { border-left-color: var(--band-e); }
+  .node.b-f { border-left-color: var(--band-f); }
   .node.k-data {
     border-style: dashed; border-left-style: solid;
     background: #f8fafc;
@@ -197,6 +197,7 @@
     margin-top: 4px; font-size: 10px; color: #94a3b8;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
+  .n-io + .n-io { margin-top: 1px; }
   .cloud {
     position: absolute; top: 6px; right: 7px;
     font-size: 10px; line-height: 1;
@@ -260,11 +261,11 @@
 
 <header>
   <h1>RagLaw · 全链路交互式流水线图</h1>
-  <div class="sub">对应 docs/plan/v1 的阶段 0 → 阶段 6 · 节点 = 一个或多个 Python 文件 · 支持串行依赖与并行分支</div>
+  <div class="sub">对应 docs/plan/v1 阶段 0 → 6 · 加上登录鉴权与历史会话持久化 · 节点 = 一个或多个源文件 · 支持串行依赖与并行分支</div>
   <div class="stats">
-    <span class="stat"><b>6</b>大阶段</span>
-    <span class="stat"><b>33</b>个节点</span>
-    <span class="stat"><b>31</b>个 Python 文件</span>
+    <span class="stat"><b>6</b>个分区</span>
+    <span class="stat"><b>37</b>个节点</span>
+    <span class="stat"><b>35</b>个 Python 文件 + 1 套 Vue 前端</span>
     <span class="stat"><b>4</b>组并行分支</span>
     <span class="stat"><b>1</b>条引用修复回路</span>
   </div>
@@ -294,23 +295,24 @@
     <div class="band c" style="left:24px;top:940px;width:1612px;height:256px;"></div>
     <div class="band d" style="left:24px;top:1228px;width:1612px;height:204px;"></div>
     <div class="band e" style="left:24px;top:1462px;width:1612px;height:160px;"></div>
+    <div class="band f" style="left:24px;top:1650px;width:1612px;height:150px;"></div>
 
     <div class="band-title" style="left:40px;top:30px;"><span class="dot" style="background:var(--band-a)"></span>① 离线建库链（阶段 0 → 2）<span class="pill">编排：knowledge_base.py（add_document / rebuild）</span></div>
-    <div class="band-title" style="left:40px;top:340px;"><span class="dot" style="background:var(--band-b)"></span>② 在线问答链（阶段 2 → 4 · 核心查询路径）</div>
-    <div class="band-note" style="left:40px;top:908px;">conversation / retrieve / evidence / generate / cite / repair / degrade / log 均由 generation/answer_pipeline.py 的同一次 run() 编排</div>
+    <div class="band-title" style="left:40px;top:340px;"><span class="dot" style="background:var(--band-b)"></span>② 在线问答链（阶段 2 → 4 · 核心查询路径）<span class="pill">编排：answer_graph.py 状态图 · answer_pipeline.py 仅是门面</span></div>
     <div class="band-title" style="left:40px;top:950px;"><span class="dot" style="background:var(--band-c)"></span>③ 离线评测链（阶段 5 · 四路并行，互不依赖）</div>
-    <div class="band-title" style="left:40px;top:1240px;"><span class="dot" style="background:var(--band-d)"></span>④ 服务与入口层（阶段 6 · 四个独立入口可并行运行）<span class="pill">API / UI / CLI 均调用上方「在线问答链」</span></div>
+    <div class="band-title" style="left:40px;top:1240px;"><span class="dot" style="background:var(--band-d)"></span>④ 服务与入口层（阶段 6 + 登录鉴权）<span class="pill">CLI / API / Vue 前端 均调用上方「在线问答链」</span></div>
     <div class="band-title" style="left:40px;top:1474px;"><span class="dot" style="background:var(--band-e)"></span>⑤ 横向支撑层（被所有阶段引用）</div>
+    <div class="band-title" style="left:40px;top:1664px;"><span class="dot" style="background:var(--band-f)"></span>⑥ 持久化与鉴权层<span class="pill">被 ② 的历史回填与 ④ 的会话接口引用</span></div>
 
-    <svg id="edges" viewBox="0 0 1660 1660">
+    <svg id="edges" viewBox="0 0 1660 1830">
       <defs>
-        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+        <marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#52627a"/>
         </marker>
-        <marker id="arrBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-          <path d="M0,0 L10,5 L0,10 z" fill="#3b82f6"/>
+        <marker id="arrBlue" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2563eb"/>
         </marker>
-        <marker id="arrRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <marker id="arrRed" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="12" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
           <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
         </marker>
       </defs>
@@ -383,21 +385,28 @@ const NODES = [
     ioList:{ '输入':'两路构建节点汇聚', '输出':'在线问答链：BM25 召回 / Dense 召回' } },
 
   /* ---------- ② 在线问答链 ---------- */
-  { id:'n_query', band:'b', kind:'data', x:40, y:372, w:180, h:96,
-    tag:'入口', title:'当前问题 + 可选历史',
-    files:'API / UI / CLI / 评测器',
-    io:'进入统一在线问答链',
-    desc:'FastAPI /v1/query 与 Streamlit 可携带当前问题之前的 ConversationTurn 历史；API 不保存服务端会话，Streamlit 只保存在当前 session_state。CLI、/v1/retrieve 与现有评测器仍可按单轮方式调用。',
-    ioList:{ '输入':'query + 可选 history[]', '输出':'会话上下文准备；无历史时保持原单轮行为' } },
+  { id:'n_query', band:'b', kind:'data', x:40, y:372, w:180, h:88,
+    tag:'入口', title:'当前问题 + 会话 id',
+    files:'API / Web / CLI / 评测器',
+    io:'POST /v1/query',
+    desc:'请求体除 query、law_name 外还带 conversation_id 与 history：conversation_id 指向库里的会话；history 是前端按最近 50 条 / 单条 2000 字裁出的上下文，只作兜底。CLI、/v1/retrieve 与现有评测器仍按单轮方式调用。',
+    ioList:{ '输入':'query + law_name + conversation_id + history[]', '输出':'交给历史回填节点' } },
 
-  { id:'n_conversation', band:'b', kind:'stage', x:40, y:490, w:180, h:116,
-    tag:'多轮会话 · 可选 LLM', title:'会话上下文准备',
-    files:'generation/conversation.py',
-    io:'最近 N 轮原文 + 更早摘要',
+  { id:'n_history', band:'b', kind:'stage', x:40, y:478, w:180, h:88,
+    tag:'多轮 · 历史回填', title:'这一轮用哪份历史',
+    files:'api/main.py（_load_conversation_context）',
+    io:'库里有 → 带 seq；读不到 → 前端 history',
+    desc:'有 conversation_id 就从 conversation_messages 取最近 100 条（约 50 轮），转成带 seq 的 ConversationTurn 并附上摘要缓存对象；新会话、已删除或会话库不可用时退回前端传来的 history（无 seq、无缓存）。这样即使历史存储全挂，多轮问答照旧能跑。',
+    ioList:{ '输入':'conversation_id + fallback history', '输出':'ConversationTurn[]（带 seq）→ 上下文准备' } },
+
+  { id:'n_conversation', band:'b', kind:'stage', x:40, y:584, w:180, h:122,
+    tag:'多轮 · 裁剪 + 摘要', title:'上下文准备与增量摘要',
+    files:'generation/conversation.py（ConversationContextBuilder）',
+    ioLines:['→ 上下文化检索问题', '→ 生成背景（非证据）'],
     cloud:'☁ LLM',
-    desc:'ConversationContextBuilder 按用户消息计轮：最近 N 轮保留原文，N 由 RAG_LAW_CONVERSATION_RECENT_ROUNDS 配置；更早历史由 LLM 压缩为用户事实、讨论主题和未解决问题，摘要失败则退化为限长原文摘录。摘要与最近用户问题组成 contextualized retrieval query，完整会话背景另送生成 Prompt。历史仅存在当前请求/页面会话，不接 PostgreSQL。',
-    ext:'OpenAI 兼容 Chat 接口（仅存在更早历史时用于摘要）· .env: RAG_LAW_CONVERSATION_*',
-    ioList:{ '输入':'ConversationTurn[]', '输出 1':'上下文化检索问题 → 双路召回', '输出 2':'会话背景 → 结构化生成（明确标记为非法律证据）' } },
+    desc:'按用户消息计轮，最近 N 轮（默认 3）留原文，更早的进 older。读 conversations.summary 与 summary_covered_seq，只对 seq 大于游标的部分做总结，并走 MERGE_SUMMARY_PROMPT 与旧摘要合并；只有模型成功才写回游标，失败降级为原文摘录且不推进游标，下一轮重试。窗口没从 seq=1 开始且缓存未覆盖窗口开头时，本轮放弃缓存，以免中间段没人记过。',
+    ext:'OpenAI 兼容 Chat 接口（仅当有新的旧消息挤出时调用）· .env: RAG_LAW_CONVERSATION_*',
+    ioList:{ '输入':'ConversationTurn[]（带 seq）+ 摘要缓存', '输出 1':'上下文化检索问题 → 双路召回', '输出 2':'会话背景 prompt_text → 结构化生成（明确标记为非法律证据）' } },
 
   { id:'n_bm25_search', band:'b', kind:'stage', x:300, y:372, w:210, h:88,
     tag:'阶段 2 · 召回', title:'BM25 稀疏召回',
@@ -441,14 +450,14 @@ const NODES = [
 
   { id:'n_evidence', band:'b', kind:'stage', x:1095, y:636, w:235, h:100,
     tag:'阶段 4 · 前置检查', title:'证据充分性检查',
-    files:'generation/answer_pipeline.py（_has_sufficient_evidence）',
+    files:'generation/answer_graph.py（check_evidence 节点 + route_after_evidence）',
     io:'通过 → 生成；不通过 → 安全降级',
     desc:'调用大模型前的守门检查：Top1 Rerank 分数 ≥ min_answer_score（默认 0.15）且证据非空、上下文文本非空。不达标则直接返回「证据不足」回答，绝不无依据作答。',
     ioList:{ '输入':'RetrievalContextResult', '输出':'通过 → 结构化生成；不足 → 安全降级回答' } },
 
   { id:'n_generate', band:'b', kind:'stage', x:835, y:636, w:215, h:104,
     tag:'阶段 4 · 生成', title:'结构化生成',
-    files:'generation/prompts.py + generation/chain.py（answer_chain）',
+    files:'generation/answer_graph.py（generate 节点）· prompts.py · chain.py（answer_chain）',
     io:'输入：问题 + 会话背景 + 编号证据',
     cloud:'☁ LLM',
     desc:'版本化 Prompt（stage6-v2-conversation-context）同时接收当前问题、裁剪后的会话背景和本轮 BuiltContext。会话历史只用于理解省略、指代和用户陈述，不能作为法律依据；历史与本轮证据冲突时以本轮证据为准。模型仍强制返回结构化 GeneratedAnswer，空结果自动重试一次。',
@@ -464,7 +473,7 @@ const NODES = [
 
   { id:'n_repair', band:'b', kind:'stage', x:585, y:800, w:205, h:92,
     tag:'阶段 4 · 修复回路', title:'引用修复链（≤1 次）',
-    files:'generation/chain.py（repair_chain）',
+    files:'generation/answer_graph.py（repair 节点 + route_after_repair）· chain.py（repair_chain）',
     io:'修复后回到引用校验',
     cloud:'☁ LLM',
     desc:'把同一份会话背景、本轮证据、校验错误清单与原回答一起回喂模型，重新生成完整结构化回答；不得沿用错误引用，证据不支持时必须收缩结论。修复后重新校验：通过则放行，再失败即安全降级。整个回路最多执行一次。',
@@ -478,7 +487,7 @@ const NODES = [
     desc:'status ∈ answered / needs_clarification / insufficient_evidence / generation_failed。每条引用附法条原文、源文件与页码；「回答限制」固定声明仅供参考、不替代律师意见。',
     ioList:{ '输入':'校验通过的引用 + 生成内容', '输出':'展示给用户；同时侧写运行日志' } },
 
-  { id:'n_log', band:'b', kind:'artifact', x:40, y:636, w:205, h:100,
+  { id:'n_log', band:'b', kind:'artifact', x:300, y:770, w:215, h:88,
     tag:'产物 · logs/', title:'运行日志落盘',
     files:'generation/run_logger.py → logs/answer_runs.jsonl',
     io:'每次回答一行 JSONL（脱敏）',
@@ -487,7 +496,7 @@ const NODES = [
 
   { id:'n_degrade', band:'b', kind:'artifact', x:835, y:800, w:215, h:96,
     tag:'输出 · 安全降级', title:'安全降级回答',
-    files:'generation/answer_pipeline.py（内置兜底回答）',
+    files:'generation/answer_graph.py（insufficient / generation_failed 两个出口）',
     io:'证据不足 / 生成失败 / 校验失败时返回',
     desc:'三条降级路径共用：① Top1 分数不足；② 结构化生成异常（含重试后仍为空）；③ 两轮引用校验均失败。只返回固定的安全话术，绝不输出未核验的法律结论。',
     ioList:{ '输入':'任一失败分支', '输出':'status = insufficient_evidence 或 generation_failed' } },
@@ -554,50 +563,72 @@ const NODES = [
   { id:'n_api', band:'d', kind:'stage', x:300, y:1300, w:210, h:118,
     tag:'阶段 6 · 入口 2', title:'FastAPI 服务',
     files:'api/main.py',
-    io:'GET /v1/health · GET /v1/laws · POST /v1/retrieve · POST /v1/query',
+    io:'/v1/auth/* · /v1/laws · /v1/query · /v1/retrieve · /v1/conversations/* · 知识库上传/重建',
     para:true,
-    desc:'HTTP 服务：/v1/query 接受最多 50 条显式 history 消息并转交 AnswerPipeline，但服务端不保存会话；同时提供滑动窗口限流（30 次/分钟）、60s 超时和延迟加载。/v1/health 检查 manifest、语料与双索引完整性。',
+    desc:'HTTP 服务。业务接口统一挂 require_user 登录校验：/v1/query 收 conversation_id 后先回填历史再落库；/v1/conversations 四条提供列表/创建/详情/删除（越权与不存在统一 404）；上传与重建以 SSE 推送进度，并发重建返回 409。另有滑动窗口限流（30 次/分钟）、60s 超时与流水线惰性加载。',
     cmds:['uv run uvicorn rag_law.api.main:app --host 127.0.0.1 --port 8000'],
-    ioList:{ '调用':'AnswerPipeline / RetrievalContextPipeline', '输出':'JSON 响应' } },
+    ioList:{ '调用':'AnswerPipeline / RetrievalContextPipeline / ConversationStore', '输出':'JSON 响应 或 SSE 事件流' } },
 
-  { id:'n_ui', band:'d', kind:'stage', x:560, y:1300, w:210, h:118,
-    tag:'阶段 6 · 入口 3', title:'Streamlit 界面',
-    files:'ui/app.py + ui/presentation.py + ui/styles.css',
-    io:'多轮追问 / 进度展示 / 引用卡片 / 知识库维护',
+  { id:'n_web', band:'d', kind:'stage', x:560, y:1300, w:210, h:118,
+    tag:'阶段 6 · 入口 3', title:'Vue3 Web 界面',
+    files:'web/src（App.vue · composables/useChat.ts · components/AppSidebar.vue）',
+    io:'登录 / 多轮追问 / 历史列表 / 引用卡片 / 知识库维护',
     para:true,
-    desc:'演示页面：使用 session_state 展示并保存当前页面内的消息；每次提问把历史转换为 ConversationTurn 后传给 AnswerPipeline，清空对话即删除这些内存历史。页面同时提供法条过滤、进度展示、引用与来源页码渲染，以及知识库添加/重建。',
-    cmds:['uv run streamlit run src/rag_law/ui/app.py'],
-    ioList:{ '调用':'AnswerPipeline / knowledge_base', '输出':'网页交互界面' } },
+    desc:'SPA（Vue 3 + TS + Element Plus）。侧栏上半是历史对话列表（点击切换、可删除），下半是法律清单与上传/重建入口；localStorage 只存当前 conversation_id，刷新或重启服务后靠它把上一次对话拉回来。消息正文存在数据库，前端不存。',
+    cmds:['cd web; npm install', 'cd web; npm run build'],
+    ioList:{ '调用':'全部 /v1 接口（生产由 FastAPI 同源托管 web/dist）', '输出':'浏览器页面；开发时 Vite 代理到 8000' } },
 
   { id:'n_deploy', band:'d', kind:'stage', x:820, y:1300, w:210, h:118,
     tag:'阶段 6 · 交付', title:'部署交付',
-    files:'Dockerfile · compose.yaml · .streamlit/config.toml',
-    io:'容器化构建与编排',
+    files:'Dockerfile（node 构建 dist → python 运行）· compose.yaml',
+    io:'单容器同时提供页面与接口',
     para:true,
-    desc:'容器镜像构建与服务编排配置，.streamlit/config.toml 控制页面主题。与前三个入口相互独立，可按需单独部署。',
-    ioList:{ '输入':'源码 + 配置', '输出':'可运行容器服务' } },
+    desc:'多阶段镜像：node 阶段跑 vue-tsc + vite build，python 阶段只装运行时并把 dist 拷入。compose 只有一个 api 服务，data / indexes / logs 三个卷必须可写（页面内上传与重建依赖），--workers 1 —— 登录会话与限流器都在进程内，多副本会导致登录态分裂。',
+    ioList:{ '输入':'源码 + .env', '输出':'可运行容器服务（端口 8000）' } },
 
   /* ---------- ⑤ 横向支撑层 ---------- */
   { id:'n_schemas', band:'e', kind:'stage', x:40, y:1512, w:480, h:96,
     tag:'支撑 · 数据契约', title:'schemas.py',
     files:'ConversationTurn / ArticleChunk / RetrievalResult / BuiltContext / GeneratedAnswer / AnswerPipelineResult …',
     io:'全链共享的 Pydantic 模型',
-    desc:'定义阶段间传递的全部数据结构：ConversationTurn 约束 user / assistant 历史消息；阶段 1 产出 ArticleChunk，阶段 3 产出 BuiltContext / RetrievalContextResult，阶段 4 产出 GeneratedAnswer / AnswerPipelineResult。任何字段变更都会波及全链，是事实上的「接口契约」。',
-    ioList:{ '被引用':'ingestion / retrieval / generation / evaluation / api / ui 全部模块' } },
+    desc:'定义阶段间传递的全部数据结构：ConversationTurn 约束 user / assistant 历史消息（content 限 2000 字，并从库里回填时才带 seq）；阶段 1 产出 ArticleChunk，阶段 3 产出 BuiltContext / RetrievalContextResult，阶段 4 产出 GeneratedAnswer / AnswerPipelineResult。任何字段变更都会波及全链，是事实上的「接口契约」。',
+    ioList:{ '被引用':'ingestion / retrieval / generation / evaluation / api / web / history 全部模块' } },
 
   { id:'n_config', band:'e', kind:'stage', x:560, y:1512, w:480, h:96,
     tag:'支撑 · 全局配置', title:'config.py',
     files:'.env（RAG_LAW_ 前缀） → Settings',
-    io:'模型服务 + 会话保留轮数 / 摘要长度',
-    desc:'用 pydantic-settings 从 .env 读取配置，生成全局 settings 对象；除三组模型服务外，RAG_LAW_CONVERSATION_RECENT_ROUNDS 控制保留原文的最近轮数（默认 3），RAG_LAW_CONVERSATION_SUMMARY_MAX_CHARS 控制早期摘要长度（默认 1500）。',
+    io:'模型服务 + 会话保留轮数 / 摘要长度 / 数据库 / 侧栏条数',
+    desc:'用 pydantic-settings 从 .env 读取配置，生成全局 settings 对象。三组模型服务是必填项（fail fast）；RAG_LAW_DATABASE_URL 留空时登录与历史会话不可用、但问答本身照常；RAG_LAW_CONVERSATION_RECENT_ROUNDS（默认 3）控制保留原文的轮数，CONVERSATION_SUMMARY_MAX_CHARS（1500）控制摘要长度，CONVERSATION_HISTORY_LIMIT（50）控制侧栏会话数。',
     ioList:{ '被引用':'dense.py / reranker.py / chain.py / conversation.py / run_logger.py 等' } },
 
   { id:'n_scripts', band:'e', kind:'stage', x:1080, y:1512, w:530, h:96,
     tag:'支撑 · 运维脚本', title:'scripts/',
-    files:'verify_env.py · check_manifest.py · verify_generation.py',
-    io:'环境自检 / 清单校验 / 生成链冒烟',
-    desc:'verify_env 校验 .env 与三方依赖版本；check_manifest 校验 manifest 命名规范（cn_ 前缀）与文件存在性；verify_generation 用真实服务冒烟验证生成与校验链路。',
+    files:'verify_env.py · check_manifest.py · verify_generation.py · init_auth_db.py|sql · init_conversations_db.sql',
+    io:'环境自检 / 清单校验 / 建表 / 生成链冒烟',
+    desc:'verify_env 校验 .env 与三方依赖；check_manifest 校验清单命名规范（cn_ 前缀）与文件存在性；init_auth_db 建 users 表与初始账号；init_conversations_db.sql 供无 CREATE 权限的受限账号手工执行；verify_generation 用真实服务冒烟生成与校验链路。',
     ioList:{ '被使用':'开发调试与部署前检查' } },
+
+  /* ---------- ⑥ 持久化与鉴权层 ---------- */
+  { id:'n_pg', band:'f', kind:'data', x:40, y:1690, w:480, h:96,
+    tag:'持久化 · PostgreSQL', title:'数据库三张表',
+    files:'users · conversations（含 summary / summary_covered_seq）· conversation_messages',
+    io:'与账号同库；DSN 复用 RAG_LAW_DATABASE_URL',
+    desc:'conversations 一行一个会话（title / law_name + 摘要两列），conversation_messages 一问一答各一行，seq 在会话内递增并有唯一约束，payload 用 JSONB 存完整 AnswerPipelineResult 供界面还原。外键级联：删账号会连会话与消息一起清。',
+    ioList:{ '被引用':'auth（users）· history/store.py', '输出':'持久化的登录账号与历史对话' } },
+
+  { id:'n_auth', band:'f', kind:'stage', x:560, y:1690, w:480, h:96,
+    tag:'鉴权 · 进程内会话', title:'登录态',
+    files:'auth/state.py（AuthState / SessionStore）· auth/router.py',
+    io:'Session Cookie rag_law_sid → 每请求取 session.user_id',
+    desc:'登录成功下发 httponly + samesite=lax 的 Cookie，内容只是随机串，用户信息存在进程内存，登出或重启进程即失效（但对话已落库，重新登录后照样回来）。除登录相关接口，其余业务接口统一挂 require_user，会话按 users.id 做隔离。',
+    ioList:{ '输入':'用户名 + 密码（数据库明文，仅限内网/演示）', '输出':'session.user_id → 所有业务接口的数据归属依据' } },
+
+  { id:'n_history_store', band:'f', kind:'stage', x:1080, y:1690, w:530, h:96,
+    tag:'持久化 · 会话存取', title:'历史对话存取',
+    files:'history/store.py（ConversationStore）· history/__init__.py',
+    io:'幂等建表 · 读写 · 越权返回空',
+    desc:'首读写时自动跑幂等 DDL（含旧库 ALTER 补列）；append_exchange 在一个事务里 UPDATE 锁行 + MAX(seq) 取号后插两条；load_messages 取最近 N 条升序返回供回填；save_summary 只改两列、不碰 updated_at 以免刷乱侧栏顺序。驱动与连接池异常统一转 ConversationStoreUnavailable，由调用方降级。',
+    ioList:{ '被调用':'api/main.py（历史回填 / 落库 / 摘要缓存）', '输出':'带 seq 的消息、摘要与游标' } },
 ];
 
 /* ================= 边定义（kind: serial | parallel | loop） ================= */
@@ -613,21 +644,21 @@ const EDGES = [
   { id:'e8',  kind:'serial',   d:'M1140,166 C1140,142 1158,126 1180,126',   from:'n_bm25_build', to:'n_index', arrow:'arr' },
 
   /* ② 在线问答链 */
-  { id:'e9',  kind:'serial',   d:'M130,468 L130,490',                       from:'n_query', to:'n_conversation', label:'可选历史', lx:166, ly:482 },
-  { id:'e9a', kind:'parallel', d:'M220,548 C234,548 244,522 255,522',       from:'n_conversation', to:'n_bm25_search' },
-  { id:'e10', kind:'parallel', d:'M255,522 C255,462 274,416 300,416',       from:'n_conversation', to:'n_bm25_search', arrow:'arrBlue' },
-  { id:'e11', kind:'parallel', d:'M255,522 L300,522',                       from:'n_conversation', to:'n_dense_search', arrow:'arrBlue' },
+  { id:'e9',  kind:'serial',   d:'M130,460 L130,478',                       from:'n_query', to:'n_history' },
+  { id:'e9b', kind:'serial',   d:'M130,566 L130,584',                       from:'n_history', to:'n_conversation' },
+  { id:'e9a', kind:'parallel', d:'M220,645 L255,645',                       from:'n_conversation', to:'n_bm25_search' },
+  { id:'e10', kind:'parallel', d:'M255,645 C255,540 266,430 300,416',       from:'n_conversation', to:'n_bm25_search', arrow:'arrBlue' },
+  { id:'e11', kind:'parallel', d:'M255,645 C255,592 266,540 300,522',       from:'n_conversation', to:'n_dense_search', arrow:'arrBlue' },
   { id:'e12', kind:'parallel', d:'M510,416 C524,416 534,418 540,420',       from:'n_bm25_search', to:'n_fusion' },
   { id:'e13', kind:'parallel', d:'M510,522 C532,522 540,468 540,420',       from:'n_dense_search', to:'n_fusion' },
   { id:'e14', kind:'serial',   d:'M540,420 C552,420 568,416 585,416',       from:'n_bm25_search', to:'n_fusion', arrow:'arr' },
   { id:'e15', kind:'serial',   d:'M790,416 L835,416',                       from:'n_fusion', to:'n_rerank', label:'Top 候选', lx:812, ly:406 },
   { id:'e16', kind:'serial',   d:'M1050,416 L1095,420',                     from:'n_rerank', to:'n_context', label:'Top N', lx:1072, ly:406 },
   { id:'e17', kind:'serial',   d:'M1212,468 L1212,636',                     from:'n_context', to:'n_evidence', label:'进入阶段 4', lx:1212, ly:556 },
-  { id:'e17a',kind:'serial thin', d:'M130,606 L130,614 L942,614 L942,636',  from:'n_conversation', to:'n_generate', label:'会话背景（非证据）', lx:520, ly:608 },
   { id:'e18', kind:'serial',   d:'M1095,686 L1050,688',                     from:'n_evidence', to:'n_generate', label:'证据充分', lx:1072, ly:676 },
   { id:'e19', kind:'serial',   d:'M835,688 L790,686',                       from:'n_generate', to:'n_cite' },
   { id:'e20', kind:'serial',   d:'M585,686 L515,692',                       from:'n_cite', to:'n_answer', label:'校验通过', lx:550, ly:676 },
-  { id:'e21', kind:'serial thin', d:'M300,692 L245,686',                    from:'n_answer', to:'n_log', label:'落盘', lx:272, ly:676 },
+  { id:'e21', kind:'serial thin', d:'M407,748 L407,770',                    from:'n_answer', to:'n_log', label:'落盘', lx:438, ly:765 },
   { id:'e22', kind:'loop',     d:'M1160,736 C1160,792 1112,828 1050,834',   from:'n_evidence', to:'n_degrade', label:'Top1 分数不足', lx:1128, ly:784, arrow:'arrRed', warn:true },
   { id:'e23', kind:'loop',     d:'M660,736 L660,800',                       from:'n_cite', to:'n_repair', label:'校验失败', lx:652, ly:772, arrow:'arrRed', warn:true },
   { id:'e24', kind:'loop',     d:'M715,800 L715,736',                       from:'n_repair', to:'n_cite', label:'修复后重校验 ≤1次', lx:724, ly:768, arrow:'arrRed', warn:true },
@@ -650,7 +681,7 @@ const EDGES = [
   { id:'e31', kind:'parallel', d:'M145,1280 L925,1280',                     from:'n_cli', to:'n_deploy' },
   { id:'e32a',kind:'parallel', d:'M145,1280 L145,1300',                     from:'n_cli', to:'n_deploy', arrow:'arrBlue' },
   { id:'e32b',kind:'parallel', d:'M405,1280 L405,1300',                     from:'n_api', to:'n_deploy', arrow:'arrBlue' },
-  { id:'e32c',kind:'parallel', d:'M665,1280 L665,1300',                     from:'n_ui', to:'n_deploy', arrow:'arrBlue' },
+  { id:'e32c',kind:'parallel', d:'M665,1280 L665,1300',                     from:'n_web', to:'n_deploy', arrow:'arrBlue' },
   { id:'e32d',kind:'parallel', d:'M925,1280 L925,1300',                     from:'n_deploy', to:'n_deploy', arrow:'arrBlue' },
 ];
 
@@ -658,13 +689,13 @@ const EDGES = [
 const FORKS = [
   { x:825,  y:166,  label:'∥ 并行', lx:825, ly:150 },
   { x:1140, y:166,  label:'∥ 汇聚', lx:1140, ly:188 },
-  { x:255,  y:522,  label:'∥ 召回', lx:255, ly:506 },
+  { x:255,  y:645,  label:'∥ 召回', lx:255, ly:627 },
   { x:540,  y:420,  label:'∥ 汇聚', lx:540, ly:442 },
 ];
 
 /* 播放序列：主流程（建库 → 在线问答） */
 const PLAY = ['n_raw','n_ingest','n_articles','n_bm25_build','n_dense_build','n_index',
-              'n_query','n_conversation','n_bm25_search','n_dense_search','n_fusion','n_rerank','n_context',
+              'n_query','n_history','n_conversation','n_bm25_search','n_dense_search','n_fusion','n_rerank','n_context',
               'n_evidence','n_generate','n_cite','n_answer','n_log'];
 
 /* ================= 渲染 ================= */
@@ -680,7 +711,9 @@ function renderNodes() {
       <div class="n-tag">${n.tag}</div>
       <div class="n-title">${n.title}</div>
       ${n.files ? `<div class="n-files">${n.files}</div>` : ''}
-      ${n.io ? `<div class="n-io">${n.io}</div>` : ''}
+      ${n.ioLines
+        ? n.ioLines.map(s => `<div class="n-io">${s}</div>`).join('')
+        : (n.io ? `<div class="n-io">${n.io}</div>` : '')}
       ${n.cloud ? `<span class="cloud">${n.cloud}</span>` : ''}
       ${n.para ? '<span class="para">∥</span>' : ''}
     </div>`).join('');
@@ -731,8 +764,8 @@ function highlight(id) {
 }
 
 function showPanel(n) {
-  const bandNames = { a:'① 离线建库链', b:'② 在线问答链', c:'③ 离线评测链', d:'④ 服务与入口层', e:'⑤ 横向支撑层' };
-  const bandColors = { a:'#2563eb', b:'#059669', c:'#7c3aed', d:'#ea580c', e:'#475569' };
+  const bandNames = { a:'① 离线建库链', b:'② 在线问答链', c:'③ 离线评测链', d:'④ 服务与入口层', e:'⑤ 横向支撑层', f:'⑥ 持久化与鉴权层' };
+  const bandColors = { a:'#2563eb', b:'#059669', c:'#7c3aed', d:'#ea580c', e:'#475569', f:'#0891b2' };
   let html = `
     <h3>${n.title}</h3>
     <span class="d-band" style="background:${bandColors[n.band]}">${bandNames[n.band]} · ${n.tag}</span>

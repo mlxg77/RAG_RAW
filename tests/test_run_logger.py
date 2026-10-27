@@ -8,6 +8,7 @@ from rag_law.schemas import (
     AnswerPipelineResult,
     AnswerResponse,
     BuiltContext,
+    ContextEvidence,
     RetrievalContextResult,
     RetrievalResult,
 )
@@ -130,9 +131,21 @@ def test_logger_writes_one_redacted_json_line(
 
     record = json.loads(lines[0])
 
-    assert record["schema_version"] == "1.0"
+    assert record["schema_version"] == "1.1"
     assert record["model_name"] == "test-model"
     assert record["prompt_version"] == "stage4-v1"
+
+    # 多轮追问时真正用于检索的文本要单独记下来，
+    # 它可能和原始问题完全不同。
+    assert (
+        "[手机号已脱敏]"
+        in record["retrieval_query"]
+    )
+    assert record["reranked_article_nos"] == [
+        "第十条"
+    ]
+    assert record["context_article_nos"] == []
+    assert record["context_law_names"] == []
 
     assert (
         record["status"]
@@ -201,3 +214,97 @@ def test_logger_does_not_store_raw_context_or_errors(
         "chunk-labor-10"
     )
     assert "text" not in retrieval_item
+
+
+def make_evidence(
+    *,
+    evidence_id: str,
+    article_no: str,
+    relation: str,
+) -> ContextEvidence:
+    return ContextEvidence(
+        evidence_id=evidence_id,
+        chunk_id=f"chunk-criminal-{article_no}",
+        law_id="cn_criminal_law",
+        law_name="中华人民共和国刑法",
+        article_no=article_no,
+        text=f"{article_no}的证据正文不应写入日志。",
+        source_file=(
+            "data/raw/中华人民共和国刑法.docx"
+        ),
+        relation=relation,
+        is_excerpt=False,
+        score=0.9,
+    )
+
+
+def test_logger_records_what_model_actually_saw(
+    tmp_path,
+) -> None:
+    """追问轮次要能看出：检索输入是什么、
+    精排命中哪些条号、模型最终拿到哪些条号。"""
+
+    log_path = tmp_path / "answer_runs.jsonl"
+
+    base = make_result()
+
+    result = base.model_copy(
+        update={
+            "retrieval": base.retrieval.model_copy(
+                update={
+                    "query": (
+                        "此前用户问题：刑法第二十条是什么\n"
+                        "本轮用户问题：第一条呢"
+                    ),
+                    "context": (
+                        base.retrieval.context
+                        .model_copy(
+                            update={
+                                "evidences": [
+                                    make_evidence(
+                                        evidence_id="E001",
+                                        article_no="第二十条",
+                                        relation="matched",
+                                    ),
+                                    make_evidence(
+                                        evidence_id="E002",
+                                        article_no="第二十一条",
+                                        relation="adjacent",
+                                    ),
+                                ]
+                            }
+                        )
+                    ),
+                }
+            )
+        }
+    )
+
+    AnswerRunLogger(
+        path=log_path,
+        model_name="test-model",
+    ).write(result=result)
+
+    raw_log = log_path.read_text(
+        encoding="utf-8"
+    )
+
+    assert "证据正文不应写入日志" not in raw_log
+
+    record = json.loads(raw_log.strip())
+
+    assert record["query"] == (
+        "我的手机号是[手机号已脱敏]，"
+        "公司没有签劳动合同怎么办？"
+    )
+    assert record["retrieval_query"] == (
+        "此前用户问题：刑法第二十条是什么\n"
+        "本轮用户问题：第一条呢"
+    )
+    assert record["context_article_nos"] == [
+        "第二十条",
+        "第二十一条",
+    ]
+    assert record["context_law_names"] == [
+        "中华人民共和国刑法"
+    ]

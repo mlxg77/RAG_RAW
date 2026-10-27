@@ -290,6 +290,18 @@ uv run python -m rag_law.cli add-document --file path/to/law.md --law-id cn_exam
 返回 `503`，检查 `.env` 中三组模型配置并运行 `uv run python scripts/verify_env.py`。日志写入
 `logs/answer_runs.jsonl` 前会脱敏身份证号、手机号、邮箱、银行卡号和座机号；API 错误日志不会记录请求原文。
 
+回答日志（`schema_version` 1.1）除脱敏后的原始问题外，还固定记录三项定位信息：
+`retrieval_query`（多轮追问时真正送去检索的拼接文本）、`reranked_article_nos`（精排命中的条号）
+和 `context_article_nos` / `context_law_names`（模型实际看到的证据条号，含相邻条文）。
+排查“为什么这一轮拒答”不必再复现请求：库里每轮 `payload` 已存完整结果，可直接打印对照：
+
+```bash
+uv run python scripts/show_conversation_trace.py --conversation-id 5 --user-id 1
+```
+
+输出会逐轮列出“用户输入 → 实际检索 query → 精排命中条号 → 模型看到的证据 → 模型引用 → 状态”，
+并在 `insufficient_evidence` 时区分两种来源：证据闸门拦截（未调用模型）与模型判定证据不支持（已调用模型但未给出引用）。
+
 容器异常时先运行 `docker compose ps` 和 `docker compose logs --tail=200 api`。健康状态为
 `unhealthy` 通常表示挂载中缺少结构化法条或索引；出现 `PermissionError` 时检查上述 UID/GID
 设置以及宿主机目录权限。
@@ -305,7 +317,7 @@ data/
 docs/
   plan/v1/             # V1 各阶段实施规划
   note/v1/             # 各阶段实施后的知识沉淀
-scripts/               # 开发辅助脚本（环境自检、清单校验、账号库初始化）
+scripts/               # 开发辅助脚本（环境自检、清单校验、账号库初始化、会话链路对照）
 src/rag_law/
   api/                 # FastAPI 接口、SSE 进度流与静态页面托管
   auth/                # 登录接口、Session Cookie、进程内会话与账号库连接池

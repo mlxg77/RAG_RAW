@@ -53,9 +53,13 @@ const scrollArea = ref<HTMLElement | null>(null)
 watch(
   messages,
   async () => {
-    await nextTick()
     const area = scrollArea.value
-    if (area) {
+    // 打字机每几十毫秒就长一截，用户自己往上翻时不要硬拉回底部。
+    const pinned =
+      !area ||
+      area.scrollHeight - area.scrollTop - area.clientHeight < 96
+    await nextTick()
+    if (area && pinned) {
       area.scrollTop = area.scrollHeight
     }
   },

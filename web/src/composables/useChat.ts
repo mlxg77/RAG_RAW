@@ -6,10 +6,10 @@ import {
   deleteConversation,
   fetchConversation,
   fetchConversations,
-  queryAnswer,
 } from '@/api/client'
+import { streamAnswer } from '@/api/stream'
 import { buildConversationHistory } from '@/lib/presentation'
-import type { ChatMessage, ConversationSummary } from '@/types'
+import type { AnswerDraft, ChatMessage, ConversationSummary } from '@/types'
 
 /** 当前会话 id：刷新页面或服务重启后靠它把上一次的对话接回来。 */
 const STORAGE_KEY = 'rag_law_conversation_id'
@@ -54,6 +54,14 @@ export function useChat() {
     const index = messages.value.findIndex((message) => message.id === id)
     if (index >= 0) {
       messages.value[index] = next
+    }
+  }
+
+  /** 就地更新草稿：用户中途切走会话时什么都不做。 */
+  function patchDraft(id: string, patch: (draft: AnswerDraft) => void): void {
+    const target = messages.value.find((message) => message.id === id)
+    if (target?.draft) {
+      patch(target.draft)
     }
   }
 
@@ -104,18 +112,63 @@ export function useChat() {
       content: trimmed,
       lawName,
     })
-    messages.value.push({ id: pendingId, role: 'assistant', pending: true })
+    messages.value.push({
+      id: pendingId,
+      role: 'assistant',
+      draft: {
+        phase: 'thinking',
+        reasoning: '',
+        summary: '',
+        analysis: '',
+        steps: [],
+      },
+    })
     sending.value = true
 
     try {
       const targetId = await ensureConversation(lawName)
-      const result = await queryAnswer({
-        query: trimmed,
-        law_name: lawName,
-        history,
-        conversation_id: targetId,
-      })
-      replace(pendingId, { id: pendingId, role: 'assistant', result })
+      await streamAnswer(
+        {
+          query: trimmed,
+          law_name: lawName,
+          history,
+          conversation_id: targetId,
+        },
+        {
+          onProgress(event) {
+            patchDraft(pendingId, (draft) => {
+              draft.steps.push(event)
+            })
+          },
+          onReasoning(text) {
+            patchDraft(pendingId, (draft) => {
+              draft.reasoning += text
+            })
+          },
+          onAnswerField(field, text) {
+            patchDraft(pendingId, (draft) => {
+              draft.phase = 'answering'
+              draft[field] = text
+            })
+          },
+          onComplete(result) {
+            replace(pendingId, { id: pendingId, role: 'assistant', result })
+          },
+          onError(payload) {
+            // 失败时留住已经推出来的思考过程，正文整段换成提示。
+            const draft = messages.value.find(
+              (message) => message.id === pendingId,
+            )?.draft
+            replace(pendingId, {
+              id: pendingId,
+              role: 'assistant',
+              content: payload.message,
+              error: true,
+              draft: draft ? { ...draft, phase: 'failed' } : undefined,
+            })
+          },
+        },
+      )
       if (targetId !== null) {
         void refreshConversations()
       }

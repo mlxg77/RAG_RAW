@@ -3,8 +3,19 @@ import { Loading } from '@element-plus/icons-vue'
 
 import type { ChatMessage } from '@/types'
 import AnswerCard from './AnswerCard.vue'
+import AnswerDraftCard from './AnswerDraftCard.vue'
+import ReasoningPanel from './ReasoningPanel.vue'
 
 defineProps<{ messages: ChatMessage[] }>()
+
+/** 定稿后从结果里取思考过程，生成中就取草稿里的。 */
+function reasoningOf(message: ChatMessage): string {
+  return message.result?.reasoning ?? message.draft?.reasoning ?? ''
+}
+
+function isThinking(message: ChatMessage): boolean {
+  return message.draft?.phase === 'thinking'
+}
 </script>
 
 <template>
@@ -23,12 +34,24 @@ defineProps<{ messages: ChatMessage[] }>()
       </div>
 
       <div v-else class="assistant-block">
-        <div v-if="message.pending" class="thinking">
+        <ReasoningPanel
+          v-if="reasoningOf(message)"
+          :text="reasoningOf(message)"
+          :active="isThinking(message)"
+        />
+
+        <AnswerDraftCard
+          v-if="message.draft && message.draft.phase !== 'failed'"
+          :draft="message.draft"
+        />
+        <AnswerCard v-else-if="message.result" :result="message.result" />
+        <p v-else-if="message.error" class="thread-error">
+          {{ message.content }}
+        </p>
+        <div v-else class="thinking">
           <el-icon class="is-loading"><Loading /></el-icon>
           <span>正在检索法条并核对引用，通常需要十几秒…</span>
         </div>
-        <AnswerCard v-else-if="message.result" :result="message.result" />
-        <p v-else class="thread-error">{{ message.content }}</p>
       </div>
     </div>
   </div>

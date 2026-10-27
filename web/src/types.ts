@@ -121,6 +121,8 @@ export interface AnswerPipelineResult {
   prompt_version: string
   generation_latency_ms: number
   total_latency_ms: number
+  /** 推理模型的思考过程；换成非推理模型时为空。 */
+  reasoning: string | null
 }
 
 export interface QueryRequest {
@@ -178,12 +180,32 @@ export interface StreamErrorPayload {
   detail?: string
 }
 
+/** 回答里可以边生成边显示的字段。 */
+export type AnswerTextField = 'summary' | 'analysis'
+
+/** 草稿阶段：先思考，再逐段写正文，失败时停在 failed。 */
+export type AnswerStreamPhase = 'thinking' | 'answering' | 'failed'
+
+/**
+ * 流式回答定稿前的临时内容。
+ *
+ * summary / analysis 都是后端推来的全量快照，前端直接覆盖，不做拼接。
+ */
+export interface AnswerDraft {
+  phase: AnswerStreamPhase
+  reasoning: string
+  summary: string
+  analysis: string
+  steps: ProgressEvent[]
+}
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content?: string
   result?: AnswerPipelineResult
+  /** 还没定稿的回答，定稿后换成 result。 */
+  draft?: AnswerDraft
   error?: boolean
-  pending?: boolean
   lawName?: string | null
 }

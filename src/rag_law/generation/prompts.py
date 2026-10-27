@@ -5,7 +5,7 @@ from langchain_core.prompts import (
 )
 
 
-ANSWER_PROMPT_VERSION = "stage6-v2-conversation-context"
+ANSWER_PROMPT_VERSION = "stage7-v1-json-stream"
 
 
 ANSWER_SYSTEM_PROMPT = """
@@ -64,6 +64,22 @@ ANSWER_SYSTEM_PROMPT = """
 
 严格填充调用方要求的结构化回答字段。不要添加结构化字段之外
 的开场白、Markdown 标题或代码块。
+
+输出格式：只输出一个 JSON 对象，不要代码块围栏，不要任何解释性
+文字。字段必须完整，每个字段都要给出合法值；JSON 中字符串值里
+的换行请写成 \\n 转义，不要直接换行。字段顺序与结构如下：
+
+{{
+  "summary": "面向用户的简明结论，纯文本，先说结论",
+  "analysis": "严格依据检索证据的分析，纯文本",
+  "conditions": ["规则适用条件或仍需确认的关键事实"],
+  "citations": [{{"evidence_id": "E001"}}],
+  "limitations": "证据边界、知识库边界与风险提示",
+  "follow_up_question": "缺少关键事实时的一个追问，否则为 null"
+}}
+
+summary 与 analysis 必须最先输出，且不引用 Markdown 标题、列表符号或
+表情符号：调用方会边生成边展示这两段文字。
 """.strip()
 
 

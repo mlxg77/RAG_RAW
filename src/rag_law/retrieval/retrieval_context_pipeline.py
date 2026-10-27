@@ -4,6 +4,9 @@ import time
 from collections.abc import Callable
 from typing import Protocol
 
+from rag_law.retrieval.article_anchor import (
+    ArticleAnchorIndex,
+)
 from rag_law.retrieval.bm25 import (
     BM25Retriever,
 )
@@ -100,6 +103,7 @@ class RetrievalContextPipeline:
         rrf_k: int = DEFAULT_RRF_K,
         bm25_weight: float = DEFAULT_BM25_WEIGHT,
         dense_weight: float = DEFAULT_DENSE_WEIGHT,
+        article_anchor=None,
     ) -> None:
         if rerank_top_n <= 0:
             raise ValueError(
@@ -113,6 +117,8 @@ class RetrievalContextPipeline:
         self.rrf_k = rrf_k
         self.bm25_weight = bm25_weight
         self.dense_weight = dense_weight
+        # 为 None 时不按条号补召回，行为与加该能力前一致。
+        self.article_anchor = article_anchor
 
         parallel_ready = (
             bm25_retriever is not None
@@ -141,6 +147,7 @@ class RetrievalContextPipeline:
                 bm25_weight=bm25_weight,
                 dense_weight=dense_weight,
                 rerank_top_n=rerank_top_n,
+                article_anchor=article_anchor,
             )
             return
 
@@ -205,6 +212,7 @@ class RetrievalContextPipeline:
             rrf_k=rrf_k,
             bm25_weight=bm25_weight,
             dense_weight=dense_weight,
+            article_anchor=ArticleAnchorIndex.load(),
         )
 
     def run(

@@ -11,6 +11,8 @@ from rag_law.generation.answer_graph import (
 )
 from rag_law.generation.chain import (
     GenerationChains,
+    GenerationStreamHandlers,
+    GenerationStreamResult,
 )
 from rag_law.generation.citation_validator import (
     CitationValidator,
@@ -217,6 +219,7 @@ def make_graph(
     repair_responses: list[
         GeneratedAnswer | None | Exception
     ] | None = None,
+    streamer=None,
 ):
     chunk = make_chunk()
     retrieval_pipeline = StubRetrievalPipeline(
@@ -235,6 +238,7 @@ def make_graph(
         generation_chains=GenerationChains(
             answer_chain=answer_chain,
             repair_chain=repair_chain,
+            streamer=streamer,
         ),
         citation_validator=CitationValidator(
             chunks=[chunk]
@@ -261,6 +265,7 @@ class StubDependencies:
         generation_chains,
         citation_validator,
         min_answer_score: float = 0.15,
+        query_rewriter=None,
     ) -> None:
         self.retrieval_pipeline = retrieval_pipeline
         self.generation_chains = generation_chains
@@ -272,6 +277,8 @@ class StubDependencies:
                 summarizer=None,
             )
         )
+        # 不传改写器时退回历史拼接，与线上关掉开关时一致。
+        self.query_rewriter = query_rewriter
         self.min_answer_score = min_answer_score
 
 
@@ -279,6 +286,7 @@ def make_state(
     *,
     progress_callback=None,
     min_answer_score: float = 0.15,
+    stream_handlers=None,
 ) -> dict[str, object]:
     return {
         "query": "公司没有签劳动合同怎么办？",
@@ -286,6 +294,7 @@ def make_state(
         "history": None,
         "min_answer_score": min_answer_score,
         "progress_callback": progress_callback,
+        "stream_handlers": stream_handlers,
         "total_started_at": time.perf_counter(),
         "attempts": 0,
         "validation_errors": [],
@@ -718,6 +727,78 @@ def test_graph_retries_once_on_empty_output() -> None:
     assert len(answer_chain.calls) == 2
 
 
+class StubStreamer:
+    """模拟流式生成通道：推一段思考与一个字段快照。"""
+
+    def __init__(
+        self,
+        answer: GeneratedAnswer,
+        *,
+        reasoning: str = "先比对证据再下结论",
+    ) -> None:
+        self.answer = answer
+        self.reasoning = reasoning
+        self.calls: list[Any] = []
+
+    def stream(
+        self,
+        payload: dict[str, Any],
+        handlers: GenerationStreamHandlers | None = None,
+    ) -> GenerationStreamResult:
+        self.calls.append(handlers)
+
+        if handlers is not None:
+            if handlers.on_reasoning is not None:
+                handlers.on_reasoning(self.reasoning)
+            if handlers.on_field is not None:
+                handlers.on_field("summary", self.answer.summary)
+
+        return GenerationStreamResult(
+            answer=self.answer,
+            reasoning=self.reasoning,
+        )
+
+
+def test_graph_prefers_streamer_and_keeps_reasoning() -> (
+    None
+):
+    answer = make_answer()
+    streamer = StubStreamer(answer)
+    (
+        graph,
+        _,
+        _,
+        answer_chain,
+        _,
+    ) = make_graph(
+        answer_responses=[answer],
+        streamer=streamer,
+    )
+
+    reasoning_events: list[str] = []
+    field_events: list[tuple[str, str]] = []
+
+    output = graph.invoke(
+        make_state(
+            stream_handlers=GenerationStreamHandlers(
+                on_reasoning=reasoning_events.append,
+                on_field=lambda field, text: field_events.append(
+                    (field, text)
+                ),
+            )
+        )
+    )
+
+    assert output["answer"].status == "answered"
+    assert output["reasoning"] == "先比对证据再下结论"
+    assert reasoning_events == ["先比对证据再下结论"]
+    assert field_events == [("summary", answer.summary)]
+
+    # 流式通道接管后，一次性生成链不应被调用。
+    assert len(answer_chain.calls) == 0
+    assert len(streamer.calls) == 1
+
+
 class StubSummaryCache:
     def __init__(self, summary: str = "", covered_seq: int = 0) -> None:
         self.summary = summary
@@ -774,3 +855,41 @@ def test_prepare_node_uses_summary_cache_from_state() -> None:
 
     assert plain.loads == 1
     assert plain.saved == []
+
+
+class StubQueryRewriter:
+    def __init__(self, result: str) -> None:
+        self.result = result
+        self.calls: list[tuple[str, str | None]] = []
+
+    def rewrite(
+        self,
+        question,
+        conversation,
+        *,
+        law_name=None,
+    ) -> str:
+        self.calls.append((question, law_name))
+        return self.result
+
+
+def test_prepare_node_rewrites_follow_up_query() -> None:
+    graph, deps, retrieval_pipeline, *_ = make_graph(
+        answer_responses=[make_answer()]
+    )
+    rewriter = StubQueryRewriter(
+        "中华人民共和国刑法 第二条"
+    )
+    deps.query_rewriter = rewriter
+
+    state = make_state()
+    state["query"] = "第二条呢"
+    state["history"] = _three_round_history()
+    graph.invoke(state)
+
+    # 送去检索的是改写后的一句，而不是三轮问题的拼接。
+    assert (
+        retrieval_pipeline.calls[0][0]
+        == "中华人民共和国刑法 第二条"
+    )
+    assert rewriter.calls == [("第二条呢", None)]

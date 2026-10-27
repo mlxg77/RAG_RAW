@@ -22,10 +22,20 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    def resolved_summary_model(self) -> str:
+        """摘要等辅助任务使用的模型名；未单独配置时沿用回答模型。"""
+
+        return self.llm_summary_model.strip() or self.llm_model
+
     # 大模型（回答生成）
     llm_base_url: str
     llm_api_key: str
+    # 回答模型需要产出 reasoning 内容，这里用推理模型（如 deepseek-reasoner）。
     llm_model: str
+    # 摘要/辅助任务用小模型；留空时沿用 llm_model。
+    llm_summary_model: str = ""
+    # 单次生成（含思考）的等待上限；推理模型明显慢于普通对话模型。
+    llm_timeout_seconds: float = Field(default=180.0, gt=0)
 
     # 向量模型（Embedding）
     embedding_base_url: str
@@ -47,6 +57,13 @@ class Settings(BaseSettings):
         default=1500,
         ge=200,
         le=6000,
+    )
+    # 多轮追问会先用辅助模型把问题改写成一句可独立检索的查询。
+    # 关掉后退回「把历史问题拼起来」的旧方案。
+    query_rewrite_enabled: bool = True
+    query_rewrite_timeout_seconds: float = Field(
+        default=12.0,
+        gt=0,
     )
 
     # ---------- 登录与用户 ----------

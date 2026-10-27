@@ -11,6 +11,8 @@ from rag_law.knowledge_base import (
     RebuildKnowledgeBaseResult,
 )
 from rag_law.schemas import (
+    AnswerPipelineResult,
+    AnswerResponse,
     BuiltContext,
     RetrievalContextResult,
     RetrievalResult,
@@ -374,3 +376,124 @@ def test_cors_allows_configured_origin() -> None:
         response.headers["access-control-allow-origin"]
         == "http://localhost:5173"
     )
+
+
+class StreamingAnswerPipeline:
+    """模拟流式问答：先报阶段，再推思考与正文，最后给出完整结果。"""
+
+    def __init__(self, *, fail: bool = False) -> None:
+        self.fail = fail
+        self.calls: list[dict] = []
+
+    def run(
+        self,
+        query,
+        *,
+        law_name=None,
+        history=None,
+        summary_cache=None,
+        progress_callback=None,
+        stream_handlers=None,
+    ):
+        self.calls.append({"query": query, "handlers": stream_handlers})
+
+        if progress_callback is not None:
+            progress_callback("retrieval", "正在检索法条…")
+
+        if self.fail:
+            raise RuntimeError("模型服务不可用")
+
+        if stream_handlers is not None:
+            if stream_handlers.on_reasoning is not None:
+                stream_handlers.on_reasoning("先看证据")
+            if stream_handlers.on_field is not None:
+                stream_handlers.on_field("summary", "建立劳动关系")
+                stream_handlers.on_field(
+                    "summary",
+                    "建立劳动关系应当订立书面劳动合同。",
+                )
+
+        return _answer_result(query=query)
+
+
+def _answer_result(query: str = "测试问题") -> AnswerPipelineResult:
+    return AnswerPipelineResult(
+        query=query,
+        answer=AnswerResponse(
+            status="answered",
+            summary="建立劳动关系应当订立书面劳动合同。",
+            analysis="证据规定了书面形式要求。",
+            conditions=[],
+            citations=[],
+            limitations="仅基于当前知识库。",
+            follow_up_question=None,
+        ),
+        retrieval=_retrieval_result(),
+        generation_attempts=1,
+        top_relevance_score=0.9,
+        validation_errors=[],
+        prompt_version="stage7-v1-json-stream",
+        generation_latency_ms=10,
+        total_latency_ms=20,
+        reasoning="先看证据",
+    )
+
+
+def test_query_stream_emits_progress_reasoning_and_answer() -> None:
+    services = ApiServices()
+    services.answer_pipeline = StreamingAnswerPipeline()
+    client = _authed_client(services)
+
+    response = client.post(
+        "/v1/query/stream", json={"query": "公司没有签合同怎么办？"}
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+
+    events = _sse_events(response.text)
+    assert events[0] == (
+        "progress",
+        {"stage": "retrieval", "message": "正在检索法条…"},
+    )
+    assert events[1] == ("reasoning", {"text": "先看证据"})
+    assert events[2] == ("answer", {"field": "summary", "text": "建立劳动关系"})
+
+    assert events[-1][0] == "complete"
+    assert (
+        events[-1][1]["answer"]["summary"]
+        == "建立劳动关系应当订立书面劳动合同。"
+    )
+    assert events[-1][1]["reasoning"] == "先看证据"
+
+
+def test_query_stream_rejects_unknown_law_before_streaming() -> None:
+    services = ApiServices()
+    services.answer_pipeline = StreamingAnswerPipeline()
+    client = _authed_client(services)
+
+    response = client.post(
+        "/v1/query/stream",
+        json={"query": "测试问题", "law_name": "不存在的法律"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_query_stream_reports_failure_as_error_event() -> None:
+    services = ApiServices()
+    services.answer_pipeline = StreamingAnswerPipeline(fail=True)
+    client = _authed_client(services)
+
+    response = client.post("/v1/query/stream", json={"query": "测试问题"})
+
+    # 已经开始推送，就不能再改状态码，失败只能以 error 事件下发。
+    assert response.status_code == 200
+    events = _sse_events(response.text)
+    assert events[0][0] == "progress"
+    assert events[-1][0] == "error"
+    assert (
+        events[-1][1]["message"]
+        == "这次回答没有生成成功，请稍后再试一次。"
+    )
+    assert "RuntimeError" in events[-1][1]["detail"]
